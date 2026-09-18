@@ -1,0 +1,386 @@
+{
+  "scope": "Independent SciPy Spearman of saved observed-answer projections at each mapped layer. This is distinct from the displayed observed-answer layer, especially Hallucination L23 versus L27. These are point estimates and do not by themselves establish statistical validity.",
+  "maximum_absolute_error": 1.1102230246251565e-16,
+  "records": [
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "variant": "e1",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.3172695502768344,
+      "n": 533,
+      "is_ood": true
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_mhj",
+      "variant": "q01_s0",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.21822217612979508,
+      "n": 533,
+      "is_ood": true
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "variant": "e1",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.2501888201996974,
+      "n": 917,
+      "is_ood": true
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_pair",
+      "variant": "q01_s0",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.11323488896161263,
+      "n": 917,
+      "is_ood": true
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "variant": "e1",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": -0.3066925435487682,
+      "n": 1500,
+      "is_ood": true
+    },
+    {
+      "behavior": "evil",
+      "dataset": "evil_tomgibbs",
+      "variant": "q01_s0",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.5348183617534669,
+      "n": 1500,
+      "is_ood": true
+    },
+    {
+      "behavior": "evil",
+      "dataset": "heldin_train",
+      "variant": "e1",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.6891455426954929,
+      "n": 1162,
+      "is_ood": false
+    },
+    {
+      "behavior": "evil",
+      "dataset": "heldin_train",
+      "variant": "q01_s0",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.41633252315185554,
+      "n": 1162,
+      "is_ood": false
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "variant": "e1",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.08267989033931225,
+      "n": 1868,
+      "is_ood": true
+    },
+    {
+      "behavior": "evil",
+      "dataset": "hhrt",
+      "variant": "q01_s0",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.08210457687054179,
+      "n": 1868,
+      "is_ood": true
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "variant": "e1",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.2581151286565159,
+      "n": 519,
+      "is_ood": true
+    },
+    {
+      "behavior": "evil",
+      "dataset": "toxicchat",
+      "variant": "q01_s0",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.06821958810249046,
+      "n": 519,
+      "is_ood": true
+    },
+    {
+      "behavior": "evil",
+      "dataset": "wildchat_rung",
+      "variant": "e1",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.22644899839439725,
+      "n": 417,
+      "is_ood": false
+    },
+    {
+      "behavior": "evil",
+      "dataset": "wildchat_rung",
+      "variant": "q01_s0",
+      "mapped_layer": 22,
+      "displayed_answer_layer": 22,
+      "rho": 0.12762139429710315,
+      "n": 417,
+      "is_ood": false
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "variant": "e1",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.24959029896370874,
+      "n": 1304,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "aita",
+      "variant": "q01_s0",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.5549885172989082,
+      "n": 1304,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "heldin_train",
+      "variant": "e1",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.31011109215985333,
+      "n": 3235,
+      "is_ood": false
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "heldin_train",
+      "variant": "q01_s0",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.5350267963360954,
+      "n": 3235,
+      "is_ood": false
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "variant": "e1",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.30626850753736296,
+      "n": 594,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoans",
+      "variant": "q01_s0",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.33869890595176466,
+      "n": 594,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "variant": "e1",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.35899789972474533,
+      "n": 598,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycoays",
+      "variant": "q01_s0",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.2783373531168359,
+      "n": 598,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "variant": "e1",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.22086759848752638,
+      "n": 559,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycofb",
+      "variant": "q01_s0",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.24432562526404747,
+      "n": 559,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "variant": "e1",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.04392393032075607,
+      "n": 285,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomim",
+      "variant": "q01_s0",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.028808003706405752,
+      "n": 285,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "variant": "e1",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.4760282125987752,
+      "n": 576,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "sycomwe",
+      "variant": "q01_s0",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.4342513077202207,
+      "n": 576,
+      "is_ood": true
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "wildchat_rung",
+      "variant": "e1",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.07624932674428626,
+      "n": 415,
+      "is_ood": false
+    },
+    {
+      "behavior": "sycophancy",
+      "dataset": "wildchat_rung",
+      "variant": "q01_s0",
+      "mapped_layer": 11,
+      "displayed_answer_layer": 11,
+      "rho": 0.34690897305023977,
+      "n": 415,
+      "is_ood": false
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "heldin_train",
+      "variant": "e1",
+      "mapped_layer": 23,
+      "displayed_answer_layer": 27,
+      "rho": -0.07272611059970223,
+      "n": 3350,
+      "is_ood": false
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "heldin_train",
+      "variant": "q01_s0",
+      "mapped_layer": 23,
+      "displayed_answer_layer": 27,
+      "rho": 0.42791644562103154,
+      "n": 3350,
+      "is_ood": false
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "variant": "e1",
+      "mapped_layer": 23,
+      "displayed_answer_layer": 27,
+      "rho": -0.016029082545065323,
+      "n": 3167,
+      "is_ood": true
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "nqopen",
+      "variant": "q01_s0",
+      "mapped_layer": 23,
+      "displayed_answer_layer": 27,
+      "rho": 0.3167682460642624,
+      "n": 3167,
+      "is_ood": true
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "variant": "e1",
+      "mapped_layer": 23,
+      "displayed_answer_layer": 27,
+      "rho": 0.6121630492459,
+      "n": 4021,
+      "is_ood": true
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "simpleqa",
+      "variant": "q01_s0",
+      "mapped_layer": 23,
+      "displayed_answer_layer": 27,
+      "rho": -0.06869313146914602,
+      "n": 4021,
+      "is_ood": true
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "wildchat_rung",
+      "variant": "e1",
+      "mapped_layer": 23,
+      "displayed_answer_layer": 27,
+      "rho": 0.2482438334853911,
+      "n": 411,
+      "is_ood": false
+    },
+    {
+      "behavior": "hallucination",
+      "dataset": "wildchat_rung",
+      "variant": "q01_s0",
+      "mapped_layer": 23,
+      "displayed_answer_layer": 27,
+      "rho": 0.12751715725229854,
+      "n": 411,
+      "is_ood": false
+    }
+  ]
+}

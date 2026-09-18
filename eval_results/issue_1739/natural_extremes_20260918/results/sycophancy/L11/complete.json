@@ -1,0 +1,25 @@
+{
+  "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "input_fingerprint": "420d5047aef17c30ae2c1a2eca8a8d794f04ac47a1afb7a9a36fa7fafb9c2580",
+  "layer": 11,
+  "time": 1789706201.3826747,
+  "wall_s": 65.88332509994507,
+  "max_rss_gib": 13.452320098876953,
+  "files": {
+    "directions.npz": "af2b9ca6ab53c342a224fa57f61125d8fd55c18a7cac55c2493e8607370bb677",
+    "predictions_sycomim.npz": "83cb88963f918a2173424b2cf63a6919cc921e545f367d309e9426f09790c97b",
+    "parity.json": "17ac0c3895bda11f3cad583b16cd5451c5f82e61eab6daf6565a755a36174317",
+    "predictions_sycoans.npz": "7b897bd6c74e808b3c96882d939fd371c81b809dc1731f62fa02650f3a748f41",
+    "transforms.npz": "c4fedf16e31abaae7c50f8aec487f5a8df0aba970a405f2a396285a94c19e96f",
+    "direction_stability.json": "4ae1d9efc9cec7eed30a3d9cc15b343d0860fdcef561279aaa6ee0f6646250ae",
+    "predictions_sycomwe.npz": "ece94f4031c13d07123ef4c578c4dc55536abeb8156bc625804906dca87147fc",
+    "predictions_aita.npz": "465fbc99ac559df8d38033b8ba3d9d1713917823b4723c41b18ad6540e1f686e",
+    "predictions_sycoays.npz": "3ca1119fdecd6de01a9fdee170305fd702d5bef3113b27f5f3e813a4beec39d5",
+    "predictions_heldin_train.npz": "7c3bb81ce2e6fa322bc028af7ce96a4bc1030fd9435f73657d43d05b5ed0ffae",
+    "scores.json": "3c4499e30aca573891ba3bd89857c0b9010546752f337e1c19c84c309daa1f9d",
+    "selection.json": "5e359f26b5d5079f8cfb4e67661bf477e3ae3a5fa2637a5779f22913ffc68016",
+    "map_diagnostics.json": "affb74edfd5229b5f2e8a53da481202a7230f4a7bcc3dbc1e59bba44a87d06f9",
+    "predictions_sycofb.npz": "ae47facd5b65c8f80d88261843bd41d9abf4ef50e1c7df59c945ab763683b3f2",
+    "predictions_wildchat_rung.npz": "05dbac0e91d8bc4126d3f4feacb3ad3adb2b40949eb0766761def48f713400a9"
+  }
+}

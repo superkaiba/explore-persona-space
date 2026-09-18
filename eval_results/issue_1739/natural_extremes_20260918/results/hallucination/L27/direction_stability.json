@@ -1,0 +1,282 @@
+[
+  {
+    "dataset": "nqopen",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.038414460649605
+  },
+  {
+    "dataset": "nqopen",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.7616425493651222
+  },
+  {
+    "dataset": "nqopen",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.12116864807986645
+  },
+  {
+    "dataset": "nqopen",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.8036912196883217
+  },
+  {
+    "dataset": "nqopen",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.09463108154815797
+  },
+  {
+    "dataset": "nqopen",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.7461057236418873
+  },
+  {
+    "dataset": "nqopen",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.06985498030039217
+  },
+  {
+    "dataset": "nqopen",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.8064021738283574
+  },
+  {
+    "dataset": "nqopen",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.07992746818185463
+  },
+  {
+    "dataset": "nqopen",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.7594971150364902
+  },
+  {
+    "dataset": "simpleqa",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.01683659879505676
+  },
+  {
+    "dataset": "simpleqa",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.6463625997215351
+  },
+  {
+    "dataset": "simpleqa",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.10865044327089034
+  },
+  {
+    "dataset": "simpleqa",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.8180888431091665
+  },
+  {
+    "dataset": "simpleqa",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.05709697160898388
+  },
+  {
+    "dataset": "simpleqa",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.755720077505305
+  },
+  {
+    "dataset": "simpleqa",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.051261744263401895
+  },
+  {
+    "dataset": "simpleqa",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.7868344168057243
+  },
+  {
+    "dataset": "simpleqa",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.10334384523661526
+  },
+  {
+    "dataset": "simpleqa",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.7542709710498954
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.022750931258148477
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.6925618948818991
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.09971665108706165
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.7359771536683234
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.09700313992498802
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.7211066998036821
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.07926388412867577
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.7998481983598709
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.06814242474774942
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.756127144576968
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.0026517940458581192
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.46732276895714625
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.07474711643323075
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.7357236676798194
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.07420263757848339
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.7143664061426953
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.03908036083508908
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.6337468385206925
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.07578535226833656
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.6917152986691578
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "time": 1789706057.9310122,
+  "phase": "bootstrap_dataset",
+  "max_rss_gib": 19.274871826171875,
+  "dataset": "wildchat_rung",
+  "n": 417
+}

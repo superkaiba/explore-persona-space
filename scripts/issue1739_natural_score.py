@@ -17,10 +17,14 @@ import time
 from pathlib import Path
 from types import SimpleNamespace
 
-import numpy as np
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np
 
 from explore_persona_space.experiments.issue_1739 import arms, fits, store_io
 from explore_persona_space.experiments.issue_1739 import natural_extremes as ne

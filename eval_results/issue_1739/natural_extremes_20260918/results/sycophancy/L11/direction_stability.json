@@ -1,0 +1,562 @@
+[
+  {
+    "dataset": "aita",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.28561058450627996
+  },
+  {
+    "dataset": "aita",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.6850013717921127
+  },
+  {
+    "dataset": "aita",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.8988484447791921
+  },
+  {
+    "dataset": "aita",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.9576029497730246
+  },
+  {
+    "dataset": "aita",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.8898698375796293
+  },
+  {
+    "dataset": "aita",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.9699483802976878
+  },
+  {
+    "dataset": "aita",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.8867434850134817
+  },
+  {
+    "dataset": "aita",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.9730652936347154
+  },
+  {
+    "dataset": "aita",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.8859660553610915
+  },
+  {
+    "dataset": "aita",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.9663464978441471
+  },
+  {
+    "dataset": "sycoans",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.32003829461278266
+  },
+  {
+    "dataset": "sycoans",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.6726925407226595
+  },
+  {
+    "dataset": "sycoans",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.880194030348899
+  },
+  {
+    "dataset": "sycoans",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.9558595491676948
+  },
+  {
+    "dataset": "sycoans",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.9007021179349997
+  },
+  {
+    "dataset": "sycoans",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.977232231585913
+  },
+  {
+    "dataset": "sycoans",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.9029814740283504
+  },
+  {
+    "dataset": "sycoans",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.979771708504231
+  },
+  {
+    "dataset": "sycoans",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.9116300669775512
+  },
+  {
+    "dataset": "sycoans",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.9761053327853453
+  },
+  {
+    "dataset": "sycoays",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.29007000194768434
+  },
+  {
+    "dataset": "sycoays",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.7140965134377555
+  },
+  {
+    "dataset": "sycoays",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.8963549303866721
+  },
+  {
+    "dataset": "sycoays",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.9709728522200107
+  },
+  {
+    "dataset": "sycoays",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.8861498844588126
+  },
+  {
+    "dataset": "sycoays",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.98049202248625
+  },
+  {
+    "dataset": "sycoays",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.8955287406499427
+  },
+  {
+    "dataset": "sycoays",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.978737510391698
+  },
+  {
+    "dataset": "sycoays",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.9036787951496562
+  },
+  {
+    "dataset": "sycoays",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.9710846090669086
+  },
+  {
+    "dataset": "sycofb",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.29168749034759356
+  },
+  {
+    "dataset": "sycofb",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.591131609508632
+  },
+  {
+    "dataset": "sycofb",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.8953081028267014
+  },
+  {
+    "dataset": "sycofb",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.9796792367836998
+  },
+  {
+    "dataset": "sycofb",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.8952070383538712
+  },
+  {
+    "dataset": "sycofb",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.9682699925406714
+  },
+  {
+    "dataset": "sycofb",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.904257987677647
+  },
+  {
+    "dataset": "sycofb",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.976695637198394
+  },
+  {
+    "dataset": "sycofb",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.9094424517743706
+  },
+  {
+    "dataset": "sycofb",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.9793249676971475
+  },
+  {
+    "dataset": "sycomim",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.2962560440083936
+  },
+  {
+    "dataset": "sycomim",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.7884482856633018
+  },
+  {
+    "dataset": "sycomim",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.9050713685412246
+  },
+  {
+    "dataset": "sycomim",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.976180948399316
+  },
+  {
+    "dataset": "sycomim",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.8952210492295264
+  },
+  {
+    "dataset": "sycomim",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.9744222176909112
+  },
+  {
+    "dataset": "sycomim",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.9068491830375448
+  },
+  {
+    "dataset": "sycomim",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.9839629972695434
+  },
+  {
+    "dataset": "sycomim",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.9066222544700258
+  },
+  {
+    "dataset": "sycomim",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.9776120272614462
+  },
+  {
+    "dataset": "sycomwe",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.27264760511271585
+  },
+  {
+    "dataset": "sycomwe",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.8046612328299022
+  },
+  {
+    "dataset": "sycomwe",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.8951504568828671
+  },
+  {
+    "dataset": "sycomwe",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.9645754008040043
+  },
+  {
+    "dataset": "sycomwe",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.8821023745410987
+  },
+  {
+    "dataset": "sycomwe",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.9594706833627219
+  },
+  {
+    "dataset": "sycomwe",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.8925110688300782
+  },
+  {
+    "dataset": "sycomwe",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.9687141048159763
+  },
+  {
+    "dataset": "sycomwe",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.894992512965
+  },
+  {
+    "dataset": "sycomwe",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.9745014918104307
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.3026071814893
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.810996543986593
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.8942118856501517
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.970368360397073
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.887529883654322
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.9494618476661759
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.8946862894815736
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.9834964298584135
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.890639435842992
+  },
+  {
+    "dataset": "heldin:train",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.965707588425866
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "context_end",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.2710663281478784
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "t1",
+    "left": "half0",
+    "right": "half1",
+    "whitened_cosine": 0.7232231655950412
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.8904913432122602
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s1",
+    "whitened_cosine": 0.9595313743083147
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.8996195274926496
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s2",
+    "whitened_cosine": 0.9619764539650639
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.8777643654623114
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s3",
+    "whitened_cosine": 0.9561672797049525
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "context_end",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.8839276996477636
+  },
+  {
+    "dataset": "wildchat_rung",
+    "kind": "t1",
+    "left": "q01_s0",
+    "right": "q01_s4",
+    "whitened_cosine": 0.9562422635040464
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "dataset": "nqopen",
+    "arm": "real_answer",
+    "layer": 27,
+    "n": 3167,
+    "expected_n": 3167,
+    "rho": 0.12797090910783324,
+    "expected_rho": 0.12797090910783324,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "simpleqa",
+    "arm": "real_answer",
+    "layer": 27,
+    "n": 4021,
+    "expected_n": 4021,
+    "rho": 0.5787174444636474,
+    "expected_rho": 0.5787174444636474,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "heldin:train",
+    "arm": "real_answer",
+    "layer": 27,
+    "n": 3350,
+    "expected_n": 3350,
+    "rho": 0.056203189976959625,
+    "expected_rho": 0.056203189976959625,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "wildchat_rung",
+    "arm": "real_answer",
+    "layer": 27,
+    "n": 411,
+    "expected_n": 411,
+    "rho": 0.28059178964074377,
+    "expected_rho": 0.28059178964074377,
+    "absolute_error": 0.0
+  }
+]

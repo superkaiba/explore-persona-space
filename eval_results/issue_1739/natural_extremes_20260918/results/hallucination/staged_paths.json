@@ -1,0 +1,14 @@
+{
+  "labeling": "/workspace/issue1739-natural-extremes/hallucination/store/hallucination_labeling",
+  "wildchat": "/workspace/issue1739-natural-extremes/hallucination/store/wildchat",
+  "u_store": "/workspace/issue1739-natural-extremes/hallucination/store/u_store",
+  "extraction": "/workspace/issue1739-natural-extremes/hallucination/store/hallucination_extraction",
+  "ood": [],
+  "labels": {
+    "train": "/workspace/issue1739-natural-extremes/hallucination/metadata/labels/train.json",
+    "wildchat": "/workspace/issue1739-natural-extremes/hallucination/metadata/labels/wildchat.json"
+  },
+  "prompt_metadata": "/workspace/issue1739-natural-extremes/hallucination/metadata/prompts.jsonl",
+  "hallu_per_rollout": "/workspace/issue1739-natural-extremes/hallucination/metadata/hallu_per_rollout.json",
+  "manifest": "/workspace/issue1739-natural-extremes/hallucination/outputs/staging_manifest.json"
+}

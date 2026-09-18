@@ -1,0 +1,15 @@
+{
+  "behavior": "evil",
+  "bytes": 9825,
+  "checked_at": 1789705896.403192,
+  "completed_files": 819,
+  "file": "/workspace/issue1739-natural-extremes/evil/metadata/reference.json",
+  "hashed_bytes": 30417092608,
+  "manifest": "/workspace/issue1739-natural-extremes/evil/outputs/staging_manifest.json",
+  "observed_bytes": 32137328641,
+  "observed_files": 3,
+  "phase": "staging-complete",
+  "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "status": "complete",
+  "total_bytes": 9825
+}

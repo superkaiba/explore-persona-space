@@ -1,0 +1,142 @@
+[
+  {
+    "dataset": "evil_mhj",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "n": 533,
+    "expected_n": 533,
+    "rho": -0.027791283789040264,
+    "expected_rho": -0.027791283789040264,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "evil_mhj",
+    "arm": "context_native",
+    "layer": 15,
+    "n": 533,
+    "expected_n": 533,
+    "rho": 0.03208532162940137,
+    "expected_rho": 0.03208532162940137,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "evil_pair",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "n": 917,
+    "expected_n": 917,
+    "rho": 0.09370586223298097,
+    "expected_rho": 0.09370586223298097,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "evil_pair",
+    "arm": "context_native",
+    "layer": 15,
+    "n": 917,
+    "expected_n": 917,
+    "rho": -0.00818686572982744,
+    "expected_rho": -0.00818686572982744,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "n": 1500,
+    "expected_n": 1500,
+    "rho": 0.42968804689799117,
+    "expected_rho": 0.42968804689799117,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "arm": "context_native",
+    "layer": 15,
+    "n": 1500,
+    "expected_n": 1500,
+    "rho": 0.5548426375464411,
+    "expected_rho": 0.5548426375464411,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "hhrt",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "n": 1868,
+    "expected_n": 1868,
+    "rho": 0.009478463580156925,
+    "expected_rho": 0.009478463580156925,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "hhrt",
+    "arm": "context_native",
+    "layer": 15,
+    "n": 1868,
+    "expected_n": 1868,
+    "rho": 0.03254994653314767,
+    "expected_rho": 0.03254994653314767,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "toxicchat",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "n": 519,
+    "expected_n": 519,
+    "rho": 0.0195113243787477,
+    "expected_rho": 0.0195113243787477,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "toxicchat",
+    "arm": "context_native",
+    "layer": 15,
+    "n": 519,
+    "expected_n": 519,
+    "rho": -0.07163590791197351,
+    "expected_rho": -0.07163590791197351,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "heldin:train",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "n": 1162,
+    "expected_n": 1162,
+    "rho": -0.0075143728880254414,
+    "expected_rho": -0.0075143728880254414,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "heldin:train",
+    "arm": "context_native",
+    "layer": 15,
+    "n": 1162,
+    "expected_n": 1162,
+    "rho": 0.045839372282923604,
+    "expected_rho": 0.045839372282923604,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "wildchat_rung",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "n": 417,
+    "expected_n": 417,
+    "rho": 0.06707034670126535,
+    "expected_rho": 0.06707034670126535,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "wildchat_rung",
+    "arm": "context_native",
+    "layer": 15,
+    "n": 417,
+    "expected_n": 417,
+    "rho": -0.01500240886312545,
+    "expected_rho": -0.01500240886312545,
+    "absolute_error": 0.0
+  }
+]

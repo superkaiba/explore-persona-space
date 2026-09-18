@@ -1,0 +1,82 @@
+[
+  {
+    "dataset": "nqopen",
+    "arm": "answer_direction_on_context",
+    "layer": 24,
+    "n": 3167,
+    "expected_n": 3167,
+    "rho": 0.04480219102979353,
+    "expected_rho": 0.04480219102979353,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "nqopen",
+    "arm": "context_native",
+    "layer": 24,
+    "n": 3167,
+    "expected_n": 3167,
+    "rho": 0.02912389110150348,
+    "expected_rho": 0.02912389110150348,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "simpleqa",
+    "arm": "answer_direction_on_context",
+    "layer": 24,
+    "n": 4021,
+    "expected_n": 4021,
+    "rho": 0.24522906755721233,
+    "expected_rho": 0.24522906755721233,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "simpleqa",
+    "arm": "context_native",
+    "layer": 24,
+    "n": 4021,
+    "expected_n": 4021,
+    "rho": 0.47395389736189697,
+    "expected_rho": 0.47395389736189697,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "heldin:train",
+    "arm": "answer_direction_on_context",
+    "layer": 24,
+    "n": 3350,
+    "expected_n": 3350,
+    "rho": -0.016830928997864265,
+    "expected_rho": -0.016830928997864265,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "heldin:train",
+    "arm": "context_native",
+    "layer": 24,
+    "n": 3350,
+    "expected_n": 3350,
+    "rho": 0.0522096712041754,
+    "expected_rho": 0.0522096712041754,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "wildchat_rung",
+    "arm": "answer_direction_on_context",
+    "layer": 24,
+    "n": 411,
+    "expected_n": 411,
+    "rho": -0.10319922809106985,
+    "expected_rho": -0.10319922809106985,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "wildchat_rung",
+    "arm": "context_native",
+    "layer": 24,
+    "n": 411,
+    "expected_n": 411,
+    "rho": 0.04281505072932264,
+    "expected_rho": 0.04281505072932264,
+    "absolute_error": 0.0
+  }
+]

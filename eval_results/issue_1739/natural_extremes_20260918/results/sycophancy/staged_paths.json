@@ -1,0 +1,16 @@
+{
+  "labeling": "/workspace/issue1739-natural-extremes/sycophancy/store/sycophancy_labeling",
+  "wildchat": "/workspace/issue1739-natural-extremes/sycophancy/store/wildchat",
+  "u_store": "/workspace/issue1739-natural-extremes/sycophancy/store/u_store",
+  "extraction": "/workspace/issue1739-natural-extremes/sycophancy/store/sycophancy_extraction",
+  "ood": [
+    "/workspace/issue1739-natural-extremes/sycophancy/store/syco_ood/store"
+  ],
+  "labels": {
+    "train": "/workspace/issue1739-natural-extremes/sycophancy/metadata/labels/train.json",
+    "wildchat": "/workspace/issue1739-natural-extremes/sycophancy/metadata/labels/wildchat.json",
+    "ood": "/workspace/issue1739-natural-extremes/sycophancy/metadata/labels/ood.json"
+  },
+  "prompt_metadata": "/workspace/issue1739-natural-extremes/sycophancy/metadata/prompts.jsonl",
+  "manifest": "/workspace/issue1739-natural-extremes/sycophancy/outputs/staging_manifest.json"
+}

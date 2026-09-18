@@ -1,0 +1,15 @@
+{
+  "behavior": "hallucination",
+  "bytes": 8767034,
+  "checked_at": 1789706254.8746803,
+  "completed_files": 1777,
+  "file": "/workspace/issue1739-natural-extremes/hallucination/metadata/hallu_per_rollout.json",
+  "hashed_bytes": 67251470336,
+  "manifest": "/workspace/issue1739-natural-extremes/hallucination/outputs/staging_manifest.json",
+  "observed_bytes": 69869701121,
+  "observed_files": 3,
+  "phase": "staging-complete",
+  "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "status": "complete",
+  "total_bytes": 8767034
+}

@@ -1,0 +1,24 @@
+{
+  "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "input_fingerprint": "a0a92f14d5afb0b5cabad40d7592f3c069b5fc8994d45bd18582e3bad755c972",
+  "layer": 15,
+  "time": 1789705948.739118,
+  "wall_s": 47.8019585609436,
+  "max_rss_gib": 19.274871826171875,
+  "files": {
+    "directions.npz": "0b9e04a9bbc027396b1762ca1d2e097c57c7852e1d344385da50d24495b2bcd5",
+    "predictions_evil_mhj.npz": "a4c0257bd31d12f64895478aeecc853b873b77baf1457ba9a4bb975559809965",
+    "predictions_evil_pair.npz": "46424d734eee587a305ed613c7b4d44c7040442b951fa4cd7b9375202df78ef8",
+    "parity.json": "c48db712206bee3fbfc5f45151ec4013f787e8a119118eb4bc2e0adfc7c58ac0",
+    "transforms.npz": "6498dec473bfe932448870d812e77714e272533a6463af7908a2bffbb3f38a62",
+    "direction_stability.json": "2e038fe762345dc7d350ebbe6aed7905ac01c63c94542615604309119d0fc4d3",
+    "predictions_toxicchat.npz": "de10a03f65b70abc312590b0dbe4324d251c35bfe76ebc6fa1bf8d5c042ecfcf",
+    "predictions_heldin_train.npz": "bffbf706c984928a817507ba9e6a7f1f698541aaf6e16f9c47593aea2143765c",
+    "scores.json": "039d023e1dd6186d5a8eb5ee4374990049f04f82fde3a017bac3800576c1de8e",
+    "selection.json": "1ea595c8f95c799ad2590cf8b35427920e67ff2c74f62826dc27708e5000fb30",
+    "map_diagnostics.json": "c72f15ae4a1ddf48a7e4e04f7c0ccc50ff2a5a1050954fd6299865ef5e4e2df2",
+    "predictions_hhrt.npz": "07297e903dcbb5ad3a2491b72aff716ff9895e55bea7b418c59457613ef346aa",
+    "predictions_evil_tomgibbs.npz": "9d5d43523eb2c97ddaf99858503dbbd9b4279344cd84f67b73c923a66f0bb77e",
+    "predictions_wildchat_rung.npz": "43229aa3c982aefb5342f38a5ec90d13b79ae21e065fa57b0f43c646fafaee79"
+  }
+}

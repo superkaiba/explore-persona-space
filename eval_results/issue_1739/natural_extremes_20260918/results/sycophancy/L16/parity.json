@@ -1,0 +1,162 @@
+[
+  {
+    "dataset": "aita",
+    "arm": "answer_direction_on_context",
+    "layer": 16,
+    "n": 1304,
+    "expected_n": 1304,
+    "rho": 0.06085386456800987,
+    "expected_rho": 0.06085386456800987,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "aita",
+    "arm": "context_native",
+    "layer": 16,
+    "n": 1304,
+    "expected_n": 1304,
+    "rho": 0.05085260281453181,
+    "expected_rho": 0.05085260281453181,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycoans",
+    "arm": "answer_direction_on_context",
+    "layer": 16,
+    "n": 594,
+    "expected_n": 594,
+    "rho": 0.15070121043301568,
+    "expected_rho": 0.15070121043301568,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycoans",
+    "arm": "context_native",
+    "layer": 16,
+    "n": 594,
+    "expected_n": 594,
+    "rho": -0.1373116862905605,
+    "expected_rho": -0.1373116862905605,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycoays",
+    "arm": "answer_direction_on_context",
+    "layer": 16,
+    "n": 598,
+    "expected_n": 598,
+    "rho": 0.24679134704944886,
+    "expected_rho": 0.24679134704944886,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycoays",
+    "arm": "context_native",
+    "layer": 16,
+    "n": 598,
+    "expected_n": 598,
+    "rho": 0.4883172683761515,
+    "expected_rho": 0.4883172683761515,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycofb",
+    "arm": "answer_direction_on_context",
+    "layer": 16,
+    "n": 559,
+    "expected_n": 559,
+    "rho": 0.09857986915607433,
+    "expected_rho": 0.09857986915607433,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycofb",
+    "arm": "context_native",
+    "layer": 16,
+    "n": 559,
+    "expected_n": 559,
+    "rho": 0.21042151893406577,
+    "expected_rho": 0.21042151893406577,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycomim",
+    "arm": "answer_direction_on_context",
+    "layer": 16,
+    "n": 285,
+    "expected_n": 285,
+    "rho": -0.06878414079494789,
+    "expected_rho": -0.06878414079494789,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycomim",
+    "arm": "context_native",
+    "layer": 16,
+    "n": 285,
+    "expected_n": 285,
+    "rho": -0.15198666968895472,
+    "expected_rho": -0.15198666968895472,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycomwe",
+    "arm": "answer_direction_on_context",
+    "layer": 16,
+    "n": 576,
+    "expected_n": 576,
+    "rho": 0.10050305305037388,
+    "expected_rho": 0.10050305305037388,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycomwe",
+    "arm": "context_native",
+    "layer": 16,
+    "n": 576,
+    "expected_n": 576,
+    "rho": 0.027013410871839304,
+    "expected_rho": 0.027013410871839304,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "heldin:train",
+    "arm": "answer_direction_on_context",
+    "layer": 16,
+    "n": 3235,
+    "expected_n": 3235,
+    "rho": 0.021890690576524707,
+    "expected_rho": 0.021890690576524707,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "heldin:train",
+    "arm": "context_native",
+    "layer": 16,
+    "n": 3235,
+    "expected_n": 3235,
+    "rho": 0.023388027699176674,
+    "expected_rho": 0.023388027699176674,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "wildchat_rung",
+    "arm": "answer_direction_on_context",
+    "layer": 16,
+    "n": 415,
+    "expected_n": 415,
+    "rho": -0.03910039610309418,
+    "expected_rho": -0.03910039610309418,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "wildchat_rung",
+    "arm": "context_native",
+    "layer": 16,
+    "n": 415,
+    "expected_n": 415,
+    "rho": -0.005546888638905077,
+    "expected_rho": -0.005546888638905077,
+    "absolute_error": 0.0
+  }
+]

@@ -1,0 +1,162 @@
+[
+  {
+    "dataset": "aita",
+    "arm": "mapped_answer",
+    "layer": 11,
+    "n": 1304,
+    "expected_n": 1304,
+    "rho": 0.2398471924190651,
+    "expected_rho": 0.2398471924190651,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "aita",
+    "arm": "real_answer",
+    "layer": 11,
+    "n": 1304,
+    "expected_n": 1304,
+    "rho": 0.2495902989637087,
+    "expected_rho": 0.2495902989637087,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycoans",
+    "arm": "mapped_answer",
+    "layer": 11,
+    "n": 594,
+    "expected_n": 594,
+    "rho": 0.20809156092676126,
+    "expected_rho": 0.20809156092676126,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycoans",
+    "arm": "real_answer",
+    "layer": 11,
+    "n": 594,
+    "expected_n": 594,
+    "rho": 0.30626850753736296,
+    "expected_rho": 0.30626850753736296,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycoays",
+    "arm": "mapped_answer",
+    "layer": 11,
+    "n": 598,
+    "expected_n": 598,
+    "rho": 0.3642887179631798,
+    "expected_rho": 0.3642887179631798,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycoays",
+    "arm": "real_answer",
+    "layer": 11,
+    "n": 598,
+    "expected_n": 598,
+    "rho": 0.35899789972474533,
+    "expected_rho": 0.35899789972474533,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycofb",
+    "arm": "mapped_answer",
+    "layer": 11,
+    "n": 559,
+    "expected_n": 559,
+    "rho": 0.1409920170180543,
+    "expected_rho": 0.1409920170180543,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycofb",
+    "arm": "real_answer",
+    "layer": 11,
+    "n": 559,
+    "expected_n": 559,
+    "rho": 0.2208675984875264,
+    "expected_rho": 0.2208675984875264,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycomim",
+    "arm": "mapped_answer",
+    "layer": 11,
+    "n": 285,
+    "expected_n": 285,
+    "rho": 0.12596622792734402,
+    "expected_rho": 0.12596622792734402,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycomim",
+    "arm": "real_answer",
+    "layer": 11,
+    "n": 285,
+    "expected_n": 285,
+    "rho": 0.04392393032075607,
+    "expected_rho": 0.04392393032075607,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycomwe",
+    "arm": "mapped_answer",
+    "layer": 11,
+    "n": 576,
+    "expected_n": 576,
+    "rho": 0.17843835618047793,
+    "expected_rho": 0.17843835618047793,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "sycomwe",
+    "arm": "real_answer",
+    "layer": 11,
+    "n": 576,
+    "expected_n": 576,
+    "rho": 0.47602821259877515,
+    "expected_rho": 0.47602821259877515,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "heldin:train",
+    "arm": "mapped_answer",
+    "layer": 11,
+    "n": 3235,
+    "expected_n": 3235,
+    "rho": 0.2808621849487408,
+    "expected_rho": 0.2808621849487408,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "heldin:train",
+    "arm": "real_answer",
+    "layer": 11,
+    "n": 3235,
+    "expected_n": 3235,
+    "rho": 0.3101110921598534,
+    "expected_rho": 0.3101110921598534,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "wildchat_rung",
+    "arm": "mapped_answer",
+    "layer": 11,
+    "n": 415,
+    "expected_n": 415,
+    "rho": 0.09223660209399395,
+    "expected_rho": 0.09223660209399395,
+    "absolute_error": 0.0
+  },
+  {
+    "dataset": "wildchat_rung",
+    "arm": "real_answer",
+    "layer": 11,
+    "n": 415,
+    "expected_n": 415,
+    "rho": 0.07624932674428626,
+    "expected_rho": 0.07624932674428626,
+    "absolute_error": 0.0
+  }
+]

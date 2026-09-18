@@ -1,0 +1,19 @@
+{
+  "labeling": "/workspace/issue1739-natural-extremes/evil/store/evil_labeling",
+  "wildchat": "/workspace/issue1739-natural-extremes/evil/store/wildchat",
+  "u_store": "/workspace/issue1739-natural-extremes/evil/store/u_store",
+  "extraction": "/workspace/issue1739-natural-extremes/evil/store/evil_extraction",
+  "ood": [
+    "/workspace/issue1739-natural-extremes/evil/store/evil_ood_full/store/mhj",
+    "/workspace/issue1739-natural-extremes/evil/store/evil_ood_full/store/pair",
+    "/workspace/issue1739-natural-extremes/evil/store/evil_ood_full/store/tomgibbs_p0",
+    "/workspace/issue1739-natural-extremes/evil/store/evil_ood_full/store/tomgibbs_p1"
+  ],
+  "labels": {
+    "train": "/workspace/issue1739-natural-extremes/evil/metadata/labels/train.json",
+    "wildchat": "/workspace/issue1739-natural-extremes/evil/metadata/labels/wildchat.json",
+    "ood": "/workspace/issue1739-natural-extremes/evil/metadata/labels/ood.json"
+  },
+  "prompt_metadata": "/workspace/issue1739-natural-extremes/evil/metadata/prompts.jsonl",
+  "manifest": "/workspace/issue1739-natural-extremes/evil/outputs/staging_manifest.json"
+}

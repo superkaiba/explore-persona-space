@@ -1,0 +1,21 @@
+{
+  "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "input_fingerprint": "f2b80c3e709fa66bba1e5ed5b9a0d268e50a61e0ef5332017106757f6c958a92",
+  "layer": 24,
+  "time": 1789706424.593913,
+  "wall_s": 64.73464584350586,
+  "max_rss_gib": 24.427490234375,
+  "files": {
+    "directions.npz": "138d80574c0e75f563e4085e6ed9a0ebcf9ebbc99f2144d46114f6b3c8b00e12",
+    "predictions_simpleqa.npz": "0b7a636c68c079f5b8d2a292f56ad7cc57de953d2c93b2ef4cb37a036bb5efbe",
+    "parity.json": "dd76b4f4ba3114b242c691e0f2aef82ff41386b4309d73268ba31aacce2ebdd3",
+    "transforms.npz": "d665c74adbd62713152041588544002d5105eb2229cda327b97c0841fb15304b",
+    "direction_stability.json": "1d23abb2f00be1512b7bd04d6a4183662416e2426c8b4467f197d1dd81f9ad2e",
+    "predictions_nqopen.npz": "1689a1b8faebfad8add869395874e0fa16edbe4d376bf6e7f5fe6f9813fbb83e",
+    "predictions_heldin_train.npz": "be32648cd34f2a480fe4a79ee81a2bb847467c19f86751c2285f80e8a1414246",
+    "scores.json": "afd934953244fbd4c158bfbda9b59bcc37ae5f1caa20127e9b1cb8838b832c10",
+    "selection.json": "950ebf40ca3c156090f1e6e92e95ddb5ae3199c1857e67191aeb302b499bcc1d",
+    "map_diagnostics.json": "8f448c7185836b9b44e918b9041e8ef046baafe0d53913e35849f04073541994",
+    "predictions_wildchat_rung.npz": "735dc98f2d3993eb3421e3ff8fd1781a5db9e5a572116d4961c4b26a28871f58"
+  }
+}

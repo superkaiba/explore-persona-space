@@ -1,0 +1,3215 @@
+[
+  {
+    "dataset": "evil_mhj",
+    "variant": "e1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.027791283789040264,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "e1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.03208532162940137,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "e1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.11945945550328795,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "e1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.18039462613030363,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "e2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.06524371989682118,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "e2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.11417737546358073,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "e2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1581976652469409,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "e2p",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.05189158173697802,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "e2p",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.037829776429389374,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "e2p",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.25700129113015896,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "e2p",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.34820621271437896,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "half0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.006485607237052516,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "half0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.04412542510505171,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "half0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.15293838367897972,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "half0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.26505636809524813,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "half1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.062171488437118456,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "half1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.037265215397635866,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "half1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.12348675415984024,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "half1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.18176371236894037,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_complete",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.06252587912328979,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_complete",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.006773363455419533,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_complete",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.18241308362111128,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_complete",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.2744767878307213,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.05177622962201769,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.05446983235952599,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.15080072579430642,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.24251331071419918,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.11598838353719881,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0399447262537354,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1965096757445204,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.3186171363375087,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.10800388326847325,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s2",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.006493096065458317,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.29408480178265833,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.3790742678424706,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s3",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.09622991503885704,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s3",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0014574629003312827,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s3",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.26148436149398907,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s3",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.31000438246331813,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s4",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.06233781290026022,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s4",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.06099107192528353,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s4",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.24260293143201064,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q01_s4",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.3758383702716191,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q05_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0680657198052225,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q05_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.032463749039004224,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q05_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.22582876105338087,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q05_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.3030791509841393,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q10_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.019449010782605258,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q10_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0056185136427119396,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q10_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.25912968863562075,
+    "n": 533
+  },
+  {
+    "dataset": "evil_mhj",
+    "variant": "q10_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.2972072671750938,
+    "n": 533
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "e1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.09370586223298097,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "e1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.00818686572982744,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "e1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1900250359558665,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "e1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.14892133325534762,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "e2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0734139394401903,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "e2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.013235420568622815,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "e2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.05556043272094289,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "e2p",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.08314293889050674,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "e2p",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.17303134585827823,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "e2p",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.13622739377435858,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "e2p",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.08709925236453153,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "half0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.12297371973793006,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "half0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.1456592861028697,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "half0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.13382212237237942,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "half0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.12645740436970104,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "half1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.012486468011248104,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "half1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.08837909652595974,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "half1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.06384098859771523,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "half1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.06737514015356841,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_complete",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.06299723337955644,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_complete",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.18031600406875242,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_complete",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.08807286679067322,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_complete",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.11509279531387527,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.07638486232306467,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.17950155328920178,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.10949622439874639,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.11597381562522474,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.10738248106769015,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0671721269800274,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.10218208869195576,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.08344399337623028,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.09510651715650015,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s2",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.15036370332741417,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.08688466080621988,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.02458677010765428,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s3",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0635557400493512,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s3",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.19585214446100185,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s3",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1065188489356048,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s3",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.060958094402470846,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s4",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.012642541341619237,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s4",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.05233193404134851,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s4",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.10805716714566761,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q01_s4",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.08338682664658328,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q05_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.010748581300124122,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q05_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.09645913620469679,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q05_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.067782748742555,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q05_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.08472663942436455,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q10_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.02988647288543221,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q10_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.08597775600621232,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q10_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1497156598956741,
+    "n": 917
+  },
+  {
+    "dataset": "evil_pair",
+    "variant": "q10_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.03424441209624182,
+    "n": 917
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "e1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.42968804689799117,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "e1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.5548426375464411,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "e1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.04714050390656556,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "e1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.597126499138893,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "e2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.4745161270410955,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "e2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.4244754222446759,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "e2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.2984624490747693,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "e2p",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.48257060081734776,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "e2p",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.09805477902641066,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "e2p",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.07233348719120306,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "e2p",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.24790990416393177,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "half0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.1276468206457173,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "half0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.3956862743265308,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "half0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.4386969547551917,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "half0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.1639901678907319,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "half1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.38061868814564354,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "half1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.41552695592561834,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "half1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1541419911271018,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "half1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.6919431996273084,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_complete",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.14366575020383734,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_complete",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.5002268781181884,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_complete",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.3774556096189493,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_complete",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.3676779396586976,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.20624162803983595,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.46931013731152904,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.30994229763460684,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.32520514556574737,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.42183260884698814,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.13293671488979122,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.46634616043976895,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.19945967709784276,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.4014526723717599,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s2",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.46680909671090964,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.3060073543139305,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.09403939349862118,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s3",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.05907283588567572,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s3",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.12981447880398742,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s3",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.43540174115264696,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s3",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.24364835916910949,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s4",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.41876284479892567,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s4",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.26521024907230184,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s4",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.07052695188969128,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q01_s4",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.18215822337204404,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q05_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.36546674792966966,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q05_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.6282971371601551,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q05_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.5439911987776166,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q05_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.5373328160481692,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q10_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.07762144749785184,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q10_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.5423286039612994,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q10_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.5236870874336859,
+    "n": 1500
+  },
+  {
+    "dataset": "evil_tomgibbs",
+    "variant": "q10_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.31320950510613355,
+    "n": 1500
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "e1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.009478463580156925,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "e1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.03254994653314767,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "e1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.01989146066454249,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "e1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.03209100794747374,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "e2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.027604667987756834,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "e2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.05028277684727983,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "e2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.08174365314915359,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "e2p",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.017480185822683188,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "e2p",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.003072174264263065,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "e2p",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.0777567978459175,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "e2p",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.11557024022721124,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "half0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.04136730777038964,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "half0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.0008329760158902472,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "half0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.07382399119109367,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "half0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.10386736201419601,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "half1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.043805380802257564,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "half1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.02889583851790709,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "half1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.06046830003862489,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "half1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.07087236855528067,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_complete",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.028553558118151946,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_complete",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.04490373879918442,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_complete",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.05560025811280457,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_complete",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.07639011122271458,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.04914455342492605,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.01820979497567696,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.07690251940386328,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.09981181381890113,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.07991612996309569,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.06200205781238842,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.09262554888000876,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.13019983674287036,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.03949540832979705,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s2",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.01318309880268304,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.07533760910412192,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.07450717798105944,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s3",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.04506230004112373,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s3",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.019488794502666648,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s3",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.08090403578927713,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s3",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.07872353222630062,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s4",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.05166860556838812,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s4",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.01471179624619885,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s4",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.011873492098589329,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q01_s4",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.007317398176876744,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q05_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.035018406911565825,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q05_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.0012248620256092848,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q05_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.0971333773058978,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q05_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.11295004181145431,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q10_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.01822965159319873,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q10_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0038960442222138003,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q10_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.08049880775594755,
+    "n": 1868
+  },
+  {
+    "dataset": "hhrt",
+    "variant": "q10_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.0794351575483354,
+    "n": 1868
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "e1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0195113243787477,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "e1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.07163590791197351,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "e1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.26048730979066737,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "e1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.32221682526788953,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "e2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.0890567360741285,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "e2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.11665740627866861,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "e2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.20701327974452702,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "e2p",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.03726203945427076,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "e2p",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0945651833255361,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "e2p",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.06925110702338753,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "e2p",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.190361746787591,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "half0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0807478873548774,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "half0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.011919576430669867,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "half0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.07504516106556344,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "half0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.03436990012405963,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "half1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.044328988877894174,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "half1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.1331115835501418,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "half1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.11079242496868562,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "half1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.19635553323886867,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_complete",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0021961359376520785,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_complete",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.0014848864683937632,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_complete",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.012862031397216821,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_complete",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.10635756689926566,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.011907636611897438,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.03754472059408159,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.017973618049824246,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.10625501101647487,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.015687735792260196,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.0776371296705982,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.02514731419757204,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.13663377144595862,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.04544872247813509,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s2",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.008720812002723689,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.022922079893640132,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1589930097563026,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s3",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.034624762795218776,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s3",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.09568254477635202,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s3",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.01973905072354636,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s3",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.07298997854872646,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s4",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.03323167850957197,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s4",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.026701151142585394,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s4",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.11954328419745913,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q01_s4",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.21792413448519948,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q05_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.08011744910936361,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q05_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.05434001295286777,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q05_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.13247054970386307,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q05_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": -0.015436123184864193,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q10_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.027509658738268137,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q10_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.16569526990845507,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q10_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.061320141707536704,
+    "n": 519
+  },
+  {
+    "dataset": "toxicchat",
+    "variant": "q10_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.007014047481076844,
+    "n": 519
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "e1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.0075143728880254414,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "e1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.045839372282923604,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "e1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.5539481708295932,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "e1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.5645141751682249,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "e2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.011680488061207098,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "e2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.14107785454495128,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "e2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.15397767621808411,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "e2p",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.03589775783523826,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "e2p",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.024998151614434548,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "e2p",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.3842445041516302,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "e2p",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.42921656171025346,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "half0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.023349036627007186,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "half0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.036555486066460335,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "half0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.32073748653139555,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "half0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.3635660182795698,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "half1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.009702334983820171,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "half1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.013550607114074189,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "half1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.40315257041027447,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "half1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.4382952633892477,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_complete",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.019116281186509737,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_complete",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.03937896836559199,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_complete",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.3419307382252552,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_complete",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.3805511460639513,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.008439673667281178,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.021729837135696203,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.3627653680980757,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.4047675216907493,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.03386411098658649,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.005749536637422421,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.2726509240017917,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.29386779170198507,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.012937744035196527,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s2",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.003943808323085524,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.40235673891364304,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.43218148110882204,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s3",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.017028479764485252,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s3",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.026719559012547273,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s3",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.4045691140610426,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s3",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.4337500985697777,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s4",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.04714224999537778,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s4",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.00819360920382348,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s4",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.36478482996844996,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q01_s4",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.40538547453080015,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q05_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.029853864691939274,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q05_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.0026795367323438897,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q05_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.38323165381591484,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q05_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.4328169648989232,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q10_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.020695867123252755,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q10_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.018453620984802695,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q10_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.4528599062921562,
+    "n": 1162
+  },
+  {
+    "dataset": "heldin:train",
+    "variant": "q10_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.4953270366756299,
+    "n": 1162
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "e1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.06707034670126535,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "e1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.01500240886312545,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "e1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.20005030769449472,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "e1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.2261317775575307,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "e2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.10711972390036041,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "e2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.05602481577944849,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "e2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.06632446682680918,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "e2p",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.05546137897697255,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "e2p",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.027823061566371772,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "e2p",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1844598075597068,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "e2p",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.14949155209682566,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "half0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.07585489843555042,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "half0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.005293478897473797,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "half0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.17311086230376782,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "half0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.15144681586644462,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "half1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.07372409484532343,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "half1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.03022637922267376,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "half1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.09048255936704076,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "half1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.09650449564741227,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_complete",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.07354986992973869,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_complete",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.03444295090608036,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_complete",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.10469043686984862,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_complete",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.11054143549719359,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.07713956064329602,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.04045995629261456,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.13663671186297402,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.12753658292310152,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s1",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.015633563274300367,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s1",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.04723697678260524,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s1",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.16920559438462301,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s1",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1399742695383172,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s2",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.006160001307816026,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s2",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.04665710366733828,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s2",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1494258068456616,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s2",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.13986611860015236,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s3",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.0025387528736999397,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s3",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.02327151782828432,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s3",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1492279136396578,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s3",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.13336358453377162,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s4",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.005565335511037159,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s4",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.04829514660009068,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s4",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.11503347978297757,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q01_s4",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.1142116641434269,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q05_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.05826114049779378,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q05_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.006368413754006077,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q05_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.18770302079962958,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q05_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.19739485699997858,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q10_s0",
+    "arm": "answer_direction_on_context",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": 0.041452709585191774,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q10_s0",
+    "arm": "context_native",
+    "layer": 15,
+    "displayed_layer": true,
+    "rho": -0.004628465681949391,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q10_s0",
+    "arm": "mapped_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.10322333159012276,
+    "n": 417
+  },
+  {
+    "dataset": "wildchat_rung",
+    "variant": "q10_s0",
+    "arm": "real_answer",
+    "layer": 15,
+    "displayed_layer": false,
+    "rho": 0.13764064184824912,
+    "n": 417
+  }
+]

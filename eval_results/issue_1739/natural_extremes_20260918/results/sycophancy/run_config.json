@@ -1,0 +1,110 @@
+{
+  "bootstrap_replicates": 500,
+  "capture_revision": "7a47ff5ce42f16308bebaba29c1286a4e9bc8008",
+  "selection_primary": "q01_s0",
+  "hf_files": {
+    "contexts_000.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/contexts_000.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "fbd8633026f11a759d27c041ecc1653edbfbfd7ea9c8be997e6e171f00bcb8ef"
+    },
+    "contexts_001.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/contexts_001.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "42df41e351cae65e6c5527398b4e70598336cd28d502eae6c841f05b3e634f0d"
+    },
+    "contexts_002.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/contexts_002.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "073aa5f193d8067187865b294ce1d590f0b7135b0aae87f6d0eaa4bb99de32d8"
+    },
+    "contexts_003.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/contexts_003.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "f3734466b3484cf75f7bf1dcae3b563c2569924bf20a200b6b0d4dc7a474f7f1"
+    },
+    "contexts_004.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/contexts_004.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "da378f448031a5b92fcb3bcb536008bbf0b44648ec3f1bc68e49934efb75b16a"
+    },
+    "contexts_005.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/contexts_005.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "27937e5dbb702421c5781c8a9b0cdf880c7ee9c27b44a9dae2863ee3883b76e8"
+    },
+    "contexts_006.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/contexts_006.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "eac6c8fb05276118fd5f1f1c3c774090f29c7590a31d035f223ed3f241c64b31"
+    },
+    "contexts_007.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/contexts_007.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "5363d9b97aae19d6b3349aa671456027cab13d6d646c0bd46fce023911f0018d"
+    },
+    "contexts_008.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/contexts_008.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "48e0376923f3dd4f863a955485bbbaa855c47b06d48e96c6ca5adbcee9b482ce"
+    },
+    "contexts_009.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/contexts_009.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "b38ed64e14e352686f0e0a11e9d2dd4397402a1ca9fb87f6569ef80a4e81d9d8"
+    },
+    "contexts_010.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/contexts_010.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "6268925efe8bdc6f4a00663881e5d9eb88cc31a631a81569f9d198a7c8504edf"
+    },
+    "labels/ood.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/ood_labels.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "18583d2432f258fb677735bd5940012082065a58d500ef2bf7dfc5e9bba59db8"
+    },
+    "labels/train.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/train_labels.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "8d6aed280943e1c6868bfb44448dbfa6fbee17d91b26533fa26896931617defb"
+    },
+    "labels/wildchat.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/wildchat_labels.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "b6217ef9f7089915a87094d3a34ee1d48ec10c17f969353dae93121cc5cb5765"
+    },
+    "prompts.jsonl": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/metadata.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "58a983f700e3f4aa3bf2c9cef5b7acf4adcfdd3e7758c3ed03c17ea5bd2e6c3a"
+    },
+    "reference.json": {
+      "path": "issue1739_natural_extremes_20260918/inputs_v1/sycophancy/reference.json",
+      "repo": "superkaiba1/explore-persona-space-data",
+      "revision": "ef872290fcc3145c62007a937a7f3abd0dd4d8f3",
+      "sha256": "5370f9638c7726a0af1beae8f0f333bdf086b16217d70d394ba129806e40869d"
+    }
+  },
+  "metadata_root": "/workspace/issue1739-natural-extremes/sycophancy/metadata",
+  "out_root": "/workspace/issue1739-natural-extremes/sycophancy/outputs",
+  "store_root": "/workspace/issue1739-natural-extremes/sycophancy/store",
+  "upload_prefix": "issue1739_natural_extremes_20260918/results_v1/sycophancy",
+  "behavior": "sycophancy",
+  "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "input_fingerprint": "420d5047aef17c30ae2c1a2eca8a8d794f04ac47a1afb7a9a36fa7fafb9c2580"
+}

@@ -1,0 +1,15 @@
+{
+  "behavior": "sycophancy",
+  "bytes": 10373,
+  "checked_at": 1789706109.9998655,
+  "completed_files": 1118,
+  "file": "/workspace/issue1739-natural-extremes/sycophancy/metadata/reference.json",
+  "hashed_bytes": 50381979648,
+  "manifest": "/workspace/issue1739-natural-extremes/sycophancy/outputs/staging_manifest.json",
+  "observed_bytes": 52140359681,
+  "observed_files": 3,
+  "phase": "staging-complete",
+  "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "status": "complete",
+  "total_bytes": 10373
+}
