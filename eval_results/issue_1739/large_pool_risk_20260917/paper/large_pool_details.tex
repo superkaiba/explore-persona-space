@@ -1,0 +1,32 @@
+\subsection{Large-pool preimage retrieval}
+\label{app:large-pool-retrieval}
+
+We use the frozen Qwen2.5-7B-Instruct layer-19 map fitted on 963,444 generic context--answer pairs. Of these, 959,844 have saved answer text; normalizing case and whitespace and retaining the lowest original row for duplicate full prompts leaves 952,067 candidates. All methods rank the same population. Let $z=D^{-1}(x-\mu_C)$ and $\hat y=W^\top z+\mu_A$. Scores are $\cos(z,(W^\top)^+_{378}v_A)$ for the preimage, $\cos(z,Dv_C)$ for the context-derived control, $\cos(z,Dv_A)$ for the answer-on-context control, and $z^\top Wv_A$ for the mapped-answer diagnostic. The inverse rank was selected on 400 generic validation pairs without behavior labels. Directions, layers, signs, inverse rank, and top-$k$ cutoffs remain frozen.
+
+The top 200 per method and behavior, together with a shared uniform random sample of 1,000 (seed 1739), produce 2,955 distinct transcripts and 4,958 primary transcript--behavior judgments. Top-50 and top-100 results are secondary. Native gpt-5.6-luna judges use medium reasoning, complete content-only packets, opaque IDs, and fixed 0--100 anchored rubrics. Blinding relies on scoped instructions, not physical filesystem isolation. Scores at least 50 indicate substantive behavior. Unverifiable factual claims remain unassessable; no-factual-claim responses and model refusals can receive zero. Harmful compliance here excludes merely malicious style and harmless fiction, and differs from the earlier broad evil-persona score.
+
+A 24-item pilot per behavior precedes production; 100 items per behavior receive independent repeats. Schema, exact-ID and literal-authorship gates plus matched-transcript spot checks detect procedural failures. Rejected default-generated or misaligned batches are rejudged and excluded; originals and corrections remain archived. One 23-item hallucination audit batch was replaced after a wrong-transcript rationale. Accepted binary repeat agreement is 97/100 for harmful compliance, 100/100 for sycophancy, and 75/78 for hallucination answers scored in both reads; hallucination status and status-inclusive agreement are 92/100 and 89/100. These are repeatability measurements, not validation against human ground truth.
+
+\begin{table*}[t]
+\centering
+\caption{Primary large-pool results. Entries are graded mean among scorable answers; detected positives / full denominator; unassessable count. Means with incomplete coverage are conditional and cannot establish full-population superiority.}
+\label{tab:large-pool-luna}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccc}
+\toprule
+Selection & Harmful compliance & Sycophancy & Hallucination \\
+\midrule
+Preimage similarity & 13.95; 29/200; 0 & 0.00; 0/200; 0 & 42.86; 4/200; 193 \\
+Answer $\to$ mapped answer & 6.00; 14/200; 0 & 0.00; 0/200; 0 & 3.42; 9/200; 17 \\
+Context $\to$ context & 15.22; 35/200; 0 & 2.45; 8/200; 0 & 3.03; 6/200; 27 \\
+Answer $\to$ context & 12.75; 32/200; 0 & 1.50; 5/200; 0 & 2.06; 5/200; 6 \\
+Random & 0.82; 10/1000; 0 & 0.00; 0/1000; 0 & 14.14; 168/1000; 109 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+We report complete-case means and fractions alongside full-denominator worst-case missingness bounds. Pointwise 95\% intervals use 2,000 shared Poisson context-bootstrap draws (seed 1739 plus behavior index), preserving overlap among selections, conditional on fixed maps, selections, and labels. They exclude judge and map-refit uncertainty; zero-event intervals are degenerate. The harmful-compliance preimage-minus-context differences are $-3.0$ points ($-8.7,2.3$) and $-1.5$ points ($-7.5,4.3$); its difference from mapped-answer selection is $+7.5$ points ($2.0,13.1$).
+
+An outcome-blind exploratory sensitivity uses character-four-gram TF--IDF cosine components at thresholds 0.90 and 0.95 over the selected union, retaining the highest-ranked item per component without refilling. At 0.90, harmful-compliance yields are 11/105 for preimage, 23/132 for context-derived, 24/127 for answer-on-context, 10/155 for mapped-answer, and 10/971 for random selection. This lexical rule does not merge the common company-introduction family: all 200 hallucination-preimage prompts share that request form despite different names and addresses. Thus it does not establish semantic diversity.
+
+The Singleton Birch case is a post-hoc illustration, selected from positive retrieved answers. Its founding-date error is contradicted by the company's 2019 brochure\footnote{\url{https://singletonbirch.co.uk/wp-content/uploads/2019/07/1203-masterox-a4-leaflet-v2.pdf}}, which predates the cached pool. Its ranks were recomputed over all 952,067 eligible prompts with the same score and row-index tie break. This example does not repair the aggregate hallucination coverage limitation. Both contexts and cached answers were used to train the generic map; unseen-context evaluation and repeated fresh rollouts would be required to establish prospective behavioral risk.

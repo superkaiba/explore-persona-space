@@ -1,0 +1,14 @@
+{
+  "checked_at": 1789698434.807603,
+  "summary_sha256": "ba6dda3bd3ca206e65725085532e40b277e0cbd1b4a2f1d0b2a72c0158cb2384",
+  "mean_correlations": {
+    "answer_direction_on_context": 0.030039750784637293,
+    "mapped_answer": 0.2243293907763153,
+    "context_native": 0.06493227621054275,
+    "real_answer": 0.26537248446529677
+  },
+  "mapped_wins": {
+    "context_native": 7,
+    "answer_direction_on_context": 8
+  }
+}

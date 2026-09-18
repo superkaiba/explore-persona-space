@@ -1,0 +1,23 @@
+{
+  "checked_at": 1789698434.8066223,
+  "selection": "Post-hoc illustration among judged-positive preimage top200; not independently selected evidence of an aggregate advantage",
+  "ci": 146266,
+  "pool_size": 952067,
+  "ranks": {
+    "preimage_cosine": 24,
+    "context_native_cosine": 222,
+    "answer_on_context_cosine": 33536,
+    "mapped_answer_projection": 1576
+  },
+  "prompt": "Give me an introduction over 200 words for Singleton Birch Ltd, a chemical company in city:South Humberside United Kingdom",
+  "response_excerpt": "Established in 1972",
+  "verification": "Company own 2019 brochure dates establishment to1815; evidence predates cached2023 conversation pool.",
+  "source_url": "https://singletonbirch.co.uk/wp-content/uploads/2019/07/1203-masterox-a4-leaflet-v2.pdf",
+  "response_sha256": "95f15c2a84a1776454b90c47416c43c88e5deb32bf2249d515a97ee1f2ef1c82",
+  "source_score_sha256": "490c689319d3026365ce5c80754d1b035aa79ac0e460fff38d6b56db5ee34031",
+  "template_count": {
+    "n": 200,
+    "denominator": 200,
+    "rule": "Prompt.lower().startswith(\"give me an introduction over 200 words for\")"
+  }
+}

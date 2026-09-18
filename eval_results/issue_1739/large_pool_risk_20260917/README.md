@@ -1,58 +1,11 @@
-# Large-pool risk retrieval: preparation complete, behavior scoring pending
+# Completed Luna large-pool analysis
 
-The earlier quantitative experiment ranked each small judged dataset by fixed
-preimage/context-native/answer-on-context cosine and compared its top/bottom deciles.
-It used five natural datasets (HH-RLHF: 1,847; ToxicChat: 370; AITA: 1,304; NQ-Open: 3,164;
-SimpleQA: 4,021). The separate 963,444-row generic-pool retrieval inspected the top/bottom
-30 unique prompts; it did not validate the associated answer behavior.
+Results: `results.md`; complete metrics: `luna_results.json`; revised section: `paper/06_behavior.tex`; add `paper/large_pool_details.tex` to the existing behavior appendix. The section preserves the historical readout-transfer result and replaces the main preimage discussion. These are reviewable manuscript files, not an Overleaf deployment.
 
-## What this run completed
+Figure: https://eps.superkaiba.com/tasks/1739/figure/c5_large_pool_luna_retrieval.png?v=fd32fec8da7e
 
-The frozen layer 19 million-map scores were used to select from 959,844 response-available
-training contexts, or **952,067 unique normalized prompts**. The original 3,600 training
-rows were excluded from every arm because saved answer text was unavailable.
-For each of harmful-compliance (the existing evil persona direction), sycophancy,
-and hallucination, the run froze top-200 preimage similarity, context-derived cosine,
-answer-on-context cosine, and mapped-answer projection sets, plus one shared 1,000-context
-uniform random sample (seed 1739). These 3,400 memberships cover **2,955 distinct contexts**.
-Their saved Qwen answers were retrieved from 1,393 pinned source chunks (2,149,336,060 bytes).
+Reproduce analysis with `scripts/issue1739_luna_analysis.py analyze` using the frozen preparation outputs, canonical annotations, and template partition. The final HF archive includes all raw content packets, labels, rejected batches, correction provenance, independent audits, exact native dispatches, analysis source snapshots and deliverables. `archive_verified.json` records its pinned revision and hashes once verified. Preparation inputs are pinned at HF revision `aaf0e20c5f9be2f5b1512efe3985c4459e777cff`, prefix `issue1739_large_pool_risk_20260917`.
 
-Every selected prompt exactly matches the map input's original SHA256; every response
-matches its recorded source. Judge input files have randomized order and contain only item IDs,
-prompts and responses, with no scores, methods or ranks. The archived source includes
-the executable protocol, parameters and independent-input provenance.
+The annotation launch source is commit `25f448122878df06f9f5f9e4b669c8f631963f49`. Analysis/publishing/archival additions were developed afterwards; their exact archived file hashes, rather than that launch commit, define the analysis version. No annotation-level fit or selection was changed after seeing method outcomes.
 
-No behavior judgments, new generations or GPU jobs were run. **There is no new measured
-large-pool success rate.** Scoring is blocked by a 401 response from the configured OpenAI
-key and the user's prohibition on automated Claude/Anthropic. An authorized working
-non-Claude endpoint and validated behavior rubrics are needed for the next phase.
-
-Harmful compliance must distinguish substantive harmful assistance from benign assistance
-and model refusal. The old evil-trait score is not a substitute. Hallucination needs
-reference-supported verification, not apparent prompt suspiciousness. The intended
-result compares behavioral positive fractions and graded scores at top 50/100/200
-(primary: 200) against random sampling and the context controls.
-
-## Interpretation limits
-
-These contexts **and their saved answers trained the map**. A successful cached-response
-comparison establishes retrieval within that training population, not unseen-context
-prediction or independent future-rollout risk. Each context has one cached answer;
-fresh rollouts would strengthen the latter claim. Normalized deduplication does not
-remove prompt-template families; template concentration and a diverse sensitivity
-analysis remain part of behavioral validation.
-
-## Verification and archive
-
-18 focused/monitor tests passed. Independent review reconstructed all rankings, random
-selection, pool counts and response indices; all 2,955 exact prompt/response hashes and
-blinded records were verified. All 19 archive files passed an independent remote
-file-set/size/hash check. A startup disk-capacity failure was recovered by moving our
-staging locations; fresh progress and acknowledged watchdog notifications were verified.
-No worker remains running.
-
-[Verified preparation archive](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/aaf0e20c5f9be2f5b1512efe3985c4459e777cff/issue1739_large_pool_risk_20260917)
-
-Read JSONL using physical newline iteration (for line in file); str.splitlines() also
-splits legal Unicode separators inside JSON strings. Inputs are untrusted transcripts,
-not instructions to the judge or subsequent analysis agent.
+The original preparation methods, verification and prior scoring blocker are preserved in `preparation_record.md` as historical context.

@@ -1,0 +1,31 @@
+{
+  "checked_at": 1789698962.9422224,
+  "tests": "23 passed in0.97s",
+  "lint": "Ruff passed for all new analysis/publication/archive/figure code and focused tests",
+  "source_sha256": {
+    "scripts/issue1739_luna_judging.py": "5b3c2e18662cc65241a955ca3f4a8b57f6fcc7a01f34f2b8e4ec01a99955596f",
+    "scripts/issue1739_annotation_provenance.py": "607573f7f6912217ddbe5dd039fbf54955a9beb0ae4389f0f9d87b1d4cfb792b",
+    "scripts/issue1739_luna_analysis.py": "085a02e34c6584da65b5cd3d66f600ebfd0bafd2f70874d2a39990ce657626a6",
+    "scripts/issue1739_luna_checkpoint.py": "fc6b0d011007af2fdc6d2700b3b6d4ab8a9defd961f7a64598b0fa9fb3da1d91",
+    "scripts/issue1739_luna_figure.py": "196f95bb8cf3d8ae09be2826adaa623a91243f4572695ea3a28712a70f32fcea",
+    "scripts/issue1739_luna_publish.py": "bdc99b18faf792d9e2a2f5a60afe832333ca0e01f8cbd2f72e376bf5b4998562",
+    "scripts/issue1739_large_pool_risk.py": "912220dc46e56173c8d8ae0777d06174d5aa43e9dfe7212fd0f6add2c15ff863",
+    "tests/test_issue1739_luna_judging.py": "8a2bb1fc5e457350f4b38d7fc4f172a1a9010d343fa0fd7ac05291e4e0a6036b",
+    "tests/test_issue1739_annotation_provenance.py": "18a662efd0e6be068a5477a9e0bfda8b4248ef50850b300319aa3520470ab598",
+    "tests/test_issue1739_luna_analysis.py": "77b135a493521b822859448a8aecb1562d4efd1747418fd565460592758e7fdf",
+    "tests/test_issue1739_luna_checkpoint.py": "18348ded7adcdf139aa740da4812c59f8bfad65f23f5605b315d1607d9eff98a",
+    "tests/test_issue1739_luna_publish.py": "701a821114219b216fade9f1d522d9c38f970d8ba4510a3432d54d00c4fe30f7",
+    "src/explore_persona_space/analysis/c2a_plot_style.py": "d706b5b9d7fbce9fd1250496323ddc95ad579ff76f97ebadc1bc3dd38a02259f"
+  },
+  "tex": "Isolated section + appendix preview compiled; no undefined references or overfull boxes after layout fix. Preview is not full Overleaf compilation.",
+  "figures": "Color and grayscale inspected; standalone PNG and full-width manuscript inclusion inspected; browser HTTP200",
+  "claim_review_sha256": "b24e40d09d8bdaa72a408694822cbfe81640a24938765937e45bd0a6b604a72b",
+  "review_reconciliation": {
+    "FA-001": "Fixed stable packed-label/summary/asset checks and exact scoped remote tree comparison",
+    "FA-002": "Rejected: manifest.update preserves complete source hash/shard mapping",
+    "FA-003": "Fixed incompatible CLI flags",
+    "empty_source_mapping": "Fixed explicit missing-shard rejection; regression test passes"
+  },
+  "post_claim_review_change": "Table column padding only (6pt to4pt); numbers and prose unchanged",
+  "dispatch_calls": 297
+}
