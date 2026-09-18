@@ -1,0 +1,15 @@
+{
+  "revision": "7ef5523673d64697ab497577dbc5b9270c39f020",
+  "prefix": "issue1092_realistic_crossing/corpus",
+  "git_blobs": {
+    "manifest.jsonl": "4411f7ab5f5233db56b0ef94cb43b8a60a7fe8c2",
+    "query_store.jsonl": "7e71602b7a111e6e3e89b01269f576299b61f1b3",
+    "prefix_store.jsonl": "bab87051a5f302591edb7dbfef9d4d0199972bed"
+  },
+  "fit_rows": 18793,
+  "query_ids": 1397,
+  "prefix_ids": 1095,
+  "joined_query_ids": 1397,
+  "joined_prefix_ids": 1095,
+  "unique_query_or_userturn_texts": 3957
+}

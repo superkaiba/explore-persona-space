@@ -12,6 +12,7 @@ from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
 from huggingface_hub import HfApi, hf_hub_download  # noqa: E402
+from explore_persona_space.orchestrate import hub  # noqa: E402
 
 REPO = "superkaiba1/explore-persona-space-data"
 
@@ -24,11 +25,14 @@ def fetch(observation_path: Path, destination: Path):
             continue
         identity = state["results"]
         prefix, revision = identity["prefix"], identity["verified_revision"]
-        receipt_path = hf_hub_download(
-            REPO,
-            prefix + ".completion.json",
-            repo_type="dataset",
-            revision=identity["receipt_publication_revision"],
+        receipt_path = hub.retry_transient(
+            lambda: hf_hub_download(
+                REPO,
+                prefix + ".completion.json",
+                repo_type="dataset",
+                revision=identity["receipt_publication_revision"],
+            ),
+            what=f"natural completion receipt: {behavior}",
         )
         receipt = json.loads(Path(receipt_path).read_text())
         for key in ("source_sha", "input_fingerprint", "verified_revision"):
@@ -37,8 +41,17 @@ def fetch(observation_path: Path, destination: Path):
         expected = receipt["verification"]["sha256"]
         entries = {
             e.path[len(prefix) + 1 :]: e
-            for e in HfApi().list_repo_tree(
-                REPO, path_in_repo=prefix, repo_type="dataset", revision=revision, recursive=True
+            for e in hub.retry_transient(
+                lambda: list(
+                    HfApi().list_repo_tree(
+                        REPO,
+                        path_in_repo=prefix,
+                        repo_type="dataset",
+                        revision=revision,
+                        recursive=True,
+                    )
+                ),
+                what=f"natural output inventory: {behavior}",
             )
             if hasattr(e, "size")
         }
@@ -56,8 +69,11 @@ def fetch(observation_path: Path, destination: Path):
                 raise ValueError(f"Remote tensor digest mismatch: {behavior}/{name}")
             if retained or entry.lfs is None:
                 downloaded = Path(
-                    hf_hub_download(
-                        REPO, prefix + "/" + name, repo_type="dataset", revision=revision
+                    hub.retry_transient(
+                        lambda: hf_hub_download(
+                            REPO, prefix + "/" + name, repo_type="dataset", revision=revision
+                        ),
+                        what=f"natural output file: {behavior}/{name}",
                     )
                 )
                 with downloaded.open("rb") as stream:

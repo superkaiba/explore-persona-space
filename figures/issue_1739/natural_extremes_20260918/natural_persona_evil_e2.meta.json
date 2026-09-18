@@ -1,0 +1,1373 @@
+{
+  "behavior_labels": {
+    "evil": "Evil trait",
+    "hallucination": "Hallucination",
+    "sycophancy": "Sycophancy"
+  },
+  "correlation_axis_range": [
+    -1.02,
+    1.02
+  ],
+  "encodings": {
+    "instruction": "open square",
+    "mapped_answer": "#176B87",
+    "missing": "N/A text; no point",
+    "natural": "filled circle",
+    "other_readouts": "#687078"
+  },
+  "frozen_layers": {
+    "evil": {
+      "answer_direction_on_context": 15,
+      "context_native": 15,
+      "mapped_answer": 22,
+      "real_answer": 22
+    },
+    "hallucination": {
+      "answer_direction_on_context": 24,
+      "context_native": 24,
+      "mapped_answer": 23,
+      "real_answer": 27
+    },
+    "sycophancy": {
+      "answer_direction_on_context": 16,
+      "context_native": 16,
+      "mapped_answer": 11,
+      "real_answer": 11
+    }
+  },
+  "inputs": {
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L15/parity.json": {
+      "sha256": "c48db712206bee3fbfc5f45151ec4013f787e8a119118eb4bc2e0adfc7c58ac0",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/direction_stability.json": {
+      "sha256": "855abbdb0b447cb81fdece763eeb1eea281d243a37a05cdad355d144d0d22301",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/parity.json": {
+      "sha256": "7995c1daf40ccb480154d428dba79bfa3d896a54729f6a0180e1100ad8f096c5",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/scores.json": {
+      "sha256": "56becdbc6746418453bfc9e4c8f602e9142d0c0a7b74bf69e0635ed34e1befe9",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/selection.json": {
+      "sha256": "1ea595c8f95c799ad2590cf8b35427920e67ff2c74f62826dc27708e5000fb30",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/results.json": {
+      "sha256": "8d3546feaf963ce80d1420197df89688823d0a2f87e669cd8bc6cf71659116d0",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/direction_stability.json": {
+      "sha256": "899dcd3145e3cae5f47c628055f3aa13b38543db74a23fc83246cac9358efd3f",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/parity.json": {
+      "sha256": "2283bed675351e47bf0f42d25c6b693bdb657808b22bdf34f74a027d31d6953e",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/scores.json": {
+      "sha256": "883f529b4817f026e1a3fad89e3cea1049f6283a259bcbb40b3ef64c9dd0e134",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/selection.json": {
+      "sha256": "950ebf40ca3c156090f1e6e92e95ddb5ae3199c1857e67191aeb302b499bcc1d",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L24/parity.json": {
+      "sha256": "dd76b4f4ba3114b242c691e0f2aef82ff41386b4309d73268ba31aacce2ebdd3",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L27/parity.json": {
+      "sha256": "20763c918da322c911600d2831854a6edb09523390ce30fc0302941637a3b12b",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/results.json": {
+      "sha256": "8946e9e83803d9fcdccb2d72d48fff294918e38ef4003b940ff04e0e776c8b66",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/direction_stability.json": {
+      "sha256": "4ae1d9efc9cec7eed30a3d9cc15b343d0860fdcef561279aaa6ee0f6646250ae",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/parity.json": {
+      "sha256": "17ac0c3895bda11f3cad583b16cd5451c5f82e61eab6daf6565a755a36174317",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/scores.json": {
+      "sha256": "3c4499e30aca573891ba3bd89857c0b9010546752f337e1c19c84c309daa1f9d",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/selection.json": {
+      "sha256": "5e359f26b5d5079f8cfb4e67661bf477e3ae3a5fa2637a5779f22913ffc68016",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L16/parity.json": {
+      "sha256": "42270e84409d68bc00e01de7c595e9b9386a0d1f362cbcd9975edf36ab286047",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/results.json": {
+      "sha256": "bb4dc08781181166239adf9cf3a0ba808ecdc3240ad8e36e8349b8bea101334c",
+      "status": "read"
+    }
+  },
+  "intervals": "Archived 95% paired group-bootstrap endpoints, drawn without recentering",
+  "optional_input_absence_is_not_a_zero": true,
+  "outputs": {
+    "grayscale": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_evil_e2_grayscale.png",
+      "sha256": "69c21a327bb29fe8e5232d4c3a94875d1b72d195f07e64d92770004b937fc842"
+    },
+    "pdf": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_evil_e2.pdf",
+      "sha256": "2b770e27c25dbf1ec1ef6bdd22fd99cae39e0c62180ea3c33a142305922c0fe3"
+    },
+    "png": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_evil_e2.png",
+      "sha256": "e5f5652c1f7c68cccf495b7aee516538a40fc03219d70a2681c923fda48a2432"
+    }
+  },
+  "plotted_values": [
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.059242076461059424,
+        0.16438535774576965
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 417,
+      "rho": 0.06707034670126535,
+      "source": {
+        "ci95": [
+          -0.059242076461059424,
+          0.16438535774576965
+        ],
+        "rho": 0.06707034670126535,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.19559116365662385,
+        -0.015947944648619653
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 417,
+      "rho": -0.10711972390036041,
+      "source": {
+        "ci95": [
+          -0.19559116365662385,
+          -0.015947944648619653
+        ],
+        "rho": -0.10711972390036041,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.08771765987268519,
+        0.06600149356233961
+      ],
+      "dataset": "heldin_train",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 1162,
+      "rho": -0.0075143728880254414,
+      "source": {
+        "ci95": [
+          -0.08771765987268519,
+          0.06600149356233961
+        ],
+        "rho": -0.0075143728880254414,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.08351932898769884,
+        0.06410286386980193
+      ],
+      "dataset": "heldin_train",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 1162,
+      "rho": -0.011680488061207098,
+      "source": {
+        "ci95": [
+          -0.08351932898769884,
+          0.06410286386980193
+        ],
+        "rho": -0.011680488061207098,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.033729985919251776,
+        0.05188607050216953
+      ],
+      "dataset": "hhrt",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 1868,
+      "rho": 0.009478463580156925,
+      "source": {
+        "ci95": [
+          -0.033729985919251776,
+          0.05188607050216953
+        ],
+        "rho": 0.009478463580156925,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.01715845886920068,
+        0.06519641136074214
+      ],
+      "dataset": "hhrt",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 1868,
+      "rho": 0.027604667987756834,
+      "source": {
+        "ci95": [
+          -0.01715845886920068,
+          0.06519641136074214
+        ],
+        "rho": 0.027604667987756834,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.07123537572472666,
+        0.10202017579841748
+      ],
+      "dataset": "toxicchat",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 519,
+      "rho": 0.0195113243787477,
+      "source": {
+        "ci95": [
+          -0.07123537572472666,
+          0.10202017579841748
+        ],
+        "rho": 0.0195113243787477,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.17721296411763793,
+        -0.009581837690346096
+      ],
+      "dataset": "toxicchat",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 519,
+      "rho": -0.0890567360741285,
+      "source": {
+        "ci95": [
+          -0.17721296411763793,
+          -0.009581837690346096
+        ],
+        "rho": -0.0890567360741285,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.11595699801473246,
+        0.062420573240882536
+      ],
+      "dataset": "evil_mhj",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 533,
+      "rho": -0.027791283789040264,
+      "source": {
+        "ci95": [
+          -0.11595699801473246,
+          0.062420573240882536
+        ],
+        "rho": -0.027791283789040264,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.1496812361879948,
+        0.02735410716797942
+      ],
+      "dataset": "evil_mhj",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 533,
+      "rho": -0.06524371989682118,
+      "source": {
+        "ci95": [
+          -0.1496812361879948,
+          0.02735410716797942
+        ],
+        "rho": -0.06524371989682118,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.032899507211444315,
+        0.1626214321988096
+      ],
+      "dataset": "evil_pair",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 917,
+      "rho": 0.09370586223298097,
+      "source": {
+        "ci95": [
+          0.032899507211444315,
+          0.1626214321988096
+        ],
+        "rho": 0.09370586223298097,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.010790564660563629,
+        0.1351815725282113
+      ],
+      "dataset": "evil_pair",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 917,
+      "rho": 0.0734139394401903,
+      "source": {
+        "ci95": [
+          0.010790564660563629,
+          0.1351815725282113
+        ],
+        "rho": 0.0734139394401903,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.3842774399639602,
+        0.47158923249530577
+      ],
+      "dataset": "evil_tomgibbs",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 1500,
+      "rho": 0.42968804689799117,
+      "source": {
+        "ci95": [
+          0.3842774399639602,
+          0.47158923249530577
+        ],
+        "rho": 0.42968804689799117,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.5135219152358222,
+        -0.43516724279445607
+      ],
+      "dataset": "evil_tomgibbs",
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "n": 1500,
+      "rho": -0.4745161270410955,
+      "source": {
+        "ci95": [
+          -0.5135219152358222,
+          -0.43516724279445607
+        ],
+        "rho": -0.4745161270410955,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.1238395305237845,
+        0.09542424508477555
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 15,
+      "method": "context_native",
+      "n": 417,
+      "rho": -0.01500240886312545,
+      "source": {
+        "ci95": [
+          -0.1238395305237845,
+          0.09542424508477555
+        ],
+        "rho": -0.01500240886312545,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": null,
+      "dataset": "wildchat_rung",
+      "layer": 15,
+      "method": "context_native",
+      "n": 417,
+      "reason": "Within-prompt context contrast is structurally zero",
+      "rho": null,
+      "source": null,
+      "status": "unavailable",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.039745280206039305,
+        0.13093233578531688
+      ],
+      "dataset": "heldin_train",
+      "layer": 15,
+      "method": "context_native",
+      "n": 1162,
+      "rho": 0.045839372282923604,
+      "source": {
+        "ci95": [
+          -0.039745280206039305,
+          0.13093233578531688
+        ],
+        "rho": 0.045839372282923604,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": null,
+      "dataset": "heldin_train",
+      "layer": 15,
+      "method": "context_native",
+      "n": 1162,
+      "reason": "Within-prompt context contrast is structurally zero",
+      "rho": null,
+      "source": null,
+      "status": "unavailable",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.002072591150110989,
+        0.07103253206051506
+      ],
+      "dataset": "hhrt",
+      "layer": 15,
+      "method": "context_native",
+      "n": 1868,
+      "rho": 0.03254994653314767,
+      "source": {
+        "ci95": [
+          -0.002072591150110989,
+          0.07103253206051506
+        ],
+        "rho": 0.03254994653314767,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": null,
+      "dataset": "hhrt",
+      "layer": 15,
+      "method": "context_native",
+      "n": 1868,
+      "reason": "Within-prompt context contrast is structurally zero",
+      "rho": null,
+      "source": null,
+      "status": "unavailable",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.17099326407943444,
+        0.02331366361420245
+      ],
+      "dataset": "toxicchat",
+      "layer": 15,
+      "method": "context_native",
+      "n": 519,
+      "rho": -0.07163590791197351,
+      "source": {
+        "ci95": [
+          -0.17099326407943444,
+          0.02331366361420245
+        ],
+        "rho": -0.07163590791197351,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": null,
+      "dataset": "toxicchat",
+      "layer": 15,
+      "method": "context_native",
+      "n": 519,
+      "reason": "Within-prompt context contrast is structurally zero",
+      "rho": null,
+      "source": null,
+      "status": "unavailable",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.05507277057561622,
+        0.11668336561120914
+      ],
+      "dataset": "evil_mhj",
+      "layer": 15,
+      "method": "context_native",
+      "n": 533,
+      "rho": 0.03208532162940137,
+      "source": {
+        "ci95": [
+          -0.05507277057561622,
+          0.11668336561120914
+        ],
+        "rho": 0.03208532162940137,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": null,
+      "dataset": "evil_mhj",
+      "layer": 15,
+      "method": "context_native",
+      "n": 533,
+      "reason": "Within-prompt context contrast is structurally zero",
+      "rho": null,
+      "source": null,
+      "status": "unavailable",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.06511994594072054,
+        0.06125305522292729
+      ],
+      "dataset": "evil_pair",
+      "layer": 15,
+      "method": "context_native",
+      "n": 917,
+      "rho": -0.00818686572982744,
+      "source": {
+        "ci95": [
+          -0.06511994594072054,
+          0.06125305522292729
+        ],
+        "rho": -0.00818686572982744,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": null,
+      "dataset": "evil_pair",
+      "layer": 15,
+      "method": "context_native",
+      "n": 917,
+      "reason": "Within-prompt context contrast is structurally zero",
+      "rho": null,
+      "source": null,
+      "status": "unavailable",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.5167801868872658,
+        0.5864226765018646
+      ],
+      "dataset": "evil_tomgibbs",
+      "layer": 15,
+      "method": "context_native",
+      "n": 1500,
+      "rho": 0.5548426375464411,
+      "source": {
+        "ci95": [
+          0.5167801868872658,
+          0.5864226765018646
+        ],
+        "rho": 0.5548426375464411,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": null,
+      "dataset": "evil_tomgibbs",
+      "layer": 15,
+      "method": "context_native",
+      "n": 1500,
+      "reason": "Within-prompt context contrast is structurally zero",
+      "rho": null,
+      "source": null,
+      "status": "unavailable",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.13743915019548752,
+        0.29114354707862256
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 417,
+      "rho": 0.22541778412988908,
+      "source": {
+        "ci95": [
+          0.13743915019548752,
+          0.29114354707862256
+        ],
+        "rho": 0.22541778412988908,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.009663601377974236,
+        0.2141271870323631
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 417,
+      "rho": 0.129260423408623,
+      "source": {
+        "ci95": [
+          0.009663601377974236,
+          0.2141271870323631
+        ],
+        "rho": 0.129260423408623,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.6144873076609291,
+        0.7143032423901585
+      ],
+      "dataset": "heldin_train",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 1162,
+      "rho": 0.6675617388187668,
+      "source": {
+        "ci95": [
+          0.6144873076609291,
+          0.7143032423901585
+        ],
+        "rho": 0.6675617388187668,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.12200178687108153,
+        0.29909349273046937
+      ],
+      "dataset": "heldin_train",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 1162,
+      "rho": 0.20874586925578884,
+      "source": {
+        "ci95": [
+          0.12200178687108153,
+          0.29909349273046937
+        ],
+        "rho": 0.20874586925578884,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.016789102756171924,
+        0.10639410894562841
+      ],
+      "dataset": "hhrt",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 1868,
+      "rho": 0.06470666693570033,
+      "source": {
+        "ci95": [
+          0.016789102756171924,
+          0.10639410894562841
+        ],
+        "rho": 0.06470666693570033,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.04129151519569999,
+        0.12873987085754168
+      ],
+      "dataset": "hhrt",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 1868,
+      "rho": 0.0867240497007562,
+      "source": {
+        "ci95": [
+          0.04129151519569999,
+          0.12873987085754168
+        ],
+        "rho": 0.0867240497007562,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.16209059669747586,
+        0.3261540309535054
+      ],
+      "dataset": "toxicchat",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 519,
+      "rho": 0.25083424306392416,
+      "source": {
+        "ci95": [
+          0.16209059669747586,
+          0.3261540309535054
+        ],
+        "rho": 0.25083424306392416,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.1266697214089966,
+        0.2903896023742296
+      ],
+      "dataset": "toxicchat",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 519,
+      "rho": 0.21152250836317044,
+      "source": {
+        "ci95": [
+          0.1266697214089966,
+          0.2903896023742296
+        ],
+        "rho": 0.21152250836317044,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.061885697697223734,
+        0.22103761847566344
+      ],
+      "dataset": "evil_mhj",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 533,
+      "rho": 0.1384995198874108,
+      "source": {
+        "ci95": [
+          0.061885697697223734,
+          0.22103761847566344
+        ],
+        "rho": 0.1384995198874108,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.03391578456119107,
+        0.19459557640330377
+      ],
+      "dataset": "evil_mhj",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 533,
+      "rho": 0.11727585808522206,
+      "source": {
+        "ci95": [
+          0.03391578456119107,
+          0.19459557640330377
+        ],
+        "rho": 0.11727585808522206,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.09590896042002213,
+        0.21663908000976728
+      ],
+      "dataset": "evil_pair",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 917,
+      "rho": 0.1577491635325607,
+      "source": {
+        "ci95": [
+          0.09590896042002213,
+          0.21663908000976728
+        ],
+        "rho": 0.1577491635325607,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.019573813844782365,
+        0.1429439903125721
+      ],
+      "dataset": "evil_pair",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 917,
+      "rho": 0.07951433903012937,
+      "source": {
+        "ci95": [
+          0.019573813844782365,
+          0.1429439903125721
+        ],
+        "rho": 0.07951433903012937,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.3931351794207011,
+        0.4698632528412988
+      ],
+      "dataset": "evil_tomgibbs",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 1500,
+      "rho": 0.4333642042180326,
+      "source": {
+        "ci95": [
+          0.3931351794207011,
+          0.4698632528412988
+        ],
+        "rho": 0.4333642042180326,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.13656422489721026,
+        0.22817896487479117
+      ],
+      "dataset": "evil_tomgibbs",
+      "layer": 22,
+      "method": "mapped_answer",
+      "n": 1500,
+      "rho": 0.18213719779615345,
+      "source": {
+        "ci95": [
+          0.13656422489721026,
+          0.22817896487479117
+        ],
+        "rho": 0.18213719779615345,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.13406534150039656,
+        0.29325685342606034
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 417,
+      "rho": 0.22644899839439725,
+      "source": {
+        "ci95": [
+          0.13406534150039656,
+          0.29325685342606034
+        ],
+        "rho": 0.22644899839439725,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.052750305033516076,
+        0.18312430497583845
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 417,
+      "rho": 0.07606561196553122,
+      "source": {
+        "ci95": [
+          -0.052750305033516076,
+          0.18312430497583845
+        ],
+        "rho": 0.07606561196553122,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.6424953505049001,
+        0.7291213501109896
+      ],
+      "dataset": "heldin_train",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 1162,
+      "rho": 0.6891455426954929,
+      "source": {
+        "ci95": [
+          0.6424953505049001,
+          0.7291213501109896
+        ],
+        "rho": 0.6891455426954929,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.15915086186772065,
+        0.32571241702745424
+      ],
+      "dataset": "heldin_train",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 1162,
+      "rho": 0.2404132911077487,
+      "source": {
+        "ci95": [
+          0.15915086186772065,
+          0.32571241702745424
+        ],
+        "rho": 0.2404132911077487,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.04329329580521648,
+        0.12273823644643155
+      ],
+      "dataset": "hhrt",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 1868,
+      "rho": 0.08267989033931226,
+      "source": {
+        "ci95": [
+          0.04329329580521648,
+          0.12273823644643155
+        ],
+        "rho": 0.08267989033931226,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.03920663211954117,
+        0.11034202096269986
+      ],
+      "dataset": "hhrt",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 1868,
+      "rho": 0.07718481981147197,
+      "source": {
+        "ci95": [
+          0.03920663211954117,
+          0.11034202096269986
+        ],
+        "rho": 0.07718481981147197,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.17507700947432595,
+        0.33481500953802906
+      ],
+      "dataset": "toxicchat",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 519,
+      "rho": 0.2581151286565159,
+      "source": {
+        "ci95": [
+          0.17507700947432595,
+          0.33481500953802906
+        ],
+        "rho": 0.2581151286565159,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.12083477509810153,
+        0.2779049525686985
+      ],
+      "dataset": "toxicchat",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 519,
+      "rho": 0.20186880149452602,
+      "source": {
+        "ci95": [
+          0.12083477509810153,
+          0.2779049525686985
+        ],
+        "rho": 0.20186880149452602,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.23049163734253728,
+        0.40376701935234993
+      ],
+      "dataset": "evil_mhj",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 533,
+      "rho": 0.31726955027683434,
+      "source": {
+        "ci95": [
+          0.23049163734253728,
+          0.40376701935234993
+        ],
+        "rho": 0.31726955027683434,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.04584040928088612,
+        0.21771095113765943
+      ],
+      "dataset": "evil_mhj",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 533,
+      "rho": 0.13464812575221588,
+      "source": {
+        "ci95": [
+          0.04584040928088612,
+          0.21771095113765943
+        ],
+        "rho": 0.13464812575221588,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.18259136494976205,
+        0.30867902154828647
+      ],
+      "dataset": "evil_pair",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 917,
+      "rho": 0.2501888201996974,
+      "source": {
+        "ci95": [
+          0.18259136494976205,
+          0.30867902154828647
+        ],
+        "rho": 0.2501888201996974,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.011566795115996826,
+        0.13898159303458496
+      ],
+      "dataset": "evil_pair",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 917,
+      "rho": 0.0780784462608598,
+      "source": {
+        "ci95": [
+          0.011566795115996826,
+          0.13898159303458496
+        ],
+        "rho": 0.0780784462608598,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.3578784114349568,
+        -0.2560331797973207
+      ],
+      "dataset": "evil_tomgibbs",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 1500,
+      "rho": -0.3066925435487681,
+      "source": {
+        "ci95": [
+          -0.3578784114349568,
+          -0.2560331797973207
+        ],
+        "rho": -0.3066925435487681,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.3026802462391249,
+        0.39523581093458293
+      ],
+      "dataset": "evil_tomgibbs",
+      "layer": 22,
+      "method": "real_answer",
+      "n": 1500,
+      "rho": 0.3525007363861733,
+      "source": {
+        "ci95": [
+          0.3026802462391249,
+          0.39523581093458293
+        ],
+        "rho": 0.3525007363861733,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e2"
+    }
+  ],
+  "public_urls": {
+    "grayscale": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_evil_e2_grayscale.png",
+    "pdf": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_evil_e2.pdf",
+    "png": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_evil_e2.png"
+  },
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      9.494
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      9.174
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/natural_persona_evil_e2.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "A  \u00b7  LAYER 15",
+      "Spearman $\\rho$ \u2191",
+      "\u22121",
+      "0",
+      "1",
+      "Generic chat\n(n=417)",
+      "ID (map exposed)\n(n=1,162)",
+      "HHRT\n(n=1,868)",
+      "ToxicChat\n(n=519)",
+      "MHJ\n(n=533)",
+      "PAIR\n(n=917)",
+      "Tom Gibbs\n(n=1,500)",
+      "Answer on\ncontext",
+      "N/A",
+      "B  \u00b7  LAYER 15",
+      "Context\nnative",
+      "C  \u00b7  LAYER 22",
+      "Mapped\nanswer",
+      "D  \u00b7  LAYER 22",
+      "Observed\nanswer",
+      "Evil trait \u00b7 Natural prompts: within-prompt response contrast",
+      "DIRECTION EXTRACTION",
+      "Instruction contrast (E1)",
+      "Natural prompts: within-prompt response contrast"
+    ]
+  },
+  "renderer_git_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "renderer_git_status": "?? scripts/issue1739_natural_figure.py",
+  "renderer_sha256": "e7251058fac3607d36dc71dc2e0fe754f4c580ce4d6b1062eb7744bbc02748c2",
+  "run_input_fingerprints": {
+    "evil": "a0a92f14d5afb0b5cabad40d7592f3c069b5fc8994d45bd18582e3bad755c972",
+    "hallucination": "f2b80c3e709fa66bba1e5ed5b9a0d268e50a61e0ef5332017106757f6c958a92",
+    "sycophancy": "420d5047aef17c30ae2c1a2eca8a8d794f04ac47a1afb7a9a36fa7fafb9c2580"
+  },
+  "run_source_shas": {
+    "evil": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+    "hallucination": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+    "sycophancy": "9263556c52acd1bf5fa25478a8a175f51baf05d5"
+  },
+  "style_sha256": "74d774c6f04778e69a36cc58595e009cf06f3b612b7414f09423601fba1b5f98",
+  "title": "Evil trait: Natural prompts: within-prompt response contrast"
+}

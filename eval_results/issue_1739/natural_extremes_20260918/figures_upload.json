@@ -1,0 +1,703 @@
+{
+  "revision": "563fa707eaceebf13be063fa8df7cf337afcbcd7",
+  "repo": "superkaiba1/explore-persona-space-data",
+  "prefix": "issue1739_natural_extremes_20260918/figures_v1",
+  "verified_at": 1789707386.6261454,
+  "files": {
+    "natural_persona_evil_e2.meta.json": {
+      "size": 34971,
+      "sha256": "8d0b14b36a79cb0c2cba021148790f81721e041be651ec248cae698b026232ab",
+      "git_blob_sha1": "291178b2860251b0df928039744fd3c739fb2b71"
+    },
+    "natural_persona_evil_e2.pdf": {
+      "size": 29694,
+      "sha256": "2b770e27c25dbf1ec1ef6bdd22fd99cae39e0c62180ea3c33a142305922c0fe3",
+      "git_blob_sha1": "2adabbd9be9891180c2f93225151511294e56dee"
+    },
+    "natural_persona_evil_e2.png": {
+      "size": 308504,
+      "sha256": "e5f5652c1f7c68cccf495b7aee516538a40fc03219d70a2681c923fda48a2432",
+      "git_blob_sha1": "60a565dca1f63f36249b1a2b323cd78da06754d7"
+    },
+    "natural_persona_evil_e2_grayscale.png": {
+      "size": 133597,
+      "sha256": "69c21a327bb29fe8e5232d4c3a94875d1b72d195f07e64d92770004b937fc842",
+      "git_blob_sha1": "abce1cd81bcd2e4e6532c17214db48b330225fdb"
+    },
+    "natural_persona_evil_e2p.meta.json": {
+      "size": 36112,
+      "sha256": "53757f6b0903148f635c1fce948a3f9bcb27ee09a1d9d6689794886703522f2b",
+      "git_blob_sha1": "1378f04966512b35e2714304146e598ffa4dfb0d"
+    },
+    "natural_persona_evil_e2p.pdf": {
+      "size": 30399,
+      "sha256": "ab67b2adf1de78979cd6d64b4b35047e8d674fc7a97c4f15b7616f0caa38cd0f",
+      "git_blob_sha1": "d952b016ea1d0d515a8dd4d532e375d755bce25f"
+    },
+    "natural_persona_evil_e2p.png": {
+      "size": 287020,
+      "sha256": "ab3e411f2ccca3a1bf851adab3d309dc88474eb79dcdb482984f1ce5cba7a572",
+      "git_blob_sha1": "e61af47c47846d87c8d9d981eb150e68885f081e"
+    },
+    "natural_persona_evil_e2p_grayscale.png": {
+      "size": 124390,
+      "sha256": "f60c004ecde568b50e0b6be54375eeafe11db831f3b5ac5abeecf6159fbcb24a",
+      "git_blob_sha1": "9cbd24cd016620dd266e6579003e4a4d686dd75a"
+    },
+    "natural_persona_evil_endpoints.meta.json": {
+      "size": 31130,
+      "sha256": "4dfed45bdcd2b93c4fa3eed2ac98dabf3234b0b8665e6540536485561da938c1",
+      "git_blob_sha1": "b2e71dcee33d1eddaddcd643fcddb72b1b19ecc0"
+    },
+    "natural_persona_evil_endpoints.pdf": {
+      "size": 25384,
+      "sha256": "5764a090ad6f0f40de0f2a649bdcb4a150037d7c1e754fccd93ffdd98deb5d65",
+      "git_blob_sha1": "28acf455147418f2c2206f9e78032bc6814aa4d8"
+    },
+    "natural_persona_evil_endpoints.png": {
+      "size": 287032,
+      "sha256": "c528957dea473d76942e802764476e30ff4599c8adb8057858319af8db045efa",
+      "git_blob_sha1": "1247ac6194f9b6fa99f76b47696f5bafe37a7260"
+    },
+    "natural_persona_evil_endpoints_grayscale.png": {
+      "size": 124114,
+      "sha256": "8bf54f299518434116afabad35deef83128701cfb4b552d211c1a7dbf832f125",
+      "git_blob_sha1": "5dda8bc1366f5cd74c4821d27b5dd4d15c0baf92"
+    },
+    "natural_persona_evil_q01_complete.meta.json": {
+      "size": 36409,
+      "sha256": "ccbfdc055bfceb4332ab5b13a09b93f30938dd2d5d5f9d715b660ce462649b22",
+      "git_blob_sha1": "bffa90275a7a5b40e7a539d61d15242474e60679"
+    },
+    "natural_persona_evil_q01_complete.pdf": {
+      "size": 30831,
+      "sha256": "99f78b5607f5b2df95626db410304d97ceef0e3f918e3a4d5b5846e533c60a8b",
+      "git_blob_sha1": "6c023ef91b23d34c04012d678c4d668d1e985199"
+    },
+    "natural_persona_evil_q01_complete.png": {
+      "size": 287113,
+      "sha256": "a9a7f11894830d70c55919cf036f6a3a4680b8dde775425b0299c6f85a09c378",
+      "git_blob_sha1": "d0f443f90991b6bf7622fcc0d391b4bcff307ecf"
+    },
+    "natural_persona_evil_q01_complete_grayscale.png": {
+      "size": 123973,
+      "sha256": "7a1fa155d433adda77fa22246b7394097b577b2ff85a54ee4c61fee7969d4a91",
+      "git_blob_sha1": "6d73b15d0c7d7538c0ebe7a8fb9e2469263abaa9"
+    },
+    "natural_persona_evil_q01_s0.meta.json": {
+      "size": 36179,
+      "sha256": "f98b99da25e51c090f4346b9c04b106f6c7cc78972553c490d8b60ffe29d41ed",
+      "git_blob_sha1": "d9e7ce4c39a6c0af6fc7261246891825b19bbf0a"
+    },
+    "natural_persona_evil_q01_s0.pdf": {
+      "size": 30516,
+      "sha256": "9d33785c7a1049d8b83e0a59d4568ad22ce448dd4b397a2b65a49996182f6f90",
+      "git_blob_sha1": "cb67f97a1d04aa7e538a13000f9379d43ad8b78b"
+    },
+    "natural_persona_evil_q01_s0.png": {
+      "size": 270196,
+      "sha256": "92c3cb6ddf5354513f8865d67f0e49bfa0e2562c2cd1e2e564f0aeff892b1541",
+      "git_blob_sha1": "03a75e31d8b3930221c36a4310d328127d6d3908"
+    },
+    "natural_persona_evil_q01_s0_grayscale.png": {
+      "size": 116954,
+      "sha256": "ea2698ea561a4e30e7a9eaa501e278c2f1becde527598c8e736b8a857cccf88f",
+      "git_blob_sha1": "3f9a787fcd80d593b3dc855f1dbdc27ce0c68dda"
+    },
+    "natural_persona_evil_q01_s1.meta.json": {
+      "size": 36177,
+      "sha256": "253d647d06637a6051db7d1924a200d2926ffc49ce61a84677196c7ddd426d6d",
+      "git_blob_sha1": "7d6d176958a0248152290e2f66606f9de7ea6188"
+    },
+    "natural_persona_evil_q01_s1.pdf": {
+      "size": 30562,
+      "sha256": "93e45604ddf9d80c136f6a66022cf766afd294d06aebad8fcfdc8ca4277a14c1",
+      "git_blob_sha1": "9df842d350c81205883f52c11e215196fbca9f10"
+    },
+    "natural_persona_evil_q01_s1.png": {
+      "size": 278154,
+      "sha256": "2fe91b2593678a656714b7009cbe9133f5b9666299462cfd0477d276bbecc41e",
+      "git_blob_sha1": "40edaf15569bfe3f84640bd7b79f25a9257407c7"
+    },
+    "natural_persona_evil_q01_s1_grayscale.png": {
+      "size": 120240,
+      "sha256": "a3122cee670ca4166ffa9c587bb5516edc76ebf03fdf85bbfd53e54f13ee4a59",
+      "git_blob_sha1": "99d752777a616524f6cf14b79f39577f1ce7ea33"
+    },
+    "natural_persona_evil_q01_s2.meta.json": {
+      "size": 36191,
+      "sha256": "6abc0da33ed8fd794f255f7bffc06dc69d1e347b494ba46b063c08eb6e1114c7",
+      "git_blob_sha1": "a1626d088bd455e6c5bfc89e865c45ed5f12342d"
+    },
+    "natural_persona_evil_q01_s2.pdf": {
+      "size": 30544,
+      "sha256": "7193c08dc4812a081ba99963a67dcde0c6d10b5fff60ee3a9c8b0364f51c3feb",
+      "git_blob_sha1": "4a281e8f140872aa388bd41c78a32917823b6e50"
+    },
+    "natural_persona_evil_q01_s2.png": {
+      "size": 280000,
+      "sha256": "201c43ee9b0e3ed413d5f48a8545b8e8e9b276f346c246cfd1f6daabc0670718",
+      "git_blob_sha1": "6571a9f2a5208336e828e95c29c1f70f6afe88cc"
+    },
+    "natural_persona_evil_q01_s2_grayscale.png": {
+      "size": 120898,
+      "sha256": "f6315e644846948019924d13e7af5710634dfac26fa6a90f5418fe605f3083b1",
+      "git_blob_sha1": "db0e433b1d8566ee30eb9352f08baa7b8d947364"
+    },
+    "natural_persona_evil_q01_s3.meta.json": {
+      "size": 36213,
+      "sha256": "bd5fedbe24b6b5ae459e9bcaa7e71bf15066f0abadeef2b47963b35105317e80",
+      "git_blob_sha1": "1ee085f775131cea1657bce63c46958d199d905b"
+    },
+    "natural_persona_evil_q01_s3.pdf": {
+      "size": 30577,
+      "sha256": "fc06f65f1989401daa1a95bd10529d79636ff4ca930cba68776df9033d4b91fd",
+      "git_blob_sha1": "42cfc6fdb0a6515312c9d9eb3192a7c8a655c185"
+    },
+    "natural_persona_evil_q01_s3.png": {
+      "size": 280704,
+      "sha256": "d62c49e08c7af01a9fdd3f98d4a4a79ea20b9e97ced093d189d7d2579eaa74b8",
+      "git_blob_sha1": "7c1972aa21485ab3add1907fa6610236ce3f09b3"
+    },
+    "natural_persona_evil_q01_s3_grayscale.png": {
+      "size": 121173,
+      "sha256": "06b29b71d15dec99ac6fa2c5e174218c6442e7e5b02242f41c00d7e0bb18b47b",
+      "git_blob_sha1": "0dd844e9e449a0f52541cdf455c75790c87aa0e2"
+    },
+    "natural_persona_evil_q01_s4.meta.json": {
+      "size": 36203,
+      "sha256": "480e0b67ed4f6a91e388d033a26d359917281deef83f2f4cab586d00edbdcaf9",
+      "git_blob_sha1": "d1d6a539462092009d7657751d3ea8a8c78d936c"
+    },
+    "natural_persona_evil_q01_s4.pdf": {
+      "size": 30594,
+      "sha256": "6120a85b1f08ba3c0631b941bece18646033396d2647f519cf1eb2ad00c93da1",
+      "git_blob_sha1": "d4423180665c5558b9a553cdf539e771ec6df33e"
+    },
+    "natural_persona_evil_q01_s4.png": {
+      "size": 279188,
+      "sha256": "7fcfcac3c5fc0b15a7c6c4607b49475b9fdfbe3f1e2ee336ae4d19ed2c6407a2",
+      "git_blob_sha1": "22fb2fe22aee1f637b53b201c98168b47ec0c810"
+    },
+    "natural_persona_evil_q01_s4_grayscale.png": {
+      "size": 120632,
+      "sha256": "28af80df62e216b2f8545284903bbd6a00c623a46f4565737ccd967c4169c2dc",
+      "git_blob_sha1": "c60210e4472cb1e5cba05203c906411e5d1ebb2e"
+    },
+    "natural_persona_evil_q05_s0.meta.json": {
+      "size": 36209,
+      "sha256": "2a1a0099fcbe95697182796eee40755f87b8fe64b4617f7dad6b253018d4eb29",
+      "git_blob_sha1": "437cd002a55643e7caaac17d2dfba0010911ccc1"
+    },
+    "natural_persona_evil_q05_s0.pdf": {
+      "size": 30539,
+      "sha256": "bccc30860971d6ef8ea585a0e42c98ae807fa5f28ccd17f4e0aea7a6687fe02e",
+      "git_blob_sha1": "09015871adda83cc48686fcee1f830e9a30056d8"
+    },
+    "natural_persona_evil_q05_s0.png": {
+      "size": 272256,
+      "sha256": "33582ec739df011760ab0a0cdb8a106674f4dae18a862b268a35cdf8d2b8b2e3",
+      "git_blob_sha1": "f41befea23d66b9045f3926443dc6237fe8ae53e"
+    },
+    "natural_persona_evil_q05_s0_grayscale.png": {
+      "size": 117785,
+      "sha256": "865901738fbe347334811304e3fdcf910da4a096b8a08fcf7de9f187780fc040",
+      "git_blob_sha1": "e27fc90aefdb532fa8e82f26bbc636b814b6acfe"
+    },
+    "natural_persona_evil_q10_s0.meta.json": {
+      "size": 36186,
+      "sha256": "0cbca9499ffe616a60a19e2628f2a296bf27e0756bfd3542817c4b6c7ae54fc0",
+      "git_blob_sha1": "56a21c89769b05a75aa386f768fde600111d9fad"
+    },
+    "natural_persona_evil_q10_s0.pdf": {
+      "size": 30597,
+      "sha256": "b9a340ed2763bf5d28327f3b6996735f95e93f2559ebda1e66cb40732e912c3a",
+      "git_blob_sha1": "fd79a82e1364ca1ec5b1784759e85d7f0fd0ce1a"
+    },
+    "natural_persona_evil_q10_s0.png": {
+      "size": 272506,
+      "sha256": "1d5298bab49186336cc5799bcf3d54881aa38c9f0c480302ffea0b95d6203641",
+      "git_blob_sha1": "a2f7e6abf6e52742e07f5e0eab1abca44306e390"
+    },
+    "natural_persona_evil_q10_s0_grayscale.png": {
+      "size": 117969,
+      "sha256": "ee06069e88b91087d820ed347e647e0382f48bf7b515aea8067bd07d05c13804",
+      "git_blob_sha1": "5cfd8845be53b0e21b639d880412ac5173910632"
+    },
+    "natural_persona_hallucination_e2.meta.json": {
+      "size": 24054,
+      "sha256": "7f039c83509cd1e9c1e3d31ccf622f7881f6d71af4d5bdb3c53691313746deb5",
+      "git_blob_sha1": "eb42ad27bfa339839a26b48e4687df7ed39a7f53"
+    },
+    "natural_persona_hallucination_e2.pdf": {
+      "size": 26006,
+      "sha256": "569c7e23c21a1c94e35a5ee4d55e2fe7034d00e00b38982478fed597f8d3a8f8",
+      "git_blob_sha1": "6c93130c723c858d4481ebdf8f8eaa84b61d8cbd"
+    },
+    "natural_persona_hallucination_e2.png": {
+      "size": 263441,
+      "sha256": "73dfd1da368546c2b0d8daa5dd6bda8123042e81cc4b3c07283211e93389d61e",
+      "git_blob_sha1": "978ff23627c55ab13efbe0229d468a879b27f09a"
+    },
+    "natural_persona_hallucination_e2_grayscale.png": {
+      "size": 114403,
+      "sha256": "6b56ba4456bc9e55392ce7732ef0235a8d9db6e8186515b30cad23923dbcfb2c",
+      "git_blob_sha1": "c64bc041fd1bd442ab0bfa3023706370e0559c42"
+    },
+    "natural_persona_hallucination_e2p.meta.json": {
+      "size": 24673,
+      "sha256": "87cf3f7fad5e10a3e6526b19428999b9abc59076dc0f504563c134cef0dc6004",
+      "git_blob_sha1": "4e563070b9ae053119f530dcb711f7b8d32227db"
+    },
+    "natural_persona_hallucination_e2p.pdf": {
+      "size": 26236,
+      "sha256": "27899b00b02d0e0cd8705497279157b719f7430530ebf1a76fdd4ad2c65691bf",
+      "git_blob_sha1": "7d897ca68644514accfd1d9988770b042e288563"
+    },
+    "natural_persona_hallucination_e2p.png": {
+      "size": 248883,
+      "sha256": "d9492295825be9e7e57fd8c87161a5e6466ee5ffa02f7c80a439a325744c412b",
+      "git_blob_sha1": "e49b49c6de7e7e5a0e59a8add2960944dd1c1dfb"
+    },
+    "natural_persona_hallucination_e2p_grayscale.png": {
+      "size": 108163,
+      "sha256": "d6a3f7c2ebd46453f2606ba1b57dd4208edc6ad8c93ea2ff6973eac7d33a36c6",
+      "git_blob_sha1": "c659c7dbe8c60e87e7848e9c17ab7c7f532491c4"
+    },
+    "natural_persona_hallucination_endpoints.meta.json": {
+      "size": 24788,
+      "sha256": "277cdec6fd26ea956ec66c5f3ca5c6688319f07d1b0d094520b1acfaedddb44c",
+      "git_blob_sha1": "3a0de571b1591850f1fe65979b7760d7453a6fcf"
+    },
+    "natural_persona_hallucination_endpoints.pdf": {
+      "size": 26222,
+      "sha256": "9472fe3327b163ec66a4f919a4320edc33db41138bd8fc2f73fe3be1f5fad04c",
+      "git_blob_sha1": "6a57f390daa9be7f77ff0190bf8687cf247f2d89"
+    },
+    "natural_persona_hallucination_endpoints.png": {
+      "size": 238075,
+      "sha256": "71aea9fd8bbb8c4de783ca851e58dcd89f6327937d8bc1b5d0587268c236c04b",
+      "git_blob_sha1": "e115e43a23bd15d2b2db65e9c9712efb6b837425"
+    },
+    "natural_persona_hallucination_endpoints_grayscale.png": {
+      "size": 103557,
+      "sha256": "34d41939b2a8e96194dbf0b05fb2e6bf8d30ebffba4ff609e875b94c98b10b79",
+      "git_blob_sha1": "cf073e1ba16d37889aa448a5d5b05bc261b73b31"
+    },
+    "natural_persona_hallucination_q01_complete.meta.json": {
+      "size": 24916,
+      "sha256": "6c69e6f11b7613353df403ed11e696c8f1fd762a888723fb8dd62afe940055d8",
+      "git_blob_sha1": "da9b2b774be184f8793188ead375be7ed88832ac"
+    },
+    "natural_persona_hallucination_q01_complete.pdf": {
+      "size": 26745,
+      "sha256": "a7c1dc8e107f4aa410cc95b50e1751bd965a13d2f036b50d26d06c741a764b6b",
+      "git_blob_sha1": "6fc209f9ce05aa43292b2808fcb220750e31cab5"
+    },
+    "natural_persona_hallucination_q01_complete.png": {
+      "size": 251260,
+      "sha256": "2d7ee35a4d7408b9e9a76fe57e05effff404d7a350f8a0477df5e210ec9ea940",
+      "git_blob_sha1": "113398eef6bfd5cf4a187195785866a22e0f51d5"
+    },
+    "natural_persona_hallucination_q01_complete_grayscale.png": {
+      "size": 108906,
+      "sha256": "a737b7b659c2886d61572317882e7bdf45c470b58dfbe7cc107ea19bbe6b547f",
+      "git_blob_sha1": "5b6f263e474e5a7599670a2e095ca473e05afc7d"
+    },
+    "natural_persona_hallucination_q01_s0.meta.json": {
+      "size": 24718,
+      "sha256": "7b07a8d2769e666daacada27d530dabe72177014f4421b33ed58560fba9adb1c",
+      "git_blob_sha1": "d83641e4588dec119cdcb762ca9ac9691758214d"
+    },
+    "natural_persona_hallucination_q01_s0.pdf": {
+      "size": 26357,
+      "sha256": "6d672435ec764f7f64f060657acc3eec07a90df0587614ad98c280e3cbbb71f9",
+      "git_blob_sha1": "5cc9f4ead9635aab5c167ff1b679393152cccbb7"
+    },
+    "natural_persona_hallucination_q01_s0.png": {
+      "size": 233216,
+      "sha256": "137d8068fe4e931ae6fd35ce5e8eeb3aa5477f2b3780ecbeb2c78f165fff4601",
+      "git_blob_sha1": "071e734958ed7869f068e0069a24810974cf86d0"
+    },
+    "natural_persona_hallucination_q01_s0_grayscale.png": {
+      "size": 101047,
+      "sha256": "05dc456cf4d565130e93058f6afc0b8a709cc67d85d34e95faa8779a5d2aeb0e",
+      "git_blob_sha1": "15192ed4a1826ee7abcc9ee77a72967fbe0e4fa6"
+    },
+    "natural_persona_hallucination_q01_s1.meta.json": {
+      "size": 24750,
+      "sha256": "2ad0504abb50c071f96729b32a4921fbc9eb9114170f782d5e07c90e93d987c5",
+      "git_blob_sha1": "538e6fdb4e595b407e4dfcc232138ba1b0b9bd86"
+    },
+    "natural_persona_hallucination_q01_s1.pdf": {
+      "size": 26415,
+      "sha256": "18f3562fdb81dd13fca5b527572856b98cf0043ba4a845cf7e4daa9db6fb1353",
+      "git_blob_sha1": "06d20b1d7f051d0b33abbcfcb70de1f613993765"
+    },
+    "natural_persona_hallucination_q01_s1.png": {
+      "size": 241648,
+      "sha256": "afb9f15d9e3f677f4165fba2f421674b8afe9187acf889012395aed58c301c4d",
+      "git_blob_sha1": "5f81f59c1c05bb340355f59688df63d92e1244d8"
+    },
+    "natural_persona_hallucination_q01_s1_grayscale.png": {
+      "size": 104756,
+      "sha256": "b44dd9fe11ec1aa30c6fe388d165e67074fae586396136cf6937fd10fbb24743",
+      "git_blob_sha1": "8e44c4106c28bacbd368f909f068490a8fc1c652"
+    },
+    "natural_persona_hallucination_q01_s2.meta.json": {
+      "size": 24748,
+      "sha256": "1798ebb78dda8fd7042748ffd9467014f22f667a7020185aafede5d1ae76c785",
+      "git_blob_sha1": "8bcca83cf33760e250b9d0184eb3674af5036f74"
+    },
+    "natural_persona_hallucination_q01_s2.pdf": {
+      "size": 26383,
+      "sha256": "1369e1fecc7e4b9ff672359e7c7828d0e7607ba5288966315ee78616c2b391b8",
+      "git_blob_sha1": "b85696871d59a61f60a267533fd2bbbda8ce9213"
+    },
+    "natural_persona_hallucination_q01_s2.png": {
+      "size": 243426,
+      "sha256": "5aaee57f6b36b9fadc9740d63fb163fac6ed64e4ee1f3dd4b8f2ee2c5b0d7c5d",
+      "git_blob_sha1": "8f00070521cabb5906c68c9b755a31b6e121693b"
+    },
+    "natural_persona_hallucination_q01_s2_grayscale.png": {
+      "size": 105530,
+      "sha256": "a4ea9c2e70c87b735ce093bf1276f9d6ed6ed60af32b6b750b21cffabe81e484",
+      "git_blob_sha1": "b94f5935aa9d9a0c2440a59402a93917f91b04e9"
+    },
+    "natural_persona_hallucination_q01_s3.meta.json": {
+      "size": 24744,
+      "sha256": "57ab52d396a418f400d929a151974dbbc0039feaec261378d2ea99691be28870",
+      "git_blob_sha1": "db707820e43446d161a3ca8000aa6cee8cf2e7b7"
+    },
+    "natural_persona_hallucination_q01_s3.pdf": {
+      "size": 26404,
+      "sha256": "950b166e649638a97671a5549749900ab7996da411a29582d63366d8f9f3643c",
+      "git_blob_sha1": "807ca7f498d8834d253b7707fe037e13a108def7"
+    },
+    "natural_persona_hallucination_q01_s3.png": {
+      "size": 243932,
+      "sha256": "4d5be2799df1822410b0b67880f1317ef967471981f74184cbf4ac9efbb0801d",
+      "git_blob_sha1": "a958cd19ce33deede52169b39a9951d3b1f860dc"
+    },
+    "natural_persona_hallucination_q01_s3_grayscale.png": {
+      "size": 105673,
+      "sha256": "baecb3478c5d84eaa065d6f9045676bdc84d04bb45cfa8081e649f6d80df70fe",
+      "git_blob_sha1": "55aefd4b2fcb47a3c1a1390dd43fb4aaeac482f0"
+    },
+    "natural_persona_hallucination_q01_s4.meta.json": {
+      "size": 24746,
+      "sha256": "ce5e93b5b47f1c927ede7f1fb7d31e96c98b987d9cd24436fe7c5b8fed2cac8f",
+      "git_blob_sha1": "8e907a81008f6e43def7b2e8280a24e8f94da1af"
+    },
+    "natural_persona_hallucination_q01_s4.pdf": {
+      "size": 26405,
+      "sha256": "a4b2b900888826e3ea434166aa97aa05ef79a4c7632e66520a29fc0e5713e990",
+      "git_blob_sha1": "0ae3bceb955077d8c74ed9b27bfb3cf8ae752a76"
+    },
+    "natural_persona_hallucination_q01_s4.png": {
+      "size": 242421,
+      "sha256": "ba15a780e4c11d5492af2494b3756b90db6c8a4e3276417020420df9b9594947",
+      "git_blob_sha1": "686cce24749cdff3c5461e43869430fa6b4bd955"
+    },
+    "natural_persona_hallucination_q01_s4_grayscale.png": {
+      "size": 105092,
+      "sha256": "3959bdda5788527b329571a9f8441dffe65b6a4c771052362bd807e58794ba90",
+      "git_blob_sha1": "46034424b38b8e5ad5b0043bc306ed2522ebda17"
+    },
+    "natural_persona_hallucination_q05_s0.meta.json": {
+      "size": 24702,
+      "sha256": "c202ecad45277b44e10a346842a239ea18713147db517efc8bbe8cd33417f852",
+      "git_blob_sha1": "f72982224e57f3ba973fa95c02698c55bb356e29"
+    },
+    "natural_persona_hallucination_q05_s0.pdf": {
+      "size": 26365,
+      "sha256": "f41561647759c74798b490a68deb0eab50fb12510c658bed368371865920e735",
+      "git_blob_sha1": "48a5954c1ab76dfe3e7cb6fd731aff634971df4c"
+    },
+    "natural_persona_hallucination_q05_s0.png": {
+      "size": 235354,
+      "sha256": "0138c0bc04651a8acef479084e5635329d07f9928e4acf1ac44f9046b262455f",
+      "git_blob_sha1": "017dd5dba67a2dc7a8cda10fe5ac1a0835d9fa98"
+    },
+    "natural_persona_hallucination_q05_s0_grayscale.png": {
+      "size": 101983,
+      "sha256": "3a46a04c8b5dc13b931f0c818a544964a5dd8c032e28d5a2dcda082c5970eac9",
+      "git_blob_sha1": "85c7fadda6fd6b49c30212ad8632690b857ab51b"
+    },
+    "natural_persona_hallucination_q10_s0.meta.json": {
+      "size": 24701,
+      "sha256": "0a82d47ad0971b93ceabe314e204d610a4d8618d4cee1ee750d41b721f804b60",
+      "git_blob_sha1": "5b89617115f4c30d791d48a30bc685291f83edb7"
+    },
+    "natural_persona_hallucination_q10_s0.pdf": {
+      "size": 26386,
+      "sha256": "c607e212fede049bc7cef843bbe3654a92e00aaeb4e80e4cda5937a006eceaae",
+      "git_blob_sha1": "edd94dba33f9e042e07ee86c8fd160506320b56a"
+    },
+    "natural_persona_hallucination_q10_s0.png": {
+      "size": 236333,
+      "sha256": "a6067946cf89f68a239f35b8bc79e029b8342548b761b5ae8625d5265f1a3ed0",
+      "git_blob_sha1": "b1e6b33e16e1906e36244fa2caba1fbd586048c6"
+    },
+    "natural_persona_hallucination_q10_s0_grayscale.png": {
+      "size": 102422,
+      "sha256": "08c6b30806adf45346092d00afd6042f7b84faec4906d3f183e79e283f784f7f",
+      "git_blob_sha1": "442cd36f4c24fb3290806b161b1b8c073c682fce"
+    },
+    "natural_persona_ood.meta.json": {
+      "size": 21460,
+      "sha256": "c8adcd71dbb8eff9cce13e994815c51568dd4230629883d6ccb7a7fe63920195",
+      "git_blob_sha1": "9bd75835f2b7884f59c9d4c4c591eedfad4c7e0b"
+    },
+    "natural_persona_ood.pdf": {
+      "size": 22795,
+      "sha256": "f0ecd85569eba1e972c4fb9becd9dc575802b16e5e3f2484f4b783bffabbdbf1",
+      "git_blob_sha1": "754ea748d59e86426c32e8efdcd30062c0a8f40e"
+    },
+    "natural_persona_ood.png": {
+      "size": 176329,
+      "sha256": "49b3e8544b150962b89550cfcf0d71703958b0f8718b2d54426b9a8f0d99826b",
+      "git_blob_sha1": "790cfea44531f2c8f551b7547e69a84f322f7346"
+    },
+    "natural_persona_ood_grayscale.png": {
+      "size": 76119,
+      "sha256": "a1821d7651e91215a2711501f2e83112d140bf20aa116375b76e4fcfa6ecbf06",
+      "git_blob_sha1": "e1c03ec8a8812a3076cfca5d9e023d1b1fcdcd12"
+    },
+    "natural_persona_render_manifest.json": {
+      "size": 43585,
+      "sha256": "db746284d3b6640b5aa6692563fdadfa7e459223ad037ea6382cef92d25e71e0",
+      "git_blob_sha1": "0fd8cdfafa7a1bba16b3623fdacfc8021fb6babc"
+    },
+    "natural_persona_report.json": {
+      "size": 3462656,
+      "sha256": "fed018770632b1fc9a4fcce1f759c3471593e73082d8cf3a35c7e12334b2773d",
+      "git_blob_sha1": "6f9e84bb4df4f181aa6d885fd0bc3498af86000a"
+    },
+    "natural_persona_report.md": {
+      "size": 12133,
+      "sha256": "f2f5c9486be2925c6eca6e6bf98f109260255cfdf041cbf92691d28852e81ff6",
+      "git_blob_sha1": "99b31cd4edfdd8e581268aea13681670524cc3e4"
+    },
+    "natural_persona_sycophancy_e2.meta.json": {
+      "size": 39041,
+      "sha256": "3623224f0d985748615eb332064a1129bf2df81a279dba6023410aaa5405a4d8",
+      "git_blob_sha1": "ceb9d8a8ff114cc4a84e238815f6fd2555cd82ec"
+    },
+    "natural_persona_sycophancy_e2.pdf": {
+      "size": 30343,
+      "sha256": "0dd00a8afdf42ad0542cbbf631a7cf8eb1f34c01b21d633fbc1fefdc1895bc17",
+      "git_blob_sha1": "fa6d41c0cd245d1f5756ee30911f17f6daedc2f1"
+    },
+    "natural_persona_sycophancy_e2.png": {
+      "size": 354437,
+      "sha256": "8535a79f2ae09af3e076d88871d4a2f75714271bc837c9d18be5b373a0797dff",
+      "git_blob_sha1": "a7de0ce8ebdddcd358d7cd802472f6955d8c49c9"
+    },
+    "natural_persona_sycophancy_e2_grayscale.png": {
+      "size": 153185,
+      "sha256": "12b2393cb0d2b92dcc8c7a858f4cee160d7247ec8691546cebd547d36701dc53",
+      "git_blob_sha1": "348e66da28a18c90d9f032a464bdbffea2a9416e"
+    },
+    "natural_persona_sycophancy_e2p.meta.json": {
+      "size": 40274,
+      "sha256": "7d7616e8dfb794b4ee6eccd0fe8b3c3caa29a364600d8185a4524312bfba74f3",
+      "git_blob_sha1": "ec3d7409bf944a5ac0729a368068c706d03392b0"
+    },
+    "natural_persona_sycophancy_e2p.pdf": {
+      "size": 31385,
+      "sha256": "431b1776d827cbe83e937cee46155bddc02a2e65e14a4ae7f0c0747b547840db",
+      "git_blob_sha1": "f53aba8d8c0056632611ce3208e94e123411c0fa"
+    },
+    "natural_persona_sycophancy_e2p.png": {
+      "size": 331493,
+      "sha256": "0e59f80bd977969fa2a0ff10b4d841b554c64f18a6bfaeca0921774bfcb6a387",
+      "git_blob_sha1": "b559fe20958971f69d3030e341ecf428a7f2d09d"
+    },
+    "natural_persona_sycophancy_e2p_grayscale.png": {
+      "size": 143690,
+      "sha256": "dffc358d33b2bffb72632273d6a5a5a4cc55b20478b0dc339b3fccad012a720d",
+      "git_blob_sha1": "dd4b87a034c396e57ce194768e41fcc0b24e8e10"
+    },
+    "natural_persona_sycophancy_endpoints.meta.json": {
+      "size": 34634,
+      "sha256": "117b48de7fbf398b20d0449ddf63f2e22e29350aaf92540b4961ed3d6ef0ef4a",
+      "git_blob_sha1": "8b8c367491d3d7e6b633dd1cdaf0bc88b5bb34b5"
+    },
+    "natural_persona_sycophancy_endpoints.pdf": {
+      "size": 25585,
+      "sha256": "d6a84bc384a2b15917eca4adc55e26879fcc1d2b404e0eb5186568c9a2edb990",
+      "git_blob_sha1": "1cf426fff2a298db5c35e41e94241e58ecd2dfa9"
+    },
+    "natural_persona_sycophancy_endpoints.png": {
+      "size": 334610,
+      "sha256": "26fbce3a0360e8b3f7ab88728f913bb037401a0d11d32dcc3701061b0efe2a12",
+      "git_blob_sha1": "1b285044a11716c8ac97756928aa7bf1be4a2ecb"
+    },
+    "natural_persona_sycophancy_endpoints_grayscale.png": {
+      "size": 144089,
+      "sha256": "feb34dd2aa6892837cfd6251d75c35078071efb256e4332202f286d8a58f4a09",
+      "git_blob_sha1": "5fbed5751242d2419d38872c2060f4a3fdf3ff8e"
+    },
+    "natural_persona_sycophancy_q01_complete.meta.json": {
+      "size": 40635,
+      "sha256": "3cad7b58c4b10f71b0a1f80cc3c4041d1af4596d172153838308b701362d2dcd",
+      "git_blob_sha1": "90596b0211e9f7e3c5e66710b207cb6a5b049be0"
+    },
+    "natural_persona_sycophancy_q01_complete.pdf": {
+      "size": 31685,
+      "sha256": "5c874d2f6b396ec70322b0998016f4bb2894333941bbe19f94825bb7956766d2",
+      "git_blob_sha1": "3528c08ef18105a8dc36eea9a32c23373d73d6ee"
+    },
+    "natural_persona_sycophancy_q01_complete.png": {
+      "size": 333804,
+      "sha256": "1eec0d52a05787f6b4f3ff66590b58f45458912d905e2b519a41bb07b1916642",
+      "git_blob_sha1": "2e25cdb614e57d50b7b1958278287d5ce2f1921d"
+    },
+    "natural_persona_sycophancy_q01_complete_grayscale.png": {
+      "size": 144352,
+      "sha256": "01c67a3bd7d339a9fc3c1045be10c695dc40fe65a81d0eb29ed12974cf4368e9",
+      "git_blob_sha1": "111e31b9ac05626b7c65c5b14a4caf5690552e78"
+    },
+    "natural_persona_sycophancy_q01_s0.meta.json": {
+      "size": 40357,
+      "sha256": "c7238be33014873c6700d168f490beb2f26dd3ac3b19237a798592faeba4ba39",
+      "git_blob_sha1": "2c02c4cafa2a18c1c0c96bb7939b84f8ff5c135b"
+    },
+    "natural_persona_sycophancy_q01_s0.pdf": {
+      "size": 31502,
+      "sha256": "15104c3aea1afaff70b56dd3f3d7800bb3756e94898efb7fef72404ac1761b74",
+      "git_blob_sha1": "0b1db06cf1009d06cf9860c1cbfad1342d895590"
+    },
+    "natural_persona_sycophancy_q01_s0.png": {
+      "size": 315691,
+      "sha256": "5a7fc55bc97fb075bb8f8ee71bb45908531d182e0fb76fbea8e47e7f67227bc6",
+      "git_blob_sha1": "e1c4cc6cbe99e5414689e80d01373f780dde367f"
+    },
+    "natural_persona_sycophancy_q01_s0_grayscale.png": {
+      "size": 135900,
+      "sha256": "8e4a43f6c484c7d69499228a655c89a4fd6e04b476edd5687f32c4421c7c1644",
+      "git_blob_sha1": "b7a61b752e4bf341817dce8d473fb2c011f29d34"
+    },
+    "natural_persona_sycophancy_q01_s1.meta.json": {
+      "size": 40405,
+      "sha256": "8fb367474336f64b43658434ad936bb8372f6101317afb05ee6c078f1f735dc5",
+      "git_blob_sha1": "0f48ad6aa7967afce21ce666a27be0728742ccb8"
+    },
+    "natural_persona_sycophancy_q01_s1.pdf": {
+      "size": 31554,
+      "sha256": "8ffa834fa14ae2a1a46a432a8d1e8370895c61a053a6f5de89cf517446d0648a",
+      "git_blob_sha1": "a95a09d678307fae81897825894bb09e59c329ad"
+    },
+    "natural_persona_sycophancy_q01_s1.png": {
+      "size": 324213,
+      "sha256": "bac153e93f320fce5a0f70bd64e6cce71e6a213ab2c35c4dab01610c14411f2f",
+      "git_blob_sha1": "efcb9aeb8864d891df08a3cfba7aa022481dd039"
+    },
+    "natural_persona_sycophancy_q01_s1_grayscale.png": {
+      "size": 139807,
+      "sha256": "917cb0f4af9a3cd1ebae20450de70ae1425b8b061b925191ed9de0fb8b7cd9be",
+      "git_blob_sha1": "17b46bfe1660e699e380254c890c0b07d1f8a320"
+    },
+    "natural_persona_sycophancy_q01_s2.meta.json": {
+      "size": 40383,
+      "sha256": "9e51423fd52a7e5433861af8bb621341b733e6481f5d70105f38ac3a26438baa",
+      "git_blob_sha1": "984131e6adccd10b57cb79a4916137ebea3f5e05"
+    },
+    "natural_persona_sycophancy_q01_s2.pdf": {
+      "size": 31561,
+      "sha256": "5248fa29fd7ee2e126430b5551c1e6b32911f8e5a6fa203d4867fad543bfd2df",
+      "git_blob_sha1": "659145984433dcc98eeeb12de34c38bdb3863a9a"
+    },
+    "natural_persona_sycophancy_q01_s2.png": {
+      "size": 326269,
+      "sha256": "b6e0343e62f40930996afd814bb08c4b0bb63143cf2d4c6bece643ffb2505fe2",
+      "git_blob_sha1": "b883038ac1cd26692d15b51527451d5bf2619b05"
+    },
+    "natural_persona_sycophancy_q01_s2_grayscale.png": {
+      "size": 140707,
+      "sha256": "b4af4fca8cc0bb3e97d59508cf45d5854f0d83e233554418c1a4623939281ae1",
+      "git_blob_sha1": "b4691a091f33c48a9681101cbb2c6bea738450b3"
+    },
+    "natural_persona_sycophancy_q01_s3.meta.json": {
+      "size": 40405,
+      "sha256": "f4a1479adccf34f64e28454ada7aa17e3d8c93be16b9b39df375ba20215c2739",
+      "git_blob_sha1": "037d8a403e24c4fe7c936e5dc19ea27522d5fd65"
+    },
+    "natural_persona_sycophancy_q01_s3.pdf": {
+      "size": 31552,
+      "sha256": "96f635e8c286a134cf5fc5073dc1edd3440381ed11186eb6eec7a2c09a98146c",
+      "git_blob_sha1": "cb69e57c3e7d3d7337606e4cc4ee3f979db4ae73"
+    },
+    "natural_persona_sycophancy_q01_s3.png": {
+      "size": 326687,
+      "sha256": "aabd5ea5361cd8b2c74dc67ea9910907979f4d55d1dbebed2d54e49d6d39c939",
+      "git_blob_sha1": "f1b62e009f1d109222c7b7754d9dee2c43b3a701"
+    },
+    "natural_persona_sycophancy_q01_s3_grayscale.png": {
+      "size": 140916,
+      "sha256": "e4c4f4ffb31a875ee6a7df41a6bac743841d750983b070db35b0abfb61626863",
+      "git_blob_sha1": "6b9a153071968b4fd1322a153544c3306c31dc33"
+    },
+    "natural_persona_sycophancy_q01_s4.meta.json": {
+      "size": 40363,
+      "sha256": "948ddfc4a4b9a012b383446884acf34e6617dcd46c2aab788edb5475594fdb8a",
+      "git_blob_sha1": "d58b28884ea67c950e842b4050a4be58d400627c"
+    },
+    "natural_persona_sycophancy_q01_s4.pdf": {
+      "size": 31565,
+      "sha256": "4d0aca0f8d532de9c80f34bbf501ba6c32add9abba57521ff9061e46a7550b3d",
+      "git_blob_sha1": "505f32bef3dbb564f53fbf87393ec472fe0df484"
+    },
+    "natural_persona_sycophancy_q01_s4.png": {
+      "size": 325316,
+      "sha256": "d567e799dc950c236de42cfeabf2b9023f0b2c23a633127d20467d80118bd68b",
+      "git_blob_sha1": "e28254359e25f36ce5680350085bb77ac178e1d1"
+    },
+    "natural_persona_sycophancy_q01_s4_grayscale.png": {
+      "size": 140264,
+      "sha256": "89480339211aa53a22543f4c0b2186d86821e449b7a576497d20f52955db4cf1",
+      "git_blob_sha1": "7682ecc2100bf8ba38a71abd7d68ffe080c67248"
+    },
+    "natural_persona_sycophancy_q05_s0.meta.json": {
+      "size": 40341,
+      "sha256": "de4b45b176690f8ae3ed7fe0d70c116ac2db51a9dd51174fcc1c4cea017579ec",
+      "git_blob_sha1": "4187dc1428d6194a04aa6e52d554e9e3a57350f6"
+    },
+    "natural_persona_sycophancy_q05_s0.pdf": {
+      "size": 31558,
+      "sha256": "558110ea89d80ffbfbbae73e1f5e3d58d161b5a98c4e5561635239084661af22",
+      "git_blob_sha1": "b4a5f2dd61785ef2d65f9aa55d39a74de878c096"
+    },
+    "natural_persona_sycophancy_q05_s0.png": {
+      "size": 318977,
+      "sha256": "3e039100e12d2e70b5af539194ad39265603ccddf23d2d6aec95938f5dd0e0c6",
+      "git_blob_sha1": "22573dc55bfe5b3764092bf81f1e9a7f04eef392"
+    },
+    "natural_persona_sycophancy_q05_s0_grayscale.png": {
+      "size": 137239,
+      "sha256": "39f32806b9eeb4baac60cfbb0939fc6702696ef15fc8adfb8ea3dc003b1550f0",
+      "git_blob_sha1": "71285a2ca0427c8a052a29d047bdce246d538a35"
+    },
+    "natural_persona_sycophancy_q10_s0.meta.json": {
+      "size": 40334,
+      "sha256": "cc9a4f3315186c9ebaf902a68772bae324f504e37863211889dc98b40bf08d9f",
+      "git_blob_sha1": "9ea7d26a4ffe420e7c10ece35a19c0e6e41cc672"
+    },
+    "natural_persona_sycophancy_q10_s0.pdf": {
+      "size": 31535,
+      "sha256": "6d52534d04d61270277eb96d1cf018a1fe9f7c21ad00bb08c92fd515293b5ebe",
+      "git_blob_sha1": "ce9bab48c6a0321faa8b562dff1ea363482f55be"
+    },
+    "natural_persona_sycophancy_q10_s0.png": {
+      "size": 319015,
+      "sha256": "7508c0816690fd9adea194263ea6a5f156c654fdfd248e5094d85885663c6f7a",
+      "git_blob_sha1": "41a4918529b627d896bd83bf552b4a45d9e3d2aa"
+    },
+    "natural_persona_sycophancy_q10_s0_grayscale.png": {
+      "size": 137385,
+      "sha256": "0c31a279795bf346b0eeadf0d7dcc14e35996786e0ad8f46ba40e4db91b3297b",
+      "git_blob_sha1": "ed3807b01803d1d4cb9febcb567c27c829ef383c"
+    }
+  }
+}

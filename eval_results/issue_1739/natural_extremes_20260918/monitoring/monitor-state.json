@@ -1,0 +1,48 @@
+{
+  "config_fingerprint": "7396f1b3c44ff23441d7467baafd015b1f43fdaedbb1a57471b34b4a412f6e50",
+  "handles": {
+    "evil": {
+      "handle_sha256": "bdd429cd99c9d9bbb6dd25e024c3e613cc95c81ec2053dba53cff4cfa5ae9fca",
+      "progress_signature": "e7bd2b5381a12ae6b20463e10cb0fbf33dd605b496f400ac77a4ee387c3fc353",
+      "last_advance": 1789706066.6530473,
+      "results": {
+        "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+        "verified_revision": "bffa1093a39e98877a045e79ffc9278d5b2f798f",
+        "prefix": "issue1739_natural_extremes_20260918/results_v1/evil",
+        "receipt_sha256": "8d3546feaf963ce80d1420197df89688823d0a2f87e669cd8bc6cf71659116d0",
+        "input_fingerprint": "a0a92f14d5afb0b5cabad40d7592f3c069b5fc8994d45bd18582e3bad755c972",
+        "verified_at": 1789706123.22273,
+        "receipt_publication_revision": "3dafd4c5220ab04fe3beb29c257baebe14dbca38"
+      }
+    },
+    "sycophancy": {
+      "handle_sha256": "15340c9a111579ea376008b21f91066e20ffe44bc62bb5b1b30eb4e992198125",
+      "progress_signature": "6539efd8031aea9a48c9e171a410fa59070f8ee52d0b94d14ad8bb011617c618",
+      "last_advance": 1789706371.0979085,
+      "results": {
+        "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+        "verified_revision": "49e51ea91e22ede4fed292924ae14a606079683c",
+        "prefix": "issue1739_natural_extremes_20260918/results_v1/sycophancy",
+        "receipt_sha256": "bb4dc08781181166239adf9cf3a0ba808ecdc3240ad8e36e8349b8bea101334c",
+        "input_fingerprint": "420d5047aef17c30ae2c1a2eca8a8d794f04ac47a1afb7a9a36fa7fafb9c2580",
+        "verified_at": 1789706422.2898982,
+        "receipt_publication_revision": "9e1e97a2c1614c052ae83e5f5f2010fd85cd7af7"
+      }
+    },
+    "hallucination": {
+      "handle_sha256": "74d3a83df7bc9973381c92720d50ce34201e77dc27d13b2f7ef5d4b1f75ef974",
+      "progress_signature": "a552529c97781d908e38757515a6af858996500a9adf4bf7b26167282dac38a6",
+      "last_advance": 1789706550.074522,
+      "results": {
+        "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+        "verified_revision": "f24a926a246db7f553ce47c8e5c4b0414d7d4f6d",
+        "prefix": "issue1739_natural_extremes_20260918/results_v1/hallucination",
+        "receipt_sha256": "8946e9e83803d9fcdccb2d72d48fff294918e38ef4003b940ff04e0e776c8b66",
+        "input_fingerprint": "f2b80c3e709fa66bba1e5ed5b9a0d268e50a61e0ef5332017106757f6c958a92",
+        "verified_at": 1789706602.4106922,
+        "receipt_publication_revision": "c2d9f4f9f7f5f9381f538aa742166ab4a48003fb"
+      }
+    }
+  },
+  "last_transition": "bfb6b28eb8873f1c26ec7004be041d845fd6c110ec3d51983ba1af14021191fe"
+}

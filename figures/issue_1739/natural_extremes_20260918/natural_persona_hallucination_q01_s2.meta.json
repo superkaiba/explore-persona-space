@@ -1,0 +1,904 @@
+{
+  "behavior_labels": {
+    "evil": "Evil trait",
+    "hallucination": "Hallucination",
+    "sycophancy": "Sycophancy"
+  },
+  "correlation_axis_range": [
+    -1.02,
+    1.02
+  ],
+  "encodings": {
+    "instruction": "open square",
+    "mapped_answer": "#176B87",
+    "missing": "N/A text; no point",
+    "natural": "filled circle",
+    "other_readouts": "#687078"
+  },
+  "frozen_layers": {
+    "evil": {
+      "answer_direction_on_context": 15,
+      "context_native": 15,
+      "mapped_answer": 22,
+      "real_answer": 22
+    },
+    "hallucination": {
+      "answer_direction_on_context": 24,
+      "context_native": 24,
+      "mapped_answer": 23,
+      "real_answer": 27
+    },
+    "sycophancy": {
+      "answer_direction_on_context": 16,
+      "context_native": 16,
+      "mapped_answer": 11,
+      "real_answer": 11
+    }
+  },
+  "inputs": {
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L15/parity.json": {
+      "sha256": "c48db712206bee3fbfc5f45151ec4013f787e8a119118eb4bc2e0adfc7c58ac0",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/direction_stability.json": {
+      "sha256": "855abbdb0b447cb81fdece763eeb1eea281d243a37a05cdad355d144d0d22301",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/parity.json": {
+      "sha256": "7995c1daf40ccb480154d428dba79bfa3d896a54729f6a0180e1100ad8f096c5",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/scores.json": {
+      "sha256": "56becdbc6746418453bfc9e4c8f602e9142d0c0a7b74bf69e0635ed34e1befe9",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/selection.json": {
+      "sha256": "1ea595c8f95c799ad2590cf8b35427920e67ff2c74f62826dc27708e5000fb30",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/results.json": {
+      "sha256": "8d3546feaf963ce80d1420197df89688823d0a2f87e669cd8bc6cf71659116d0",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/direction_stability.json": {
+      "sha256": "899dcd3145e3cae5f47c628055f3aa13b38543db74a23fc83246cac9358efd3f",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/parity.json": {
+      "sha256": "2283bed675351e47bf0f42d25c6b693bdb657808b22bdf34f74a027d31d6953e",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/scores.json": {
+      "sha256": "883f529b4817f026e1a3fad89e3cea1049f6283a259bcbb40b3ef64c9dd0e134",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/selection.json": {
+      "sha256": "950ebf40ca3c156090f1e6e92e95ddb5ae3199c1857e67191aeb302b499bcc1d",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L24/parity.json": {
+      "sha256": "dd76b4f4ba3114b242c691e0f2aef82ff41386b4309d73268ba31aacce2ebdd3",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L27/parity.json": {
+      "sha256": "20763c918da322c911600d2831854a6edb09523390ce30fc0302941637a3b12b",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/results.json": {
+      "sha256": "8946e9e83803d9fcdccb2d72d48fff294918e38ef4003b940ff04e0e776c8b66",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/direction_stability.json": {
+      "sha256": "4ae1d9efc9cec7eed30a3d9cc15b343d0860fdcef561279aaa6ee0f6646250ae",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/parity.json": {
+      "sha256": "17ac0c3895bda11f3cad583b16cd5451c5f82e61eab6daf6565a755a36174317",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/scores.json": {
+      "sha256": "3c4499e30aca573891ba3bd89857c0b9010546752f337e1c19c84c309daa1f9d",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/selection.json": {
+      "sha256": "5e359f26b5d5079f8cfb4e67661bf477e3ae3a5fa2637a5779f22913ffc68016",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L16/parity.json": {
+      "sha256": "42270e84409d68bc00e01de7c595e9b9386a0d1f362cbcd9975edf36ab286047",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/results.json": {
+      "sha256": "bb4dc08781181166239adf9cf3a0ba808ecdc3240ad8e36e8349b8bea101334c",
+      "status": "read"
+    }
+  },
+  "intervals": "Archived 95% paired group-bootstrap endpoints, drawn without recentering",
+  "optional_input_absence_is_not_a_zero": true,
+  "outputs": {
+    "grayscale": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_hallucination_q01_s2_grayscale.png",
+      "sha256": "a4ea9c2e70c87b735ce093bf1276f9d6ed6ed60af32b6b750b21cffabe81e484"
+    },
+    "pdf": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_hallucination_q01_s2.pdf",
+      "sha256": "1369e1fecc7e4b9ff672359e7c7828d0e7607ba5288966315ee78616c2b391b8"
+    },
+    "png": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_hallucination_q01_s2.png",
+      "sha256": "5aaee57f6b36b9fadc9740d63fb163fac6ed64e4ee1f3dd4b8f2ee2c5b0d7c5d"
+    }
+  },
+  "plotted_values": [
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        -0.2140225808849065,
+        -0.004491227535161964
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 24,
+      "method": "answer_direction_on_context",
+      "n": 411,
+      "rho": -0.10319922809106985,
+      "source": {
+        "ci95": [
+          -0.2140225808849065,
+          -0.004491227535161964
+        ],
+        "rho": -0.10319922809106985,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.02985371361931627,
+        0.21746505608544153
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 24,
+      "method": "answer_direction_on_context",
+      "n": 411,
+      "rho": 0.1138446235928585,
+      "source": {
+        "ci95": [
+          0.02985371361931627,
+          0.21746505608544153
+        ],
+        "rho": 0.1138446235928585,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        -0.0536831599637342,
+        0.017016574833543775
+      ],
+      "dataset": "heldin_train",
+      "layer": 24,
+      "method": "answer_direction_on_context",
+      "n": 3350,
+      "rho": -0.016830928997864265,
+      "source": {
+        "ci95": [
+          -0.0536831599637342,
+          0.017016574833543775
+        ],
+        "rho": -0.016830928997864265,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.031924152389336935,
+        0.0976446083792003
+      ],
+      "dataset": "heldin_train",
+      "layer": 24,
+      "method": "answer_direction_on_context",
+      "n": 3350,
+      "rho": 0.06414995423765285,
+      "source": {
+        "ci95": [
+          0.031924152389336935,
+          0.0976446083792003
+        ],
+        "rho": 0.06414995423765285,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.00883124578652418,
+        0.07986669285922789
+      ],
+      "dataset": "nqopen",
+      "layer": 24,
+      "method": "answer_direction_on_context",
+      "n": 3167,
+      "rho": 0.04480219102979353,
+      "source": {
+        "ci95": [
+          0.00883124578652418,
+          0.07986669285922789
+        ],
+        "rho": 0.04480219102979353,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.04308245457907775,
+        0.11872965091244121
+      ],
+      "dataset": "nqopen",
+      "layer": 24,
+      "method": "answer_direction_on_context",
+      "n": 3167,
+      "rho": 0.08192993939285836,
+      "source": {
+        "ci95": [
+          0.04308245457907775,
+          0.11872965091244121
+        ],
+        "rho": 0.08192993939285836,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.21444028160437678,
+        0.27448173132147957
+      ],
+      "dataset": "simpleqa",
+      "layer": 24,
+      "method": "answer_direction_on_context",
+      "n": 4021,
+      "rho": 0.24522906755721233,
+      "source": {
+        "ci95": [
+          0.21444028160437678,
+          0.27448173132147957
+        ],
+        "rho": 0.24522906755721233,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        -0.2013416560064377,
+        -0.14213465234816983
+      ],
+      "dataset": "simpleqa",
+      "layer": 24,
+      "method": "answer_direction_on_context",
+      "n": 4021,
+      "rho": -0.17303399895717744,
+      "source": {
+        "ci95": [
+          -0.2013416560064377,
+          -0.14213465234816983
+        ],
+        "rho": -0.17303399895717744,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        -0.05054041393441977,
+        0.13349910944671656
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 24,
+      "method": "context_native",
+      "n": 411,
+      "rho": 0.04281505072932264,
+      "source": {
+        "ci95": [
+          -0.05054041393441977,
+          0.13349910944671656
+        ],
+        "rho": 0.04281505072932264,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        -0.050175366159963125,
+        0.1307445325000511
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 24,
+      "method": "context_native",
+      "n": 411,
+      "rho": 0.03825808715219093,
+      "source": {
+        "ci95": [
+          -0.050175366159963125,
+          0.1307445325000511
+        ],
+        "rho": 0.03825808715219093,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.019554142256892604,
+        0.08217952504871227
+      ],
+      "dataset": "heldin_train",
+      "layer": 24,
+      "method": "context_native",
+      "n": 3350,
+      "rho": 0.0522096712041754,
+      "source": {
+        "ci95": [
+          0.019554142256892604,
+          0.08217952504871227
+        ],
+        "rho": 0.0522096712041754,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.1140085969806146,
+        0.18042582285963676
+      ],
+      "dataset": "heldin_train",
+      "layer": 24,
+      "method": "context_native",
+      "n": 3350,
+      "rho": 0.14584162272561352,
+      "source": {
+        "ci95": [
+          0.1140085969806146,
+          0.18042582285963676
+        ],
+        "rho": 0.14584162272561352,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        -0.006475331881456998,
+        0.06584104935573229
+      ],
+      "dataset": "nqopen",
+      "layer": 24,
+      "method": "context_native",
+      "n": 3167,
+      "rho": 0.02912389110150348,
+      "source": {
+        "ci95": [
+          -0.006475331881456998,
+          0.06584104935573229
+        ],
+        "rho": 0.02912389110150348,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.06267612694425082,
+        0.1324785658864381
+      ],
+      "dataset": "nqopen",
+      "layer": 24,
+      "method": "context_native",
+      "n": 3167,
+      "rho": 0.09660195128531203,
+      "source": {
+        "ci95": [
+          0.06267612694425082,
+          0.1324785658864381
+        ],
+        "rho": 0.09660195128531203,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.4477138955874171,
+        0.49723251776698774
+      ],
+      "dataset": "simpleqa",
+      "layer": 24,
+      "method": "context_native",
+      "n": 4021,
+      "rho": 0.47395389736189697,
+      "source": {
+        "ci95": [
+          0.4477138955874171,
+          0.49723251776698774
+        ],
+        "rho": 0.47395389736189697,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        -0.00037304109707054665,
+        0.05968628500615694
+      ],
+      "dataset": "simpleqa",
+      "layer": 24,
+      "method": "context_native",
+      "n": 4021,
+      "rho": 0.027418112442904447,
+      "source": {
+        "ci95": [
+          -0.00037304109707054665,
+          0.05968628500615694
+        ],
+        "rho": 0.027418112442904447,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.06979873635764901,
+        0.2652391822892833
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 23,
+      "method": "mapped_answer",
+      "n": 411,
+      "rho": 0.17577133744895965,
+      "source": {
+        "ci95": [
+          0.06979873635764901,
+          0.2652391822892833
+        ],
+        "rho": 0.17577133744895965,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.08226523339118981,
+        0.25135805539974254
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 23,
+      "method": "mapped_answer",
+      "n": 411,
+      "rho": 0.16329693068372717,
+      "source": {
+        "ci95": [
+          0.08226523339118981,
+          0.25135805539974254
+        ],
+        "rho": 0.16329693068372717,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        -0.08759254226838697,
+        -0.02413697991735992
+      ],
+      "dataset": "heldin_train",
+      "layer": 23,
+      "method": "mapped_answer",
+      "n": 3350,
+      "rho": -0.05625555702934265,
+      "source": {
+        "ci95": [
+          -0.08759254226838697,
+          -0.02413697991735992
+        ],
+        "rho": -0.05625555702934265,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.4239309437934188,
+        0.48199936566286805
+      ],
+      "dataset": "heldin_train",
+      "layer": 23,
+      "method": "mapped_answer",
+      "n": 3350,
+      "rho": 0.4528999486672128,
+      "source": {
+        "ci95": [
+          0.4239309437934188,
+          0.48199936566286805
+        ],
+        "rho": 0.4528999486672128,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        -0.07157937665367844,
+        0.0068032010009425395
+      ],
+      "dataset": "nqopen",
+      "layer": 23,
+      "method": "mapped_answer",
+      "n": 3167,
+      "rho": -0.033518388618036826,
+      "source": {
+        "ci95": [
+          -0.07157937665367844,
+          0.0068032010009425395
+        ],
+        "rho": -0.033518388618036826,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.2943364916131794,
+        0.36403417004792843
+      ],
+      "dataset": "nqopen",
+      "layer": 23,
+      "method": "mapped_answer",
+      "n": 3167,
+      "rho": 0.32911215054814136,
+      "source": {
+        "ci95": [
+          0.2943364916131794,
+          0.36403417004792843
+        ],
+        "rho": 0.32911215054814136,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.43550731464694503,
+        0.4925445292846135
+      ],
+      "dataset": "simpleqa",
+      "layer": 23,
+      "method": "mapped_answer",
+      "n": 4021,
+      "rho": 0.46298969856968547,
+      "source": {
+        "ci95": [
+          0.43550731464694503,
+          0.4925445292846135
+        ],
+        "rho": 0.46298969856968547,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        -0.06983499672790616,
+        -0.013119991511618282
+      ],
+      "dataset": "simpleqa",
+      "layer": 23,
+      "method": "mapped_answer",
+      "n": 4021,
+      "rho": -0.041509677781467136,
+      "source": {
+        "ci95": [
+          -0.06983499672790616,
+          -0.013119991511618282
+        ],
+        "rho": -0.041509677781467136,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.17697221430217752,
+        0.36883225321050567
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 27,
+      "method": "real_answer",
+      "n": 411,
+      "rho": 0.28059178964074377,
+      "source": {
+        "ci95": [
+          0.17697221430217752,
+          0.36883225321050567
+        ],
+        "rho": 0.28059178964074377,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.1962355250134075,
+        0.3777901571591478
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 27,
+      "method": "real_answer",
+      "n": 411,
+      "rho": 0.2911935178444973,
+      "source": {
+        "ci95": [
+          0.1962355250134075,
+          0.3777901571591478
+        ],
+        "rho": 0.2911935178444973,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.015396013421333617,
+        0.09119305204229958
+      ],
+      "dataset": "heldin_train",
+      "layer": 27,
+      "method": "real_answer",
+      "n": 3350,
+      "rho": 0.056203189976959625,
+      "source": {
+        "ci95": [
+          0.015396013421333617,
+          0.09119305204229958
+        ],
+        "rho": 0.056203189976959625,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.3754848546124351,
+        0.4406331959899575
+      ],
+      "dataset": "heldin_train",
+      "layer": 27,
+      "method": "real_answer",
+      "n": 3350,
+      "rho": 0.4083542634801535,
+      "source": {
+        "ci95": [
+          0.3754848546124351,
+          0.4406331959899575
+        ],
+        "rho": 0.4083542634801535,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.09394392404884158,
+        0.1638908844251488
+      ],
+      "dataset": "nqopen",
+      "layer": 27,
+      "method": "real_answer",
+      "n": 3167,
+      "rho": 0.12797090910783324,
+      "source": {
+        "ci95": [
+          0.09394392404884158,
+          0.1638908844251488
+        ],
+        "rho": 0.12797090910783324,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.27256716952825943,
+        0.3420476392240866
+      ],
+      "dataset": "nqopen",
+      "layer": 27,
+      "method": "real_answer",
+      "n": 3167,
+      "rho": 0.306712857338827,
+      "source": {
+        "ci95": [
+          0.27256716952825943,
+          0.3420476392240866
+        ],
+        "rho": 0.306712857338827,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.5543561614618724,
+        0.603712012453864
+      ],
+      "dataset": "simpleqa",
+      "layer": 27,
+      "method": "real_answer",
+      "n": 4021,
+      "rho": 0.5787174444636474,
+      "source": {
+        "ci95": [
+          0.5543561614618724,
+          0.603712012453864
+        ],
+        "rho": 0.5787174444636474,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.06878289925914771,
+        0.1288910386255687
+      ],
+      "dataset": "simpleqa",
+      "layer": 27,
+      "method": "real_answer",
+      "n": 4021,
+      "rho": 0.09770596358276779,
+      "source": {
+        "ci95": [
+          0.06878289925914771,
+          0.1288910386255687
+        ],
+        "rho": 0.09770596358276779,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s2"
+    }
+  ],
+  "public_urls": {
+    "grayscale": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_hallucination_q01_s2_grayscale.png",
+    "pdf": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_hallucination_q01_s2.pdf",
+    "png": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_hallucination_q01_s2.png"
+  },
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      7.202
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      6.985
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/natural_persona_hallucination_q01_s2.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "A  \u00b7  LAYER 24",
+      "Spearman $\\rho$ \u2191",
+      "\u22121",
+      "0",
+      "1",
+      "Generic chat\n(n=411)",
+      "ID (map exposed)\n(n=3,350)",
+      "NQOpen\n(n=3,167)",
+      "SimpleQA\n(n=4,021)",
+      "Answer on\ncontext",
+      "B  \u00b7  LAYER 24",
+      "Context\nnative",
+      "C  \u00b7  LAYER 23",
+      "Mapped\nanswer",
+      "D  \u00b7  LAYER 27",
+      "Observed\nanswer",
+      "Hallucination \u00b7 Natural prompts: 1% tails, tie salt 2",
+      "DIRECTION EXTRACTION",
+      "Instruction contrast (E1)",
+      "Natural prompts: 1% tails, tie salt 2"
+    ]
+  },
+  "renderer_git_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "renderer_git_status": "?? scripts/issue1739_natural_figure.py",
+  "renderer_sha256": "e7251058fac3607d36dc71dc2e0fe754f4c580ce4d6b1062eb7744bbc02748c2",
+  "run_input_fingerprints": {
+    "evil": "a0a92f14d5afb0b5cabad40d7592f3c069b5fc8994d45bd18582e3bad755c972",
+    "hallucination": "f2b80c3e709fa66bba1e5ed5b9a0d268e50a61e0ef5332017106757f6c958a92",
+    "sycophancy": "420d5047aef17c30ae2c1a2eca8a8d794f04ac47a1afb7a9a36fa7fafb9c2580"
+  },
+  "run_source_shas": {
+    "evil": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+    "hallucination": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+    "sycophancy": "9263556c52acd1bf5fa25478a8a175f51baf05d5"
+  },
+  "style_sha256": "74d774c6f04778e69a36cc58595e009cf06f3b612b7414f09423601fba1b5f98",
+  "title": "Hallucination: Natural prompts: 1% tails, tie salt 2"
+}

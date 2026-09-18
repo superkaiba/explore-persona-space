@@ -1,0 +1,749 @@
+{
+  "behavior_labels": {
+    "evil": "Evil trait",
+    "hallucination": "Hallucination",
+    "sycophancy": "Sycophancy"
+  },
+  "correlation_axis_range": [
+    -1.02,
+    1.02
+  ],
+  "encodings": {
+    "instruction": "open square",
+    "mapped_answer": "#176B87",
+    "missing": "N/A text; no point",
+    "natural": "filled circle",
+    "other_readouts": "#687078"
+  },
+  "frozen_layers": {
+    "evil": {
+      "answer_direction_on_context": 15,
+      "context_native": 15,
+      "mapped_answer": 22,
+      "real_answer": 22
+    },
+    "hallucination": {
+      "answer_direction_on_context": 24,
+      "context_native": 24,
+      "mapped_answer": 23,
+      "real_answer": 27
+    },
+    "sycophancy": {
+      "answer_direction_on_context": 16,
+      "context_native": 16,
+      "mapped_answer": 11,
+      "real_answer": 11
+    }
+  },
+  "inputs": {
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L15/parity.json": {
+      "sha256": "c48db712206bee3fbfc5f45151ec4013f787e8a119118eb4bc2e0adfc7c58ac0",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/direction_stability.json": {
+      "sha256": "855abbdb0b447cb81fdece763eeb1eea281d243a37a05cdad355d144d0d22301",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/parity.json": {
+      "sha256": "7995c1daf40ccb480154d428dba79bfa3d896a54729f6a0180e1100ad8f096c5",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/scores.json": {
+      "sha256": "56becdbc6746418453bfc9e4c8f602e9142d0c0a7b74bf69e0635ed34e1befe9",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/selection.json": {
+      "sha256": "1ea595c8f95c799ad2590cf8b35427920e67ff2c74f62826dc27708e5000fb30",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/results.json": {
+      "sha256": "8d3546feaf963ce80d1420197df89688823d0a2f87e669cd8bc6cf71659116d0",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/direction_stability.json": {
+      "sha256": "899dcd3145e3cae5f47c628055f3aa13b38543db74a23fc83246cac9358efd3f",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/parity.json": {
+      "sha256": "2283bed675351e47bf0f42d25c6b693bdb657808b22bdf34f74a027d31d6953e",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/scores.json": {
+      "sha256": "883f529b4817f026e1a3fad89e3cea1049f6283a259bcbb40b3ef64c9dd0e134",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/selection.json": {
+      "sha256": "950ebf40ca3c156090f1e6e92e95ddb5ae3199c1857e67191aeb302b499bcc1d",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L24/parity.json": {
+      "sha256": "dd76b4f4ba3114b242c691e0f2aef82ff41386b4309d73268ba31aacce2ebdd3",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L27/parity.json": {
+      "sha256": "20763c918da322c911600d2831854a6edb09523390ce30fc0302941637a3b12b",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/results.json": {
+      "sha256": "8946e9e83803d9fcdccb2d72d48fff294918e38ef4003b940ff04e0e776c8b66",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/direction_stability.json": {
+      "sha256": "4ae1d9efc9cec7eed30a3d9cc15b343d0860fdcef561279aaa6ee0f6646250ae",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/parity.json": {
+      "sha256": "17ac0c3895bda11f3cad583b16cd5451c5f82e61eab6daf6565a755a36174317",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/scores.json": {
+      "sha256": "3c4499e30aca573891ba3bd89857c0b9010546752f337e1c19c84c309daa1f9d",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/selection.json": {
+      "sha256": "5e359f26b5d5079f8cfb4e67661bf477e3ae3a5fa2637a5779f22913ffc68016",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L16/parity.json": {
+      "sha256": "42270e84409d68bc00e01de7c595e9b9386a0d1f362cbcd9975edf36ab286047",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/results.json": {
+      "sha256": "bb4dc08781181166239adf9cf3a0ba808ecdc3240ad8e36e8349b8bea101334c",
+      "status": "read"
+    }
+  },
+  "intervals": "Archived 95% paired group-bootstrap endpoints, drawn without recentering",
+  "optional_input_absence_is_not_a_zero": true,
+  "outputs": {
+    "grayscale": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_ood_grayscale.png",
+      "sha256": "a1821d7651e91215a2711501f2e83112d140bf20aa116375b76e4fcfa6ecbf06"
+    },
+    "pdf": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_ood.pdf",
+      "sha256": "f0ecd85569eba1e972c4fb9becd9dc575802b16e5e3f2484f4b783bffabbdbf1"
+    },
+    "png": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_ood.png",
+      "sha256": "49b3e8544b150962b89550cfcf0d71703958b0f8718b2d54426b9a8f0d99826b"
+    }
+  },
+  "plotted_values": [
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.05884943715615113,
+        0.13491930705752592
+      ],
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "regime": "OOD",
+      "rho": 0.09810753391032911,
+      "source": {
+        "ci95": [
+          0.05884943715615113,
+          0.13491930705752592
+        ],
+        "dataset_sem": 0.04247336407589083,
+        "n_datasets": 6,
+        "rho": 0.09810753391032911,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.19435211307903225,
+        -0.10143848086229926
+      ],
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "regime": "OOD",
+      "rho": -0.14910068593943174,
+      "source": {
+        "ci95": [
+          -0.19435211307903225,
+          -0.10143848086229926
+        ],
+        "dataset_sem": 0.10038570476628601,
+        "n_datasets": 6,
+        "rho": -0.14910068593943174,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.03736054648841386,
+        0.1257772357570089
+      ],
+      "layer": 16,
+      "method": "context_native",
+      "regime": "OOD",
+      "rho": 0.08121774083617887,
+      "source": {
+        "ci95": [
+          0.03736054648841386,
+          0.1257772357570089
+        ],
+        "dataset_sem": 0.09805155110122935,
+        "n_datasets": 6,
+        "rho": 0.08121774083617887,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.0264540285514103,
+        0.11426506611292948
+      ],
+      "layer": 16,
+      "method": "context_native",
+      "regime": "OOD",
+      "rho": 0.06799848763296973,
+      "source": {
+        "ci95": [
+          0.0264540285514103,
+          0.11426506611292948
+        ],
+        "dataset_sem": 0.10890740636538228,
+        "n_datasets": 6,
+        "rho": 0.06799848763296973,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.1633591349848463,
+        0.2538274410992596
+      ],
+      "layer": 11,
+      "method": "mapped_answer",
+      "regime": "OOD",
+      "rho": 0.2096040120724804,
+      "source": {
+        "ci95": [
+          0.1633591349848463,
+          0.2538274410992596
+        ],
+        "dataset_sem": 0.035364048887569485,
+        "n_datasets": 6,
+        "rho": 0.2096040120724804,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.12404077662017413,
+        0.2082402568090516
+      ],
+      "layer": 11,
+      "method": "mapped_answer",
+      "regime": "OOD",
+      "rho": 0.17153959746729477,
+      "source": {
+        "ci95": [
+          0.12404077662017413,
+          0.2082402568090516
+        ],
+        "dataset_sem": 0.09864903708267561,
+        "n_datasets": 6,
+        "rho": 0.17153959746729477,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.22674655748777303,
+        0.3235326400443868
+      ],
+      "layer": 11,
+      "method": "real_answer",
+      "regime": "OOD",
+      "rho": 0.2759460746054791,
+      "source": {
+        "ci95": [
+          0.22674655748777303,
+          0.3235326400443868
+        ],
+        "dataset_sem": 0.05927688093969245,
+        "n_datasets": 6,
+        "rho": 0.2759460746054791,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.26938345975975336,
+        0.35377304118810654
+      ],
+      "layer": 11,
+      "method": "real_answer",
+      "regime": "OOD",
+      "rho": 0.31323495217636377,
+      "source": {
+        "ci95": [
+          0.26938345975975336,
+          0.35377304118810654
+        ],
+        "dataset_sem": 0.07316720218604633,
+        "n_datasets": 6,
+        "rho": 0.31323495217636377,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.12162934409835416,
+        0.16659136797241017
+      ],
+      "layer": 24,
+      "method": "answer_direction_on_context",
+      "regime": "OOD",
+      "rho": 0.14501562929350292,
+      "source": {
+        "ci95": [
+          0.12162934409835416,
+          0.16659136797241017
+        ],
+        "dataset_sem": 0.10021343826370939,
+        "n_datasets": 2,
+        "rho": 0.14501562929350292,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        -0.03532753929089715,
+        0.009167980819022616
+      ],
+      "layer": 24,
+      "method": "answer_direction_on_context",
+      "regime": "OOD",
+      "rho": -0.014124053700580404,
+      "source": {
+        "ci95": [
+          -0.03532753929089715,
+          0.009167980819022616
+        ],
+        "dataset_sem": 0.10616661108048212,
+        "n_datasets": 2,
+        "rho": -0.014124053700580404,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.2302082209447802,
+        0.2711582223567213
+      ],
+      "layer": 24,
+      "method": "context_native",
+      "regime": "OOD",
+      "rho": 0.2515388942317002,
+      "source": {
+        "ci95": [
+          0.2302082209447802,
+          0.2711582223567213
+        ],
+        "dataset_sem": 0.22241500313019671,
+        "n_datasets": 2,
+        "rho": 0.2515388942317002,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.09573347514152884,
+        0.14320279699678073
+      ],
+      "layer": 24,
+      "method": "context_native",
+      "regime": "OOD",
+      "rho": 0.11811319773895534,
+      "source": {
+        "ci95": [
+          0.09573347514152884,
+          0.14320279699678073
+        ],
+        "dataset_sem": 0.005556269420270821,
+        "n_datasets": 2,
+        "rho": 0.11811319773895534,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.19332353741795336,
+        0.2371596578125998
+      ],
+      "layer": 23,
+      "method": "mapped_answer",
+      "regime": "OOD",
+      "rho": 0.2147356549758243,
+      "source": {
+        "ci95": [
+          0.19332353741795336,
+          0.2371596578125998
+        ],
+        "dataset_sem": 0.24825404359386113,
+        "n_datasets": 2,
+        "rho": 0.2147356549758243,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.09835198999120079,
+        0.14447476288955446
+      ],
+      "layer": 23,
+      "method": "mapped_answer",
+      "regime": "OOD",
+      "rho": 0.12324426234495293,
+      "source": {
+        "ci95": [
+          0.09835198999120079,
+          0.14447476288955446
+        ],
+        "dataset_sem": 0.17275096008715843,
+        "n_datasets": 2,
+        "rho": 0.12324426234495293,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.33149633933327194,
+        0.3753115244665793
+      ],
+      "layer": 27,
+      "method": "real_answer",
+      "regime": "OOD",
+      "rho": 0.3533441767857403,
+      "source": {
+        "ci95": [
+          0.33149633933327194,
+          0.3753115244665793
+        ],
+        "dataset_sem": 0.22537326767790702,
+        "n_datasets": 2,
+        "rho": 0.3533441767857403,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "hallucination",
+      "ci95": [
+        0.14588748377119118,
+        0.19061436999559914
+      ],
+      "layer": 27,
+      "method": "real_answer",
+      "regime": "OOD",
+      "rho": 0.16850363854955394,
+      "source": {
+        "ci95": [
+          0.14588748377119118,
+          0.19061436999559914
+        ],
+        "dataset_sem": 0.10920707158016205,
+        "n_datasets": 2,
+        "rho": 0.16850363854955394,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.07315341575048152,
+        0.13201900954852003
+      ],
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "regime": "OOD",
+      "rho": 0.1049184826601673,
+      "source": {
+        "ci95": [
+          0.07315341575048152,
+          0.13201900954852003
+        ],
+        "dataset_sem": 0.08355119830103382,
+        "n_datasets": 5,
+        "rho": 0.1049184826601673,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.032621104376286326,
+        0.027038401966525953
+      ],
+      "layer": 15,
+      "method": "answer_direction_on_context",
+      "regime": "OOD",
+      "rho": -0.0034056692115860218,
+      "source": {
+        "ci95": [
+          -0.032621104376286326,
+          0.027038401966525953
+        ],
+        "dataset_sem": 0.05174457474442619,
+        "n_datasets": 5,
+        "rho": -0.0034056692115860218,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.0773423006373863,
+        0.13548919300675177
+      ],
+      "layer": 15,
+      "method": "context_native",
+      "regime": "OOD",
+      "rho": 0.10793102641343785,
+      "source": {
+        "ci95": [
+          0.0773423006373863,
+          0.13548919300675177
+        ],
+        "dataset_sem": 0.11333413322614334,
+        "n_datasets": 5,
+        "rho": 0.10793102641343785,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        -0.10487965587242558,
+        -0.05399498810547753
+      ],
+      "layer": 15,
+      "method": "context_native",
+      "regime": "OOD",
+      "rho": -0.08000658639032236,
+      "source": {
+        "ci95": [
+          -0.10487965587242558,
+          -0.05399498810547753
+        ],
+        "dataset_sem": 0.10610742401035388,
+        "n_datasets": 5,
+        "rho": -0.08000658639032236,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.1814624201066199,
+        0.23574371449358858
+      ],
+      "layer": 22,
+      "method": "mapped_answer",
+      "regime": "OOD",
+      "rho": 0.20903075952752573,
+      "source": {
+        "ci95": [
+          0.1814624201066199,
+          0.23574371449358858
+        ],
+        "dataset_sem": 0.06344561734190257,
+        "n_datasets": 5,
+        "rho": 0.20903075952752573,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.11253522511686484,
+        0.17543315473251558
+      ],
+      "layer": 22,
+      "method": "mapped_answer",
+      "regime": "OOD",
+      "rho": 0.14490536979818652,
+      "source": {
+        "ci95": [
+          0.11253522511686484,
+          0.17543315473251558
+        ],
+        "dataset_sem": 0.021079680136675282,
+        "n_datasets": 5,
+        "rho": 0.14490536979818652,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.09114437596521481,
+        0.14888919571809908
+      ],
+      "layer": 22,
+      "method": "real_answer",
+      "regime": "OOD",
+      "rho": 0.12031216918471835,
+      "source": {
+        "ci95": [
+          0.09114437596521481,
+          0.14888919571809908
+        ],
+        "dataset_sem": 0.11366596306555961,
+        "n_datasets": 5,
+        "rho": 0.12031216918471835,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "evil",
+      "ci95": [
+        0.17501534946999037,
+        0.23205675907856993
+      ],
+      "layer": 22,
+      "method": "real_answer",
+      "regime": "OOD",
+      "rho": 0.20331991836358135,
+      "source": {
+        "ci95": [
+          0.17501534946999037,
+          0.23205675907856993
+        ],
+        "dataset_sem": 0.08694074592178612,
+        "n_datasets": 5,
+        "rho": 0.20331991836358135,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s0"
+    }
+  ],
+  "public_urls": {
+    "grayscale": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_ood_grayscale.png",
+    "pdf": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_ood.pdf",
+    "png": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_ood.png"
+  },
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      5.631
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      5.071
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/natural_persona_ood.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "A  \u00b7  SYCOPHANCY",
+      "6/6 OOD \u00b7 n=3,916",
+      "Mean Spearman $\\rho$ \u2191",
+      "\u22121",
+      "0",
+      "1",
+      "Answer on\ncontext",
+      "Context\nnative",
+      "Mapped\nanswer",
+      "Observed\nanswer",
+      "B  \u00b7  HALLUCINATION",
+      "2/2 OOD \u00b7 n=7,188",
+      "C  \u00b7  EVIL TRAIT",
+      "5/5 OOD \u00b7 n=5,337",
+      "DIRECTION EXTRACTION",
+      "Instruction contrast (E1)",
+      "Natural prompts: 1% tails"
+    ]
+  },
+  "renderer_git_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "renderer_git_status": "?? scripts/issue1739_natural_figure.py",
+  "renderer_sha256": "e7251058fac3607d36dc71dc2e0fe754f4c580ce4d6b1062eb7744bbc02748c2",
+  "run_input_fingerprints": {
+    "evil": "a0a92f14d5afb0b5cabad40d7592f3c069b5fc8994d45bd18582e3bad755c972",
+    "hallucination": "f2b80c3e709fa66bba1e5ed5b9a0d268e50a61e0ef5332017106757f6c958a92",
+    "sycophancy": "420d5047aef17c30ae2c1a2eca8a8d794f04ac47a1afb7a9a36fa7fafb9c2580"
+  },
+  "run_source_shas": {
+    "evil": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+    "hallucination": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+    "sycophancy": "9263556c52acd1bf5fa25478a8a175f51baf05d5"
+  },
+  "style_sha256": "74d774c6f04778e69a36cc58595e009cf06f3b612b7414f09423601fba1b5f98",
+  "title": "Natural-prompt persona extraction"
+}

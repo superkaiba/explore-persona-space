@@ -1,0 +1,23 @@
+{
+  "generic_sources/manifest.jsonl": {
+    "repo": "superkaiba1/explore-persona-space-data",
+    "revision": "7ef5523673d64697ab497577dbc5b9270c39f020",
+    "path": "issue1092_realistic_crossing/corpus/manifest.jsonl",
+    "sha256": "e582a3b41ae9c5b724602730b46634c01df8bdd2281db524d70450e821e24227",
+    "size": 8671651
+  },
+  "generic_sources/prefix_store.jsonl": {
+    "repo": "superkaiba1/explore-persona-space-data",
+    "revision": "7ef5523673d64697ab497577dbc5b9270c39f020",
+    "path": "issue1092_realistic_crossing/corpus/prefix_store.jsonl",
+    "sha256": "0ed63428b72a402af49722dc1b12d0bdbd3c8e385ca5422eb740bff1a40ae2c9",
+    "size": 5121614
+  },
+  "generic_sources/query_store.jsonl": {
+    "repo": "superkaiba1/explore-persona-space-data",
+    "revision": "7ef5523673d64697ab497577dbc5b9270c39f020",
+    "path": "issue1092_realistic_crossing/corpus/query_store.jsonl",
+    "sha256": "594b0217724e2b6e07d86df0d036d4c6c2fc3433911117f6950a58ba058f2699",
+    "size": 1032583
+  }
+}

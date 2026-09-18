@@ -1,0 +1,11 @@
+{
+  "normalization": "lowercase and collapse whitespace",
+  "generic_exact": "evaluation query/any user turn versus fit queries/any prefix user turn",
+  "trait_exact": "evaluation query/any user turn versus trait-train query/any user turn",
+  "near": "evaluation query versus generic query/user-turn or trait-train query",
+  "near_recipe": "corpus_staging MinHash char5,64 permutations,seed0,16 bands x4",
+  "limitation": "Operational exact/LSH disjointness; not semantic or paraphrase certification",
+  "bootstrap": "500 paired source-group draws within each dataset; equal-dataset OOD mean",
+  "conditioning": "Cached responses, judged labels, extraction directions and fitted maps fixed",
+  "id": "unavailable: every original ID evaluation row was exposed to the trait map fit"
+}

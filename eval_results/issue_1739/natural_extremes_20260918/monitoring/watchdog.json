@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "notifications": [
+    {
+      "key": "complete",
+      "message": "issue1739-natural-extremes: experiment completed; outputs verified.",
+      "created_at": 1789706640.223973,
+      "delivered_at": 1789706640.9520335,
+      "last_attempt": 1789706640.223973
+    }
+  ],
+  "recoveries": [],
+  "incident": null,
+  "worker": null,
+  "checked_at": 1789707600.2275376,
+  "observed_status": "complete",
+  "reason": "exact-source completion verified by monitor"
+}

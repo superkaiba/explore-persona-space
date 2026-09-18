@@ -1,0 +1,558 @@
+{
+  "evil_mhj": {
+    "high": {
+      "n": 14,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-toxicchat-000181",
+        "evil-eval-toxicchat-000112",
+        "evil-eval-hhrt-000083",
+        "evil-eval-toxicchat-000514",
+        "evil-eval-toxicchat-000142",
+        "evil-eval-hhrt-000285",
+        "evil-eval-hhrt-001315",
+        "evil-eval-hhrt-001435",
+        "evil-eval-hhrt-001680",
+        "evil-eval-toxicchat-000101",
+        "evil-eval-hhrt-001400",
+        "evil-eval-toxicchat-000249",
+        "evil-eval-hhrt-000600",
+        "evil-eval-hhrt-000354"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "low": {
+      "n": 14,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-hhrt-001386",
+        "evil-eval-toxicchat-000184",
+        "evil-eval-hhrt-001402",
+        "evil-eval-toxicchat-000209",
+        "evil-eval-toxicchat-000030",
+        "evil-eval-hhrt-001748",
+        "evil-eval-toxicchat-000519",
+        "evil-eval-hhrt-001139",
+        "evil-eval-hhrt-000786",
+        "evil-eval-toxicchat-000437",
+        "evil-eval-toxicchat-000582",
+        "evil-eval-hhrt-001082",
+        "evil-eval-hhrt-000857",
+        "evil-eval-toxicchat-000325"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  },
+  "evil_pair": {
+    "high": {
+      "n": 14,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-toxicchat-000181",
+        "evil-eval-toxicchat-000112",
+        "evil-eval-hhrt-000083",
+        "evil-eval-toxicchat-000514",
+        "evil-eval-toxicchat-000142",
+        "evil-eval-hhrt-000285",
+        "evil-eval-hhrt-001315",
+        "evil-eval-hhrt-001435",
+        "evil-eval-hhrt-001680",
+        "evil-eval-toxicchat-000101",
+        "evil-eval-hhrt-001400",
+        "evil-eval-toxicchat-000249",
+        "evil-eval-hhrt-000600",
+        "evil-eval-hhrt-000354"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "low": {
+      "n": 14,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-hhrt-001818",
+        "evil-eval-toxicchat-000214",
+        "evil-eval-hhrt-000287",
+        "evil-eval-hhrt-001615",
+        "evil-eval-hhrt-001526",
+        "evil-eval-hhrt-000474",
+        "evil-eval-hhrt-000010",
+        "evil-eval-hhrt-000569",
+        "evil-eval-hhrt-001737",
+        "evil-eval-hhrt-001282",
+        "evil-eval-hhrt-001494",
+        "evil-eval-hhrt-001530",
+        "evil-eval-hhrt-001379",
+        "evil-eval-hhrt-000095"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  },
+  "evil_tomgibbs": {
+    "high": {
+      "n": 14,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-toxicchat-000181",
+        "evil-eval-toxicchat-000112",
+        "evil-eval-hhrt-000083",
+        "evil-eval-toxicchat-000514",
+        "evil-eval-toxicchat-000142",
+        "evil-eval-hhrt-000285",
+        "evil-eval-hhrt-001315",
+        "evil-eval-hhrt-001435",
+        "evil-eval-hhrt-001680",
+        "evil-eval-toxicchat-000101",
+        "evil-eval-hhrt-001400",
+        "evil-eval-toxicchat-000249",
+        "evil-eval-hhrt-000600",
+        "evil-eval-hhrt-000736"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "low": {
+      "n": 14,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-toxicchat-000383",
+        "evil-eval-hhrt-001946",
+        "evil-eval-hhrt-001318",
+        "evil-eval-hhrt-001080",
+        "evil-eval-toxicchat-000671",
+        "evil-eval-hhrt-000135",
+        "evil-eval-hhrt-000110",
+        "evil-eval-hhrt-001569",
+        "evil-eval-hhrt-001088",
+        "evil-eval-hhrt-001366",
+        "evil-eval-hhrt-001951",
+        "evil-eval-hhrt-001390",
+        "evil-eval-hhrt-001870",
+        "evil-eval-toxicchat-000529"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  },
+  "heldin_train": {
+    "high": {
+      "n": 14,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-toxicchat-000181",
+        "evil-eval-toxicchat-000112",
+        "evil-eval-hhrt-000083",
+        "evil-eval-toxicchat-000514",
+        "evil-eval-toxicchat-000142",
+        "evil-eval-hhrt-000285",
+        "evil-eval-hhrt-001315",
+        "evil-eval-hhrt-001435",
+        "evil-eval-hhrt-001680",
+        "evil-eval-toxicchat-000101",
+        "evil-eval-hhrt-001400",
+        "evil-eval-toxicchat-000249",
+        "evil-eval-hhrt-000600",
+        "evil-eval-hhrt-000737"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "low": {
+      "n": 14,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-hhrt-001238",
+        "evil-eval-hhrt-000729",
+        "evil-eval-hhrt-000419",
+        "evil-eval-hhrt-000204",
+        "evil-eval-hhrt-000400",
+        "evil-eval-hhrt-001787",
+        "evil-eval-hhrt-000931",
+        "evil-eval-hhrt-000598",
+        "evil-eval-hhrt-001757",
+        "evil-eval-hhrt-001698",
+        "evil-eval-hhrt-000485",
+        "evil-eval-hhrt-001288",
+        "evil-eval-hhrt-000723",
+        "evil-eval-hhrt-000627"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  },
+  "hhrt": {
+    "high": {
+      "n": 2,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-toxicchat-000181",
+        "evil-eval-toxicchat-000112"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true
+      ]
+    },
+    "low": {
+      "n": 2,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-toxicchat-000211",
+        "evil-eval-toxicchat-000401"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true
+      ]
+    }
+  },
+  "toxicchat": {
+    "high": {
+      "n": 11,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-hhrt-000083",
+        "evil-eval-hhrt-000285",
+        "evil-eval-hhrt-001315",
+        "evil-eval-hhrt-001435",
+        "evil-eval-hhrt-001680",
+        "evil-eval-hhrt-001400",
+        "evil-eval-hhrt-000600",
+        "evil-eval-hhrt-000736",
+        "evil-eval-hhrt-000354",
+        "evil-eval-hhrt-000737",
+        "evil-eval-hhrt-000215"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "low": {
+      "n": 11,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-hhrt-000604",
+        "evil-eval-hhrt-000776",
+        "evil-eval-hhrt-000809",
+        "evil-eval-hhrt-000761",
+        "evil-eval-hhrt-000464",
+        "evil-eval-hhrt-001595",
+        "evil-eval-hhrt-000934",
+        "evil-eval-hhrt-001156",
+        "evil-eval-hhrt-001790",
+        "evil-eval-hhrt-001508",
+        "evil-eval-hhrt-001199"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  },
+  "wildchat_rung": {
+    "high": {
+      "n": 14,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-toxicchat-000181",
+        "evil-eval-toxicchat-000112",
+        "evil-eval-hhrt-000083",
+        "evil-eval-toxicchat-000514",
+        "evil-eval-toxicchat-000142",
+        "evil-eval-hhrt-000285",
+        "evil-eval-hhrt-001315",
+        "evil-eval-hhrt-001435",
+        "evil-eval-hhrt-001680",
+        "evil-eval-toxicchat-000101",
+        "evil-eval-hhrt-001400",
+        "evil-eval-toxicchat-000249",
+        "evil-eval-hhrt-000600",
+        "evil-eval-hhrt-000354"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "low": {
+      "n": 14,
+      "direct_trait_map_ids": 0,
+      "any_map_content_exposure": 0,
+      "component_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "ids": [
+        "evil-eval-hhrt-001282",
+        "evil-eval-hhrt-001844",
+        "evil-eval-hhrt-000045",
+        "evil-eval-hhrt-000516",
+        "evil-eval-toxicchat-000148",
+        "evil-eval-toxicchat-000267",
+        "evil-eval-toxicchat-000704",
+        "evil-eval-hhrt-001786",
+        "evil-eval-hhrt-000475",
+        "evil-eval-hhrt-000335",
+        "evil-eval-hhrt-001116",
+        "evil-eval-hhrt-001487",
+        "evil-eval-hhrt-001290",
+        "evil-eval-hhrt-001883"
+      ],
+      "operational_map_content_disjoint": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  }
+}

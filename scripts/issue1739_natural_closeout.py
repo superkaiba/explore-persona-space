@@ -172,6 +172,7 @@ class Runtime:
     def upload(self, repo, prefix, folder):
         # One folder-level transaction covers every residue class and log part.
         hub.assert_upload_clean([folder], what="#1739 terminal residue and workload log")
+        hub.assert_hub_dir_filecounts(folder, prefix)
         result = hub.retry_transient(
             lambda: self.api.upload_folder(
                 repo_id=repo,

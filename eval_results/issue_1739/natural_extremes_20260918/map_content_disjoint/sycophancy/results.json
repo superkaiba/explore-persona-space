@@ -1,0 +1,1147 @@
+{
+  "source_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "input_fingerprint": "420d5047aef17c30ae2c1a2eca8a8d794f04ac47a1afb7a9a36fa7fafb9c2580",
+  "primary_revision": "49e51ea91e22ede4fed292924ae14a606079683c",
+  "behavior": "sycophancy",
+  "primary": "q01_s0",
+  "datasets": [
+    {
+      "dataset": "aita",
+      "n_original": 1304,
+      "n": 1303,
+      "n_excluded": 1,
+      "joined_prompt_ids": 1304,
+      "n_groups": 1303,
+      "mask_sha256": "7a7780fa97f8b2ccbb4cd86446d5e6afeade0098200e9924dcb75cb6325c47fc",
+      "exclusion_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 1,
+        "near_trait": 0
+      },
+      "status": "ok",
+      "bootstrap_seed": 3740015069100040955,
+      "numeric_check": {
+        "point_checks": 8,
+        "sampled_bootstrap_checks": 40,
+        "max_abs_error": 2.220446049250313e-16
+      },
+      "estimates": {
+        "e1/answer_direction_on_context": {
+          "rho": 0.05905992069770294,
+          "ci95": [
+            0.009399508494581939,
+            0.11981946504542226
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/context_native": {
+          "rho": 0.05258650261770191,
+          "ci95": [
+            -0.00010243030028634403,
+            0.10584003240552563
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/mapped_answer": {
+          "rho": 0.2382543500122705,
+          "ci95": [
+            0.18569286952150332,
+            0.29270469508496205
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/real_answer": {
+          "rho": 0.2501024901084529,
+          "ci95": [
+            0.1968377487562168,
+            0.29649602080023524
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/answer_direction_on_context": {
+          "rho": 0.03977440081246868,
+          "ci95": [
+            -0.022469647459753946,
+            0.09582946077653372
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native": {
+          "rho": 0.46785970937625654,
+          "ci95": [
+            0.4134178111524162,
+            0.5129091317886497
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer": {
+          "rho": 0.5564255775134938,
+          "ci95": [
+            0.5121201146788957,
+            0.5999496029490029
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer": {
+          "rho": 0.5548513843383864,
+          "ci95": [
+            0.51125917857682,
+            0.598600976642925
+          ],
+          "valid_bootstraps": 500
+        }
+      },
+      "differences": {
+        "q01_s0/answer_direction_on_context_minus_e1/answer_direction_on_context": {
+          "delta": -0.019285519885234262,
+          "ci95": [
+            -0.09329408714979491,
+            0.04901469889281426
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native_minus_e1/context_native": {
+          "delta": 0.4152732067585546,
+          "ci95": [
+            0.3431622609914927,
+            0.4864631388316509
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_e1/mapped_answer": {
+          "delta": 0.3181712275012233,
+          "ci95": [
+            0.2589575918017239,
+            0.3851883190782695
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer_minus_e1/real_answer": {
+          "delta": 0.3047488942299335,
+          "ci95": [
+            0.24282134581201967,
+            0.3620526570298581
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/context_native": {
+          "delta": 0.08856586813723721,
+          "ci95": [
+            0.0387088483935626,
+            0.14131986957424966
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/answer_direction_on_context": {
+          "delta": 0.5166511767010251,
+          "ci95": [
+            0.4431963113803507,
+            0.5911831705232753
+          ],
+          "valid_bootstraps": 500
+        }
+      }
+    },
+    {
+      "dataset": "heldin_train",
+      "n_original": 3235,
+      "n": 0,
+      "n_excluded": 3235,
+      "joined_prompt_ids": 3235,
+      "n_groups": 0,
+      "mask_sha256": "11606a9bd285231450a0e8888f4623984ddb9f71435b231f3e3df2c38c25f402",
+      "exclusion_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 3235,
+        "near_generic": 28,
+        "near_trait": 3235
+      },
+      "status": "unavailable",
+      "reason": "unavailable: every original ID evaluation row was exposed to the trait map fit",
+      "estimates": {
+        "e1/answer_direction_on_context": {
+          "rho": null,
+          "ci95": null
+        },
+        "e1/context_native": {
+          "rho": null,
+          "ci95": null
+        },
+        "e1/mapped_answer": {
+          "rho": null,
+          "ci95": null
+        },
+        "e1/real_answer": {
+          "rho": null,
+          "ci95": null
+        },
+        "q01_s0/answer_direction_on_context": {
+          "rho": null,
+          "ci95": null
+        },
+        "q01_s0/context_native": {
+          "rho": null,
+          "ci95": null
+        },
+        "q01_s0/mapped_answer": {
+          "rho": null,
+          "ci95": null
+        },
+        "q01_s0/real_answer": {
+          "rho": null,
+          "ci95": null
+        }
+      },
+      "differences": {}
+    },
+    {
+      "dataset": "sycoans",
+      "n_original": 594,
+      "n": 593,
+      "n_excluded": 1,
+      "joined_prompt_ids": 594,
+      "n_groups": 150,
+      "mask_sha256": "01719ee31b1f0cb9ed590eebf83a8d2150e4b0075056a1ff2e8df01fd6ab7919",
+      "exclusion_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 1,
+        "near_trait": 0
+      },
+      "status": "ok",
+      "bootstrap_seed": 8656824780167430275,
+      "numeric_check": {
+        "point_checks": 8,
+        "sampled_bootstrap_checks": 40,
+        "max_abs_error": 1.1102230246251565e-16
+      },
+      "estimates": {
+        "e1/answer_direction_on_context": {
+          "rho": 0.1475139519693407,
+          "ci95": [
+            0.06971245897399733,
+            0.2323874825908919
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/context_native": {
+          "rho": -0.13868270124938387,
+          "ci95": [
+            -0.22482339758057407,
+            -0.05477614439607568
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/mapped_answer": {
+          "rho": 0.21025218200408624,
+          "ci95": [
+            0.12826049376746096,
+            0.28579248440537625
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/real_answer": {
+          "rho": 0.30454900700157544,
+          "ci95": [
+            0.23240482042135338,
+            0.3777374772931486
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/answer_direction_on_context": {
+          "rho": -0.5001322651395228,
+          "ci95": [
+            -0.5793491184862557,
+            -0.4202864865387155
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native": {
+          "rho": 0.04718159211787441,
+          "ci95": [
+            -0.030795162587587997,
+            0.11923785434680736
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer": {
+          "rho": 0.24766735612635557,
+          "ci95": [
+            0.1622623125533264,
+            0.3332284118371668
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer": {
+          "rho": 0.33731156468848494,
+          "ci95": [
+            0.24922602879276518,
+            0.4062569172875094
+          ],
+          "valid_bootstraps": 500
+        }
+      },
+      "differences": {
+        "q01_s0/answer_direction_on_context_minus_e1/answer_direction_on_context": {
+          "delta": -0.6476462171088635,
+          "ci95": [
+            -0.7537930563003238,
+            -0.5475816133352469
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native_minus_e1/context_native": {
+          "delta": 0.1858642933672583,
+          "ci95": [
+            0.06630953908043075,
+            0.28970548339519714
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_e1/mapped_answer": {
+          "delta": 0.03741517412226933,
+          "ci95": [
+            -0.05657709985937387,
+            0.13438976010278403
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer_minus_e1/real_answer": {
+          "delta": 0.0327625576869095,
+          "ci95": [
+            -0.06174934562688805,
+            0.11569599283933585
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/context_native": {
+          "delta": 0.20048576400848117,
+          "ci95": [
+            0.08994726539064221,
+            0.31270714163785496
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/answer_direction_on_context": {
+          "delta": 0.7477996212658784,
+          "ci95": [
+            0.6132590100015683,
+            0.8910182763378365
+          ],
+          "valid_bootstraps": 500
+        }
+      }
+    },
+    {
+      "dataset": "sycoays",
+      "n_original": 598,
+      "n": 572,
+      "n_excluded": 26,
+      "joined_prompt_ids": 598,
+      "n_groups": 572,
+      "mask_sha256": "ca023041d8bc4f3008097c0336c1dff4086cb68a37fe04f2e3d92b30cbff1b45",
+      "exclusion_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 26
+      },
+      "status": "ok",
+      "bootstrap_seed": 13113125489027927794,
+      "numeric_check": {
+        "point_checks": 8,
+        "sampled_bootstrap_checks": 40,
+        "max_abs_error": 1.1102230246251565e-16
+      },
+      "estimates": {
+        "e1/answer_direction_on_context": {
+          "rho": 0.2567380974861518,
+          "ci95": [
+            0.17971925910731607,
+            0.3378380172828833
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/context_native": {
+          "rho": 0.4948909059232862,
+          "ci95": [
+            0.42697343903581614,
+            0.5500659657342725
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/mapped_answer": {
+          "rho": 0.35962063498727265,
+          "ci95": [
+            0.28030432742351225,
+            0.42769410711611017
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/real_answer": {
+          "rho": 0.35989728661581954,
+          "ci95": [
+            0.28984311306081356,
+            0.4283701396896502
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/answer_direction_on_context": {
+          "rho": -0.4191232417239066,
+          "ci95": [
+            -0.47891880040545154,
+            -0.34498432565883375
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native": {
+          "rho": -0.33595927427375866,
+          "ci95": [
+            -0.40493897208277757,
+            -0.26176463631244673
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer": {
+          "rho": -0.19832985008302337,
+          "ci95": [
+            -0.27249483710085975,
+            -0.10872166890861437
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer": {
+          "rho": 0.27165025827240874,
+          "ci95": [
+            0.19606732404546476,
+            0.3495093410909883
+          ],
+          "valid_bootstraps": 500
+        }
+      },
+      "differences": {
+        "q01_s0/answer_direction_on_context_minus_e1/answer_direction_on_context": {
+          "delta": -0.6758613392100583,
+          "ci95": [
+            -0.7707794849123142,
+            -0.5735471796357626
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native_minus_e1/context_native": {
+          "delta": -0.8308501801970449,
+          "ci95": [
+            -0.9378157048108345,
+            -0.7082618353876795
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_e1/mapped_answer": {
+          "delta": -0.557950485070296,
+          "ci95": [
+            -0.6800407434839917,
+            -0.41494699632181187
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer_minus_e1/real_answer": {
+          "delta": -0.0882470283434108,
+          "ci95": [
+            -0.17077097579410147,
+            0.006079362839834681
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/context_native": {
+          "delta": 0.1376294241907353,
+          "ci95": [
+            0.05570384247605689,
+            0.23328321002545543
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/answer_direction_on_context": {
+          "delta": 0.2207933916408832,
+          "ci95": [
+            0.14710820772894745,
+            0.28238930760767095
+          ],
+          "valid_bootstraps": 500
+        }
+      }
+    },
+    {
+      "dataset": "sycofb",
+      "n_original": 559,
+      "n": 559,
+      "n_excluded": 0,
+      "joined_prompt_ids": 559,
+      "n_groups": 115,
+      "mask_sha256": "1bb539f38b85ed356eb7b9116f3362d85003cda8f448cd15e2a9fbe3f600e466",
+      "exclusion_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "status": "ok",
+      "bootstrap_seed": 3862471011708626458,
+      "numeric_check": {
+        "point_checks": 8,
+        "sampled_bootstrap_checks": 40,
+        "max_abs_error": 5.551115123125783e-17
+      },
+      "estimates": {
+        "e1/answer_direction_on_context": {
+          "rho": 0.09857986915607433,
+          "ci95": [
+            0.02602262071095366,
+            0.16160841201747836
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/context_native": {
+          "rho": 0.21042151893406577,
+          "ci95": [
+            0.12611326004111373,
+            0.29250982705999784
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/mapped_answer": {
+          "rho": 0.1409920170180543,
+          "ci95": [
+            0.06255280519479052,
+            0.22286330899537998
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/real_answer": {
+          "rho": 0.2208675984875264,
+          "ci95": [
+            0.13702783835718202,
+            0.31335786784742564
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/answer_direction_on_context": {
+          "rho": -0.009951153166725145,
+          "ci95": [
+            -0.09654966226386551,
+            0.07931778262731594
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native": {
+          "rho": 0.22448944422865838,
+          "ci95": [
+            0.14361444471256368,
+            0.30016757673301914
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer": {
+          "rho": 0.09195473260481722,
+          "ci95": [
+            0.009112865311306525,
+            0.17032717290258728
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer": {
+          "rho": 0.24432562526404747,
+          "ci95": [
+            0.16220890959072143,
+            0.32584969358596966
+          ],
+          "valid_bootstraps": 500
+        }
+      },
+      "differences": {
+        "q01_s0/answer_direction_on_context_minus_e1/answer_direction_on_context": {
+          "delta": -0.10853102232279949,
+          "ci95": [
+            -0.22553993649250972,
+            0.008347585999555306
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native_minus_e1/context_native": {
+          "delta": 0.01406792529459261,
+          "ci95": [
+            -0.08709594339748321,
+            0.125137016308775
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_e1/mapped_answer": {
+          "delta": -0.049037284413237084,
+          "ci95": [
+            -0.15205837007371845,
+            0.0432049357856194
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer_minus_e1/real_answer": {
+          "delta": 0.023458026776521063,
+          "ci95": [
+            -0.1021366766612021,
+            0.14419092582864057
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/context_native": {
+          "delta": -0.13253471162384117,
+          "ci95": [
+            -0.20470146211238932,
+            -0.06541442168640976
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/answer_direction_on_context": {
+          "delta": 0.10190588577154236,
+          "ci95": [
+            -0.057887618558754725,
+            0.255058594546979
+          ],
+          "valid_bootstraps": 500
+        }
+      }
+    },
+    {
+      "dataset": "sycomim",
+      "n_original": 285,
+      "n": 285,
+      "n_excluded": 0,
+      "joined_prompt_ids": 285,
+      "n_groups": 15,
+      "mask_sha256": "eb00f5792c0c4a9665f68c5c5155a997ac160e380a951537d3db5478ade25c64",
+      "exclusion_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 0,
+        "near_trait": 0
+      },
+      "status": "ok",
+      "bootstrap_seed": 17999494636781700016,
+      "numeric_check": {
+        "point_checks": 8,
+        "sampled_bootstrap_checks": 40,
+        "max_abs_error": 5.551115123125783e-17
+      },
+      "estimates": {
+        "e1/answer_direction_on_context": {
+          "rho": -0.06878414079494789,
+          "ci95": [
+            -0.2439701416551029,
+            0.08243569461013558
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/context_native": {
+          "rho": -0.15198666968895472,
+          "ci95": [
+            -0.3380742982674191,
+            0.03652193951500151
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/mapped_answer": {
+          "rho": 0.12596622792734402,
+          "ci95": [
+            -0.07939960021697007,
+            0.3242978157098455
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/real_answer": {
+          "rho": 0.04392393032075607,
+          "ci95": [
+            -0.22282464987192643,
+            0.2706775560310032
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/answer_direction_on_context": {
+          "rho": -0.03537668580079401,
+          "ci95": [
+            -0.25758799913801655,
+            0.18606548816962964
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native": {
+          "rho": -0.036151987807199255,
+          "ci95": [
+            -0.23059793628870123,
+            0.16091433784555434
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer": {
+          "rho": 0.14045641764986477,
+          "ci95": [
+            -0.06513519983724009,
+            0.3076028966831613
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer": {
+          "rho": 0.028808003706405752,
+          "ci95": [
+            -0.17204553446636134,
+            0.24805101119108866
+          ],
+          "valid_bootstraps": 500
+        }
+      },
+      "differences": {
+        "q01_s0/answer_direction_on_context_minus_e1/answer_direction_on_context": {
+          "delta": 0.03340745499415388,
+          "ci95": [
+            -0.23662652112974913,
+            0.3439058781274092
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native_minus_e1/context_native": {
+          "delta": 0.11583468188175547,
+          "ci95": [
+            -0.036140481343815534,
+            0.32717304174444345
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_e1/mapped_answer": {
+          "delta": 0.014490189722520752,
+          "ci95": [
+            -0.13377969811432133,
+            0.13835818317719098
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer_minus_e1/real_answer": {
+          "delta": -0.015115926614350315,
+          "ci95": [
+            -0.28615840965471434,
+            0.25992316324459525
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/context_native": {
+          "delta": 0.17660840545706402,
+          "ci95": [
+            -0.16855442660129977,
+            0.4731224815554204
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/answer_direction_on_context": {
+          "delta": 0.17583310345065878,
+          "ci95": [
+            0.007855150765546694,
+            0.3570517986765467
+          ],
+          "valid_bootstraps": 500
+        }
+      }
+    },
+    {
+      "dataset": "sycomwe",
+      "n_original": 576,
+      "n": 575,
+      "n_excluded": 1,
+      "joined_prompt_ids": 576,
+      "n_groups": 575,
+      "mask_sha256": "ae87d77c63460526e5f60fcfa11a8b940f351cdf047c7b1cd126920d274db958",
+      "exclusion_counts_nonexclusive": {
+        "exact_generic": 0,
+        "exact_trait": 0,
+        "near_generic": 1,
+        "near_trait": 0
+      },
+      "status": "ok",
+      "bootstrap_seed": 6859539568115912899,
+      "numeric_check": {
+        "point_checks": 8,
+        "sampled_bootstrap_checks": 40,
+        "max_abs_error": 5.551115123125783e-17
+      },
+      "estimates": {
+        "e1/answer_direction_on_context": {
+          "rho": 0.10080931108001136,
+          "ci95": [
+            0.015245433421358486,
+            0.18325268633907218
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/context_native": {
+          "rho": 0.026456729420992496,
+          "ci95": [
+            -0.04989042153068411,
+            0.11674164601631376
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/mapped_answer": {
+          "rho": 0.1780898898897938,
+          "ci95": [
+            0.09693550488306343,
+            0.2450603819667577
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/real_answer": {
+          "rho": 0.47586990500614706,
+          "ci95": [
+            0.4092646628215491,
+            0.5344953618442284
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/answer_direction_on_context": {
+          "rho": 0.03482428872022372,
+          "ci95": [
+            -0.04832387111072531,
+            0.12293719557263827
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native": {
+          "rho": 0.029636214475013446,
+          "ci95": [
+            -0.049322581968367994,
+            0.11214842257464058
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer": {
+          "rho": 0.1832948183694844,
+          "ci95": [
+            0.09676654751625464,
+            0.26342750397781367
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer": {
+          "rho": 0.4363017489622046,
+          "ci95": [
+            0.3634110132657588,
+            0.5040631118917075
+          ],
+          "valid_bootstraps": 500
+        }
+      },
+      "differences": {
+        "q01_s0/answer_direction_on_context_minus_e1/answer_direction_on_context": {
+          "delta": -0.06598502235978763,
+          "ci95": [
+            -0.17044609677557418,
+            0.03373863888249112
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native_minus_e1/context_native": {
+          "delta": 0.00317948505402095,
+          "ci95": [
+            -0.13271309489996552,
+            0.12460923633600184
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_e1/mapped_answer": {
+          "delta": 0.005204928479690618,
+          "ci95": [
+            -0.12082067400246523,
+            0.13683392047267146
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer_minus_e1/real_answer": {
+          "delta": -0.03956815604394248,
+          "ci95": [
+            -0.11162935162716901,
+            0.03956653908890712
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/context_native": {
+          "delta": 0.15365860389447097,
+          "ci95": [
+            0.07382055079081554,
+            0.23873041966185332
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/answer_direction_on_context": {
+          "delta": 0.1484705296492607,
+          "ci95": [
+            0.031204107194880232,
+            0.2840965808850602
+          ],
+          "valid_bootstraps": 500
+        }
+      }
+    },
+    {
+      "dataset": "wildchat_rung",
+      "n_original": 415,
+      "n": 393,
+      "n_excluded": 22,
+      "joined_prompt_ids": 415,
+      "n_groups": 393,
+      "mask_sha256": "d7edefe382b8e916f13f46ec343bc83668c49093c6f1b13bb31f28e800378d0d",
+      "exclusion_counts_nonexclusive": {
+        "exact_generic": 1,
+        "exact_trait": 0,
+        "near_generic": 9,
+        "near_trait": 12
+      },
+      "status": "ok",
+      "bootstrap_seed": 16904685359966960823,
+      "numeric_check": {
+        "point_checks": 8,
+        "sampled_bootstrap_checks": 40,
+        "max_abs_error": 5.551115123125783e-17
+      },
+      "estimates": {
+        "e1/answer_direction_on_context": {
+          "rho": -0.056877925431976124,
+          "ci95": [
+            -0.1612638088375479,
+            0.04794283392380734
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/context_native": {
+          "rho": -0.00931285539373515,
+          "ci95": [
+            -0.1053960839147039,
+            0.09045930684662191
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/mapped_answer": {
+          "rho": 0.09293233365252072,
+          "ci95": [
+            -0.019338659478781446,
+            0.1912059784868232
+          ],
+          "valid_bootstraps": 500
+        },
+        "e1/real_answer": {
+          "rho": 0.08968052693528193,
+          "ci95": [
+            -0.011390721142608902,
+            0.19358912430826167
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/answer_direction_on_context": {
+          "rho": 0.02429411998879588,
+          "ci95": [
+            -0.08555105789263909,
+            0.12300769197448479
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native": {
+          "rho": 0.16053782991245294,
+          "ci95": [
+            0.07478954819782503,
+            0.24574960038528434
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer": {
+          "rho": 0.3413981340586499,
+          "ci95": [
+            0.24210315977144398,
+            0.4235915011743071
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer": {
+          "rho": 0.3644224412766807,
+          "ci95": [
+            0.2815387381667144,
+            0.44095934409388543
+          ],
+          "valid_bootstraps": 500
+        }
+      },
+      "differences": {
+        "q01_s0/answer_direction_on_context_minus_e1/answer_direction_on_context": {
+          "delta": 0.081172045420772,
+          "ci95": [
+            -0.03631101106710689,
+            0.19429853745511858
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/context_native_minus_e1/context_native": {
+          "delta": 0.16985068530618808,
+          "ci95": [
+            0.030782051261345783,
+            0.31045311563926675
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_e1/mapped_answer": {
+          "delta": 0.24846580040612914,
+          "ci95": [
+            0.12287020636210044,
+            0.35291906006321966
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/real_answer_minus_e1/real_answer": {
+          "delta": 0.2747419143413988,
+          "ci95": [
+            0.16167334712604278,
+            0.3718015131179366
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/context_native": {
+          "delta": 0.18086030414619694,
+          "ci95": [
+            0.05094085360979322,
+            0.30881800816715277
+          ],
+          "valid_bootstraps": 500
+        },
+        "q01_s0/mapped_answer_minus_q01_s0/answer_direction_on_context": {
+          "delta": 0.317104014069854,
+          "ci95": [
+            0.1864699106368142,
+            0.44773182201422135
+          ],
+          "valid_bootstraps": 500
+        }
+      }
+    }
+  ],
+  "ood": {
+    "e1/answer_direction_on_context": {
+      "rho": 0.09898616826572221,
+      "ci95": [
+        0.057057996495547304,
+        0.13579128025750464
+      ],
+      "valid_bootstraps": 500
+    },
+    "e1/context_native": {
+      "rho": 0.08228104765961798,
+      "ci95": [
+        0.04107375596090846,
+        0.12721806130317997
+      ],
+      "valid_bootstraps": 500
+    },
+    "e1/mapped_answer": {
+      "rho": 0.20886255030647027,
+      "ci95": [
+        0.16509365679053473,
+        0.25105320930586883
+      ],
+      "valid_bootstraps": 500
+    },
+    "e1/real_answer": {
+      "rho": 0.27586836959004624,
+      "ci95": [
+        0.22656291735388584,
+        0.3226608436947007
+      ],
+      "valid_bootstraps": 500
+    },
+    "q01_s0/answer_direction_on_context": {
+      "rho": -0.14833077604970935,
+      "ci95": [
+        -0.1926494931233641,
+        -0.09806495108428431
+      ],
+      "valid_bootstraps": 500
+    },
+    "q01_s0/context_native": {
+      "rho": 0.06617594968614082,
+      "ci95": [
+        0.024346963510081095,
+        0.11072811419183025
+      ],
+      "valid_bootstraps": 500
+    },
+    "q01_s0/mapped_answer": {
+      "rho": 0.1702448420301654,
+      "ci95": [
+        0.12832435352022295,
+        0.21061415932082114
+      ],
+      "valid_bootstraps": 500
+    },
+    "q01_s0/real_answer": {
+      "rho": 0.31220809753865636,
+      "ci95": [
+        0.2682392513964205,
+        0.3571598802514016
+      ],
+      "valid_bootstraps": 500
+    }
+  },
+  "ood_differences": {
+    "q01_s0/answer_direction_on_context_minus_e1/answer_direction_on_context": {
+      "delta": -0.24731694431543155,
+      "ci95": [
+        -0.3038720058938859,
+        -0.18157197206873502
+      ],
+      "valid_bootstraps": 500
+    },
+    "q01_s0/context_native_minus_e1/context_native": {
+      "delta": -0.01610509797347716,
+      "ci95": [
+        -0.061409852977491027,
+        0.03664394442566394
+      ],
+      "valid_bootstraps": 500
+    },
+    "q01_s0/mapped_answer_minus_e1/mapped_answer": {
+      "delta": -0.03861770827630487,
+      "ci95": [
+        -0.08438447325113349,
+        0.00567368540645215
+      ],
+      "valid_bootstraps": 500
+    },
+    "q01_s0/real_answer_minus_e1/real_answer": {
+      "delta": 0.03633972794861012,
+      "ci95": [
+        -0.023455736609920494,
+        0.09856411525060094
+      ],
+      "valid_bootstraps": 500
+    },
+    "q01_s0/mapped_answer_minus_q01_s0/context_native": {
+      "delta": 0.10406889234402458,
+      "ci95": [
+        0.034526709933337695,
+        0.16530454278365078
+      ],
+      "valid_bootstraps": 500
+    },
+    "q01_s0/mapped_answer_minus_q01_s0/answer_direction_on_context": {
+      "delta": 0.3185756180798748,
+      "ci95": [
+        0.2671022126453545,
+        0.3716257109324154
+      ],
+      "valid_bootstraps": 500
+    }
+  },
+  "uncertainty": "Cached responses, judged labels, extraction directions and fitted maps fixed",
+  "trait_map_rows": 16000,
+  "trait_text_join_coverage": 1.0,
+  "extraction_map_exposure": "extraction_map_exposure.json; extraction unchanged in this sensitivity"
+}

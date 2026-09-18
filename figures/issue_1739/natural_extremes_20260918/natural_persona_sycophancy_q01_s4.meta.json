@@ -1,0 +1,1612 @@
+{
+  "behavior_labels": {
+    "evil": "Evil trait",
+    "hallucination": "Hallucination",
+    "sycophancy": "Sycophancy"
+  },
+  "correlation_axis_range": [
+    -1.02,
+    1.02
+  ],
+  "encodings": {
+    "instruction": "open square",
+    "mapped_answer": "#176B87",
+    "missing": "N/A text; no point",
+    "natural": "filled circle",
+    "other_readouts": "#687078"
+  },
+  "frozen_layers": {
+    "evil": {
+      "answer_direction_on_context": 15,
+      "context_native": 15,
+      "mapped_answer": 22,
+      "real_answer": 22
+    },
+    "hallucination": {
+      "answer_direction_on_context": 24,
+      "context_native": 24,
+      "mapped_answer": 23,
+      "real_answer": 27
+    },
+    "sycophancy": {
+      "answer_direction_on_context": 16,
+      "context_native": 16,
+      "mapped_answer": 11,
+      "real_answer": 11
+    }
+  },
+  "inputs": {
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L15/parity.json": {
+      "sha256": "c48db712206bee3fbfc5f45151ec4013f787e8a119118eb4bc2e0adfc7c58ac0",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/direction_stability.json": {
+      "sha256": "855abbdb0b447cb81fdece763eeb1eea281d243a37a05cdad355d144d0d22301",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/parity.json": {
+      "sha256": "7995c1daf40ccb480154d428dba79bfa3d896a54729f6a0180e1100ad8f096c5",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/scores.json": {
+      "sha256": "56becdbc6746418453bfc9e4c8f602e9142d0c0a7b74bf69e0635ed34e1befe9",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/L22/selection.json": {
+      "sha256": "1ea595c8f95c799ad2590cf8b35427920e67ff2c74f62826dc27708e5000fb30",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/evil/results.json": {
+      "sha256": "8d3546feaf963ce80d1420197df89688823d0a2f87e669cd8bc6cf71659116d0",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/direction_stability.json": {
+      "sha256": "899dcd3145e3cae5f47c628055f3aa13b38543db74a23fc83246cac9358efd3f",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/parity.json": {
+      "sha256": "2283bed675351e47bf0f42d25c6b693bdb657808b22bdf34f74a027d31d6953e",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/scores.json": {
+      "sha256": "883f529b4817f026e1a3fad89e3cea1049f6283a259bcbb40b3ef64c9dd0e134",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L23/selection.json": {
+      "sha256": "950ebf40ca3c156090f1e6e92e95ddb5ae3199c1857e67191aeb302b499bcc1d",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L24/parity.json": {
+      "sha256": "dd76b4f4ba3114b242c691e0f2aef82ff41386b4309d73268ba31aacce2ebdd3",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/L27/parity.json": {
+      "sha256": "20763c918da322c911600d2831854a6edb09523390ce30fc0302941637a3b12b",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/hallucination/results.json": {
+      "sha256": "8946e9e83803d9fcdccb2d72d48fff294918e38ef4003b940ff04e0e776c8b66",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/direction_stability.json": {
+      "sha256": "4ae1d9efc9cec7eed30a3d9cc15b343d0860fdcef561279aaa6ee0f6646250ae",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/parity.json": {
+      "sha256": "17ac0c3895bda11f3cad583b16cd5451c5f82e61eab6daf6565a755a36174317",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/scores.json": {
+      "sha256": "3c4499e30aca573891ba3bd89857c0b9010546752f337e1c19c84c309daa1f9d",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L11/selection.json": {
+      "sha256": "5e359f26b5d5079f8cfb4e67661bf477e3ae3a5fa2637a5779f22913ffc68016",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/L16/parity.json": {
+      "sha256": "42270e84409d68bc00e01de7c595e9b9386a0d1f362cbcd9975edf36ab286047",
+      "status": "read"
+    },
+    "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/results/sycophancy/results.json": {
+      "sha256": "bb4dc08781181166239adf9cf3a0ba808ecdc3240ad8e36e8349b8bea101334c",
+      "status": "read"
+    }
+  },
+  "intervals": "Archived 95% paired group-bootstrap endpoints, drawn without recentering",
+  "optional_input_absence_is_not_a_zero": true,
+  "outputs": {
+    "grayscale": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_sycophancy_q01_s4_grayscale.png",
+      "sha256": "89480339211aa53a22543f4c0b2186d86821e449b7a576497d20f52955db4cf1"
+    },
+    "pdf": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_sycophancy_q01_s4.pdf",
+      "sha256": "4d0aca0f8d532de9c80f34bbf501ba6c32add9abba57521ff9061e46a7550b3d"
+    },
+    "png": {
+      "path": "/mnt/eps-data/thomasjiralerspong/issue1739-natural-extremes-20260918/figures/natural_persona_sycophancy_q01_s4.png",
+      "sha256": "d567e799dc950c236de42cfeabf2b9023f0b2c23a633127d20467d80118bd68b"
+    }
+  },
+  "plotted_values": [
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.1329505877144976,
+        0.05512489974764311
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 415,
+      "rho": -0.03910039610309418,
+      "source": {
+        "ci95": [
+          -0.1329505877144976,
+          0.05512489974764311
+        ],
+        "rho": -0.03910039610309418,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.07018208237844117,
+        0.128099314547145
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 415,
+      "rho": 0.03249100818510956,
+      "source": {
+        "ci95": [
+          -0.07018208237844117,
+          0.128099314547145
+        ],
+        "rho": 0.03249100818510956,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.011828538712675484,
+        0.05956309038247323
+      ],
+      "dataset": "heldin_train",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 3235,
+      "rho": 0.021890690576524707,
+      "source": {
+        "ci95": [
+          -0.011828538712675484,
+          0.05956309038247323
+        ],
+        "rho": 0.021890690576524707,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.0075896087851861785,
+        0.0627724284592941
+      ],
+      "dataset": "heldin_train",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 3235,
+      "rho": 0.027564944396632114,
+      "source": {
+        "ci95": [
+          -0.0075896087851861785,
+          0.0627724284592941
+        ],
+        "rho": 0.027564944396632114,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.010991076864698367,
+        0.11576162527341138
+      ],
+      "dataset": "aita",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 1304,
+      "rho": 0.06085386456800987,
+      "source": {
+        "ci95": [
+          0.010991076864698367,
+          0.11576162527341138
+        ],
+        "rho": 0.06085386456800987,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.023974142263194595,
+        0.08970937106528586
+      ],
+      "dataset": "aita",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 1304,
+      "rho": 0.034836491693988586,
+      "source": {
+        "ci95": [
+          -0.023974142263194595,
+          0.08970937106528586
+        ],
+        "rho": 0.034836491693988586,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.07241722944437702,
+        0.23541428737878775
+      ],
+      "dataset": "sycoans",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 594,
+      "rho": 0.15070121043301568,
+      "source": {
+        "ci95": [
+          0.07241722944437702,
+          0.23541428737878775
+        ],
+        "rho": 0.15070121043301568,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.561561901370234,
+        -0.3977162733887341
+      ],
+      "dataset": "sycoans",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 594,
+      "rho": -0.4761401490450307,
+      "source": {
+        "ci95": [
+          -0.561561901370234,
+          -0.3977162733887341
+        ],
+        "rho": -0.4761401490450307,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.17033423894514182,
+        0.3208670118670351
+      ],
+      "dataset": "sycoays",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 598,
+      "rho": 0.24679134704944886,
+      "source": {
+        "ci95": [
+          0.17033423894514182,
+          0.3208670118670351
+        ],
+        "rho": 0.24679134704944886,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.4630422979698592,
+        -0.32609299221338667
+      ],
+      "dataset": "sycoays",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 598,
+      "rho": -0.39820663751810326,
+      "source": {
+        "ci95": [
+          -0.4630422979698592,
+          -0.32609299221338667
+        ],
+        "rho": -0.39820663751810326,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.02602262071095366,
+        0.16160841201747836
+      ],
+      "dataset": "sycofb",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 559,
+      "rho": 0.09857986915607433,
+      "source": {
+        "ci95": [
+          0.02602262071095366,
+          0.16160841201747836
+        ],
+        "rho": 0.09857986915607433,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.09947318992324068,
+        0.07282310880174922
+      ],
+      "dataset": "sycofb",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 559,
+      "rho": -0.01209158612646104,
+      "source": {
+        "ci95": [
+          -0.09947318992324068,
+          0.07282310880174922
+        ],
+        "rho": -0.01209158612646104,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.2439701416551029,
+        0.08243569461013558
+      ],
+      "dataset": "sycomim",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 285,
+      "rho": -0.06878414079494789,
+      "source": {
+        "ci95": [
+          -0.2439701416551029,
+          0.08243569461013558
+        ],
+        "rho": -0.06878414079494789,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.2334336110572809,
+        0.1899473966865322
+      ],
+      "dataset": "sycomim",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 285,
+      "rho": -0.026451510714018564,
+      "source": {
+        "ci95": [
+          -0.2334336110572809,
+          0.1899473966865322
+        ],
+        "rho": -0.026451510714018564,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.015273632184613545,
+        0.18220013355612694
+      ],
+      "dataset": "sycomwe",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 576,
+      "rho": 0.10050305305037388,
+      "source": {
+        "ci95": [
+          0.015273632184613545,
+          0.18220013355612694
+        ],
+        "rho": 0.10050305305037388,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.10897238554375403,
+        0.05141957575584236
+      ],
+      "dataset": "sycomwe",
+      "layer": 16,
+      "method": "answer_direction_on_context",
+      "n": 576,
+      "rho": -0.02954745959292353,
+      "source": {
+        "ci95": [
+          -0.10897238554375403,
+          0.05141957575584236
+        ],
+        "rho": -0.02954745959292353,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.09316018752439839,
+        0.088699100192793
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 16,
+      "method": "context_native",
+      "n": 415,
+      "rho": -0.005546888638905077,
+      "source": {
+        "ci95": [
+          -0.09316018752439839,
+          0.088699100192793
+        ],
+        "rho": -0.005546888638905077,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.050370581275935904,
+        0.24037549971069389
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 16,
+      "method": "context_native",
+      "n": 415,
+      "rho": 0.146438603901116,
+      "source": {
+        "ci95": [
+          0.050370581275935904,
+          0.24037549971069389
+        ],
+        "rho": 0.146438603901116,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.01139442799952056,
+        0.05841229467549406
+      ],
+      "dataset": "heldin_train",
+      "layer": 16,
+      "method": "context_native",
+      "n": 3235,
+      "rho": 0.023388027699176674,
+      "source": {
+        "ci95": [
+          -0.01139442799952056,
+          0.05841229467549406
+        ],
+        "rho": 0.023388027699176674,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.31599248291684245,
+        0.383181337852271
+      ],
+      "dataset": "heldin_train",
+      "layer": 16,
+      "method": "context_native",
+      "n": 3235,
+      "rho": 0.35063799704379434,
+      "source": {
+        "ci95": [
+          0.31599248291684245,
+          0.383181337852271
+        ],
+        "rho": 0.35063799704379434,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.005603423891073927,
+        0.10987820124386494
+      ],
+      "dataset": "aita",
+      "layer": 16,
+      "method": "context_native",
+      "n": 1304,
+      "rho": 0.05085260281453181,
+      "source": {
+        "ci95": [
+          -0.005603423891073927,
+          0.10987820124386494
+        ],
+        "rho": 0.05085260281453181,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.4206356596559239,
+        0.5163287861012197
+      ],
+      "dataset": "aita",
+      "layer": 16,
+      "method": "context_native",
+      "n": 1304,
+      "rho": 0.4678064997334873,
+      "source": {
+        "ci95": [
+          0.4206356596559239,
+          0.5163287861012197
+        ],
+        "rho": 0.4678064997334873,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.2225934724756613,
+        -0.05381200849947207
+      ],
+      "dataset": "sycoans",
+      "layer": 16,
+      "method": "context_native",
+      "n": 594,
+      "rho": -0.1373116862905605,
+      "source": {
+        "ci95": [
+          -0.2225934724756613,
+          -0.05381200849947207
+        ],
+        "rho": -0.1373116862905605,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.03991011906437247,
+        0.18579944616006344
+      ],
+      "dataset": "sycoans",
+      "layer": 16,
+      "method": "context_native",
+      "n": 594,
+      "rho": 0.11981696600740657,
+      "source": {
+        "ci95": [
+          0.03991011906437247,
+          0.18579944616006344
+        ],
+        "rho": 0.11981696600740657,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.42578187079144036,
+        0.5508562590206316
+      ],
+      "dataset": "sycoays",
+      "layer": 16,
+      "method": "context_native",
+      "n": 598,
+      "rho": 0.4883172683761515,
+      "source": {
+        "ci95": [
+          0.42578187079144036,
+          0.5508562590206316
+        ],
+        "rho": 0.4883172683761515,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.38410519238664087,
+        -0.2301058241310643
+      ],
+      "dataset": "sycoays",
+      "layer": 16,
+      "method": "context_native",
+      "n": 598,
+      "rho": -0.3058272625428894,
+      "source": {
+        "ci95": [
+          -0.38410519238664087,
+          -0.2301058241310643
+        ],
+        "rho": -0.3058272625428894,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.12611326004111373,
+        0.29250982705999784
+      ],
+      "dataset": "sycofb",
+      "layer": 16,
+      "method": "context_native",
+      "n": 559,
+      "rho": 0.21042151893406577,
+      "source": {
+        "ci95": [
+          0.12611326004111373,
+          0.29250982705999784
+        ],
+        "rho": 0.21042151893406577,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.140864054420857,
+        0.30311028052293804
+      ],
+      "dataset": "sycofb",
+      "layer": 16,
+      "method": "context_native",
+      "n": 559,
+      "rho": 0.2243365831500234,
+      "source": {
+        "ci95": [
+          0.140864054420857,
+          0.30311028052293804
+        ],
+        "rho": 0.2243365831500234,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.3380742982674191,
+        0.03652193951500151
+      ],
+      "dataset": "sycomim",
+      "layer": 16,
+      "method": "context_native",
+      "n": 285,
+      "rho": -0.15198666968895472,
+      "source": {
+        "ci95": [
+          -0.3380742982674191,
+          0.03652193951500151
+        ],
+        "rho": -0.15198666968895472,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.17090259730658958,
+        0.27228883961478373
+      ],
+      "dataset": "sycomim",
+      "layer": 16,
+      "method": "context_native",
+      "n": 285,
+      "rho": 0.05203984667667322,
+      "source": {
+        "ci95": [
+          -0.17090259730658958,
+          0.27228883961478373
+        ],
+        "rho": 0.05203984667667322,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.05496313057822517,
+        0.10433940785636961
+      ],
+      "dataset": "sycomwe",
+      "layer": 16,
+      "method": "context_native",
+      "n": 576,
+      "rho": 0.027013410871839304,
+      "source": {
+        "ci95": [
+          -0.05496313057822517,
+          0.10433940785636961
+        ],
+        "rho": 0.027013410871839304,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.053704288060205316,
+        0.20571774289327271
+      ],
+      "dataset": "sycomwe",
+      "layer": 16,
+      "method": "context_native",
+      "n": 576,
+      "rho": 0.13130213622202763,
+      "source": {
+        "ci95": [
+          0.053704288060205316,
+          0.20571774289327271
+        ],
+        "rho": 0.13130213622202763,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.0006915301660406413,
+        0.19802729132139849
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 415,
+      "rho": 0.09223660209399395,
+      "source": {
+        "ci95": [
+          0.0006915301660406413,
+          0.19802729132139849
+        ],
+        "rho": 0.09223660209399395,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.231627985316644,
+        0.4073848795729374
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 415,
+      "rho": 0.3195124671761408,
+      "source": {
+        "ci95": [
+          0.231627985316644,
+          0.4073848795729374
+        ],
+        "rho": 0.3195124671761408,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.24842583181003755,
+        0.3133013859198721
+      ],
+      "dataset": "heldin_train",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 3235,
+      "rho": 0.2808621849487408,
+      "source": {
+        "ci95": [
+          0.24842583181003755,
+          0.3133013859198721
+        ],
+        "rho": 0.2808621849487408,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.497639496014628,
+        0.5483552965423572
+      ],
+      "dataset": "heldin_train",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 3235,
+      "rho": 0.5235131277870853,
+      "source": {
+        "ci95": [
+          0.497639496014628,
+          0.5483552965423572
+        ],
+        "rho": 0.5235131277870853,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.1924250926510078,
+        0.29358084760899067
+      ],
+      "dataset": "aita",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 1304,
+      "rho": 0.2398471924190651,
+      "source": {
+        "ci95": [
+          0.1924250926510078,
+          0.29358084760899067
+        ],
+        "rho": 0.2398471924190651,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.53049005597219,
+        0.6146614324648115
+      ],
+      "dataset": "aita",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 1304,
+      "rho": 0.5729633400272776,
+      "source": {
+        "ci95": [
+          0.53049005597219,
+          0.6146614324648115
+        ],
+        "rho": 0.5729633400272776,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.12596496435649449,
+        0.2836009512688582
+      ],
+      "dataset": "sycoans",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 594,
+      "rho": 0.20809156092676126,
+      "source": {
+        "ci95": [
+          0.12596496435649449,
+          0.2836009512688582
+        ],
+        "rho": 0.20809156092676126,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.1395924925212146,
+        0.31818363673181566
+      ],
+      "dataset": "sycoans",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 594,
+      "rho": 0.22793584870928138,
+      "source": {
+        "ci95": [
+          0.1395924925212146,
+          0.31818363673181566
+        ],
+        "rho": 0.22793584870928138,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.2914725565131455,
+        0.4404916532683162
+      ],
+      "dataset": "sycoays",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 598,
+      "rho": 0.3642887179631798,
+      "source": {
+        "ci95": [
+          0.2914725565131455,
+          0.4404916532683162
+        ],
+        "rho": 0.3642887179631798,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.32312205314517095,
+        -0.16974239068162167
+      ],
+      "dataset": "sycoays",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 598,
+      "rho": -0.24285979999611548,
+      "source": {
+        "ci95": [
+          -0.32312205314517095,
+          -0.16974239068162167
+        ],
+        "rho": -0.24285979999611548,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.06255280519479052,
+        0.22286330899537998
+      ],
+      "dataset": "sycofb",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 559,
+      "rho": 0.1409920170180543,
+      "source": {
+        "ci95": [
+          0.06255280519479052,
+          0.22286330899537998
+        ],
+        "rho": 0.1409920170180543,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.00042343692533046364,
+        0.16316669695163077
+      ],
+      "dataset": "sycofb",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 559,
+      "rho": 0.08415119171590318,
+      "source": {
+        "ci95": [
+          -0.00042343692533046364,
+          0.16316669695163077
+        ],
+        "rho": 0.08415119171590318,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.07939960021697007,
+        0.3242978157098455
+      ],
+      "dataset": "sycomim",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 285,
+      "rho": 0.12596622792734402,
+      "source": {
+        "ci95": [
+          -0.07939960021697007,
+          0.3242978157098455
+        ],
+        "rho": 0.12596622792734402,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.07779598675340232,
+        0.30916581296349316
+      ],
+      "dataset": "sycomim",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 285,
+      "rho": 0.1386805587244611,
+      "source": {
+        "ci95": [
+          -0.07779598675340232,
+          0.30916581296349316
+        ],
+        "rho": 0.1386805587244611,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.10798433868130275,
+        0.254073122123647
+      ],
+      "dataset": "sycomwe",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 576,
+      "rho": 0.17843835618047793,
+      "source": {
+        "ci95": [
+          0.10798433868130275,
+          0.254073122123647
+        ],
+        "rho": 0.17843835618047793,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.148224141192011,
+        0.3064744821370637
+      ],
+      "dataset": "sycomwe",
+      "layer": 11,
+      "method": "mapped_answer",
+      "n": 576,
+      "rho": 0.23686631633014135,
+      "source": {
+        "ci95": [
+          0.148224141192011,
+          0.3064744821370637
+        ],
+        "rho": 0.23686631633014135,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.023389695469219273,
+        0.18314580725267057
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 415,
+      "rho": 0.07624932674428626,
+      "source": {
+        "ci95": [
+          -0.023389695469219273,
+          0.18314580725267057
+        ],
+        "rho": 0.07624932674428626,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.23789816005853232,
+        0.41436305698449183
+      ],
+      "dataset": "wildchat_rung",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 415,
+      "rho": 0.328336874474259,
+      "source": {
+        "ci95": [
+          0.23789816005853232,
+          0.41436305698449183
+        ],
+        "rho": 0.328336874474259,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.2775833889566999,
+        0.3415583859176785
+      ],
+      "dataset": "heldin_train",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 3235,
+      "rho": 0.3101110921598534,
+      "source": {
+        "ci95": [
+          0.2775833889566999,
+          0.3415583859176785
+        ],
+        "rho": 0.3101110921598534,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.509206037789659,
+        0.5621974337589828
+      ],
+      "dataset": "heldin_train",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 3235,
+      "rho": 0.5357452767697217,
+      "source": {
+        "ci95": [
+          0.509206037789659,
+          0.5621974337589828
+        ],
+        "rho": 0.5357452767697217,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.2024494754420829,
+        0.30264495343186504
+      ],
+      "dataset": "aita",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 1304,
+      "rho": 0.2495902989637087,
+      "source": {
+        "ci95": [
+          0.2024494754420829,
+          0.30264495343186504
+        ],
+        "rho": 0.2495902989637087,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.5324798565709303,
+        0.6176564130494767
+      ],
+      "dataset": "aita",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 1304,
+      "rho": 0.574371718938159,
+      "source": {
+        "ci95": [
+          0.5324798565709303,
+          0.6176564130494767
+        ],
+        "rho": 0.574371718938159,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.23376618122925857,
+        0.3793986337936268
+      ],
+      "dataset": "sycoans",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 594,
+      "rho": 0.30626850753736296,
+      "source": {
+        "ci95": [
+          0.23376618122925857,
+          0.3793986337936268
+        ],
+        "rho": 0.30626850753736296,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.25176886344028365,
+        0.41103200570110215
+      ],
+      "dataset": "sycoans",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 594,
+      "rho": 0.3397320472686033,
+      "source": {
+        "ci95": [
+          0.25176886344028365,
+          0.41103200570110215
+        ],
+        "rho": 0.3397320472686033,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.28523465290911887,
+        0.4263924424997989
+      ],
+      "dataset": "sycoays",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 598,
+      "rho": 0.35899789972474533,
+      "source": {
+        "ci95": [
+          0.28523465290911887,
+          0.4263924424997989
+        ],
+        "rho": 0.35899789972474533,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.046107758606823264,
+        0.20801187657626094
+      ],
+      "dataset": "sycoays",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 598,
+      "rho": 0.1323122904811832,
+      "source": {
+        "ci95": [
+          0.046107758606823264,
+          0.20801187657626094
+        ],
+        "rho": 0.1323122904811832,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.13702783835718202,
+        0.31335786784742564
+      ],
+      "dataset": "sycofb",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 559,
+      "rho": 0.2208675984875264,
+      "source": {
+        "ci95": [
+          0.13702783835718202,
+          0.31335786784742564
+        ],
+        "rho": 0.2208675984875264,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.1844823707136419,
+        0.344989450595838
+      ],
+      "dataset": "sycofb",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 559,
+      "rho": 0.26442665099972323,
+      "source": {
+        "ci95": [
+          0.1844823707136419,
+          0.344989450595838
+        ],
+        "rho": 0.26442665099972323,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.22282464987192643,
+        0.2706775560310032
+      ],
+      "dataset": "sycomim",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 285,
+      "rho": 0.04392393032075607,
+      "source": {
+        "ci95": [
+          -0.22282464987192643,
+          0.2706775560310032
+        ],
+        "rho": 0.04392393032075607,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        -0.18175323150436426,
+        0.25401129468628425
+      ],
+      "dataset": "sycomim",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 285,
+      "rho": 0.03586504052498909,
+      "source": {
+        "ci95": [
+          -0.18175323150436426,
+          0.25401129468628425
+        ],
+        "rho": 0.03586504052498909,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.3987708587352214,
+        0.5373917193659852
+      ],
+      "dataset": "sycomwe",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 576,
+      "rho": 0.47602821259877515,
+      "source": {
+        "ci95": [
+          0.3987708587352214,
+          0.5373917193659852
+        ],
+        "rho": 0.47602821259877515,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "e1"
+    },
+    {
+      "behavior": "sycophancy",
+      "ci95": [
+        0.39238789810895164,
+        0.5320664262299164
+      ],
+      "dataset": "sycomwe",
+      "layer": 11,
+      "method": "real_answer",
+      "n": 576,
+      "rho": 0.46454230638365845,
+      "source": {
+        "ci95": [
+          0.39238789810895164,
+          0.5320664262299164
+        ],
+        "rho": 0.46454230638365845,
+        "valid_bootstraps": 500
+      },
+      "status": "ok",
+      "variant": "q01_s4"
+    }
+  ],
+  "public_urls": {
+    "grayscale": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_sycophancy_q01_s4_grayscale.png",
+    "pdf": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_sycophancy_q01_s4.pdf",
+    "png": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural_extremes_20260918/figures_v1/natural_persona_sycophancy_q01_s4.png"
+  },
+  "render": {
+    "authoring_size_inches": [
+      13.095,
+      10.476
+    ],
+    "background": "#FFFFFF",
+    "exported_size_inches": [
+      13.095,
+      10.112
+    ],
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/natural_persona_sycophancy_q01_s4.pdf}",
+    "png_dpi": 240,
+    "realized_font_pt": {
+      "body": 7.56,
+      "label": 8.4,
+      "tick": 7.14,
+      "title": 9.24
+    },
+    "resolved_font": "Inter",
+    "scale": 0.42,
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "style_version": "c2a-v2",
+    "text": [
+      "A  \u00b7  LAYER 16",
+      "Spearman $\\rho$ \u2191",
+      "\u22121",
+      "0",
+      "1",
+      "Generic chat\n(n=415)",
+      "ID (map exposed)\n(n=3,235)",
+      "Social advice\n(n=1,304)",
+      "Answer opinion\n(n=594)",
+      "Are you sure?\n(n=598)",
+      "Feedback\n(n=559)",
+      "Mimicry\n(n=285)",
+      "MWE\n(n=576)",
+      "Answer on\ncontext",
+      "B  \u00b7  LAYER 16",
+      "Context\nnative",
+      "C  \u00b7  LAYER 11",
+      "Mapped\nanswer",
+      "D  \u00b7  LAYER 11",
+      "Observed\nanswer",
+      "Sycophancy \u00b7 Natural prompts: 1% tails, tie salt 4",
+      "DIRECTION EXTRACTION",
+      "Instruction contrast (E1)",
+      "Natural prompts: 1% tails, tie salt 4"
+    ]
+  },
+  "renderer_git_sha": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+  "renderer_git_status": "?? scripts/issue1739_natural_figure.py",
+  "renderer_sha256": "e7251058fac3607d36dc71dc2e0fe754f4c580ce4d6b1062eb7744bbc02748c2",
+  "run_input_fingerprints": {
+    "evil": "a0a92f14d5afb0b5cabad40d7592f3c069b5fc8994d45bd18582e3bad755c972",
+    "hallucination": "f2b80c3e709fa66bba1e5ed5b9a0d268e50a61e0ef5332017106757f6c958a92",
+    "sycophancy": "420d5047aef17c30ae2c1a2eca8a8d794f04ac47a1afb7a9a36fa7fafb9c2580"
+  },
+  "run_source_shas": {
+    "evil": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+    "hallucination": "9263556c52acd1bf5fa25478a8a175f51baf05d5",
+    "sycophancy": "9263556c52acd1bf5fa25478a8a175f51baf05d5"
+  },
+  "style_sha256": "74d774c6f04778e69a36cc58595e009cf06f3b612b7414f09423601fba1b5f98",
+  "title": "Sycophancy: Natural prompts: 1% tails, tie salt 4"
+}
