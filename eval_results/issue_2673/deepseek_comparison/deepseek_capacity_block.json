@@ -1,0 +1,64 @@
+{
+  "checked_at": 1789692231.57862,
+  "requested_gpu_count": 8,
+  "capacity": {
+    "g0": [
+      {
+        "id": "NVIDIA H200",
+        "memoryInGb": 141,
+        "secure": {
+          "stockStatus": null,
+          "uninterruptablePrice": null,
+          "minMemory": null
+        },
+        "community": {
+          "stockStatus": null,
+          "uninterruptablePrice": null,
+          "minMemory": null
+        }
+      }
+    ],
+    "g1": [
+      {
+        "id": "NVIDIA H200 NVL",
+        "memoryInGb": 143,
+        "secure": {
+          "stockStatus": null,
+          "uninterruptablePrice": null,
+          "minMemory": null
+        },
+        "community": {
+          "stockStatus": null,
+          "uninterruptablePrice": null,
+          "minMemory": null
+        }
+      }
+    ],
+    "g2": [
+      {
+        "id": "NVIDIA B200",
+        "memoryInGb": 180,
+        "secure": {
+          "stockStatus": null,
+          "uninterruptablePrice": null,
+          "minMemory": null
+        },
+        "community": {
+          "stockStatus": null,
+          "uninterruptablePrice": null,
+          "minMemory": null
+        }
+      }
+    ]
+  },
+  "live_owned_pods": [],
+  "team_pod_count_positive_control": 0,
+  "status": "not_launched_capacity_blocked",
+  "source_sha": "cb794596d9a093b8d3c897352ed64874b8b69d76",
+  "model_key": "deepseek",
+  "no_deepseek_allocation": true,
+  "automatic_retry_active": false,
+  "launcher_exit_code": 4,
+  "provider_error": "RunPodNoCapacityError: ALL, COMMUNITY and COMMUNITY spot returned null",
+  "remaining_gpu_hours_lower_bound": 16.34579123761919
+}
