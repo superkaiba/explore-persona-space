@@ -365,9 +365,14 @@ map-geometry fits under `figures/paper/inputs/speaker_character_transfer/`.
 No fitting or inference runs during rendering.
 
 Panel B shows frozen and target-trained maps, with character-to-character
-transfer first. Each source map trains on only one character. The twelve
+transfer first. Each source map in the first row trains on only one character. The twelve
 directed pairs are averaged equally within each of five conversation folds,
-then across folds. The remaining rows show the story assistant to characters,
+then across folds. The second row trains jointly on chat and one character,
+then evaluates the other three characters. It averages all twelve source-choice
+and unseen-target pairs within each fold, then across folds. Its pinned source
+archive is `figures/paper/inputs/speaker_character_transfer/assistant_sources.json`;
+no target character or held-out conversation enters its source fit. The remaining
+rows show the story assistant to characters,
 chat to story assistant, and story assistant to chat. Panel A displays the six
 chat/story settings. Plain-text comparisons are omitted from this section,
 but the original numerical inputs are preserved. The joint map still uses its

@@ -55,6 +55,7 @@ PAIRS = [("story", "characters"), ("chat", "story"), ("plain", "story"), ("story
 DISPLAY_INDICES = (0, 2, 3, 4, 5, 6)
 DISPLAY_PAIRS = [
     ("character", "other_characters"),
+    ("chat+character", "other_characters"),
     ("story", "characters"),
     ("chat", "story"),
     ("story", "chat"),
@@ -205,7 +206,11 @@ def add_character_transfers(data: dict, sources: dict[str, Path]) -> None:
             rtol=0,
             atol=1e-12,
         )
-        existing = [r for r in data["models"][model]["transfers"] if r["source"] != "character"]
+        existing = [
+            r
+            for r in data["models"][model]["transfers"]
+            if r["source"] not in {"character", "chat+character"}
+        ]
         data["models"][model]["transfers"] = [
             {
                 "source": "character",
@@ -263,6 +268,103 @@ def add_character_transfers(data: dict, sources: dict[str, Path]) -> None:
         rows = data["models"][model]["transfers"]
         rows = [r for r in rows if (r["source"], r["target"]) != ("chat", "plain")]
         data["models"][model]["transfers"] = rows[:2] + framing_transfers[:1] + rows[2:]
+
+
+def add_joint_character_transfers(data: dict, path: Path) -> None:
+    """Average saved chat-plus-character maps over their unseen character targets."""
+    results = load(path, "1ea49e91af068bd2c2729e5c6ed6c359d0e6ae0ec92c1798f054a376b73ee58d")
+    if results["status"] != "complete":
+        raise ValueError("Joint-source transfer results are incomplete")
+    characters = ("helios", "wren", "dana", "vex")
+    expected = {(s, t) for s in characters for t in characters if s != t}
+    for model, _, _ in MODELS:
+        panels = [
+            r
+            for r in results["panels"]
+            if r["model"] == model
+            and r["regime"].startswith("assistant_plus_char_")
+            and r["cell"].startswith("char_")
+        ]
+        pairs = {
+            (r["regime"].removeprefix("assistant_plus_char_"), setting(r["cell"])) for r in panels
+        }
+        if len(panels) != 12 or pairs != expected:
+            raise ValueError(f"Expected all twelve joint-source/unseen-character pairs: {model}")
+        single = data["models"][model]["transfers"][0]
+        own_reference = {
+            (r["target"].lower(), r["fold"]): r["own"] for r in single["source_records"]
+        }
+        records = []
+        for panel in panels:
+            source = panel["regime"].removeprefix("assistant_plus_char_")
+            target = setting(panel["cell"])
+            expected_sources = {
+                f"conversation_paired_stories_assistant__on_policy__chat__{model}",
+                f"char_{source}__on_policy__attrib_quoted__{model}",
+            }
+            if set(panel["source_cells"]) != expected_sources or panel["cell"] in expected_sources:
+                raise ValueError("Joint map must train on chat and one non-target character")
+            if sorted(f["fold"] for f in panel["folds"]) != list(range(5)):
+                raise ValueError("Joint-source transfer needs five conversation folds")
+            for fold in panel["folds"]:
+                audit = fold["audit"]
+                if (
+                    fold["status"] != "complete"
+                    or audit["test_overlap_source"] != 0
+                    or audit["target_labels_used_for_source_map"] is not False
+                    or audit["excluded_conversation_fold"] != fold["fold"]
+                    or set(audit["source_settings"]) != expected_sources
+                ):
+                    raise ValueError("Joint-source conversation holdout audit failed")
+                map_record = fold["source_map"]
+                if map_record["sha256"] != results["maps"][map_record["path"]]:
+                    raise ValueError("Joint-source map checksum differs from the archive")
+                frozen = fold["metrics"]["frozen"]
+                np.testing.assert_allclose(
+                    fold["own"]["r2"], own_reference[(target, fold["fold"])], rtol=0, atol=1e-12
+                )
+                records.append(
+                    {
+                        "source": source,
+                        "source_cells": panel["source_cells"],
+                        "target": target,
+                        "fold": fold["fold"],
+                        "frozen": frozen["r2"],
+                        "own": fold["own"]["r2"],
+                        "source_identity_bias": fold["metrics"]["source_identity_bias"]["r2"],
+                        "retrieval_pool": frozen["retrieval_pool"],
+                        "chance_top1": frozen["chance_top1"],
+                        "euclidean_top1": frozen["retrieval"]["euclidean"]["acc_at_k"]["1"],
+                        "cosine_top1": frozen["retrieval"]["cosine"]["acc_at_k"]["1"],
+                        "source_map_sha256": map_record["sha256"],
+                        "audit": audit,
+                    }
+                )
+        metrics = {}
+        for method in ("frozen", "own", "source_identity_bias"):
+            folds = [
+                float(np.mean([r[method] for r in records if r["fold"] == f])) for f in range(5)
+            ]
+            if not np.isfinite(folds).all():
+                raise ValueError("Nonfinite joint-source transfer score")
+            metrics[method] = {"mean": float(np.mean(folds)), "folds": folds}
+        rows = [r for r in data["models"][model]["transfers"] if r["source"] != "chat+character"]
+        data["models"][model]["transfers"] = (
+            rows[:1]
+            + [
+                {
+                    "source": "chat+character",
+                    "target": "other_characters",
+                    "metrics": metrics,
+                    "source_records": records,
+                    "aggregation": (
+                        "Equal mean of four source-character choices and their three unseen "
+                        "character targets within each fold, then five folds"
+                    ),
+                }
+            ]
+            + rows[1:]
+        )
 
 
 def compress_negative(values):
@@ -333,7 +435,13 @@ def render(data: dict, output: Path) -> dict:
         "frozen": (transfer_color, None),
         "own": ("white", None),
     }
-    expected_pairs = [("character", "other_characters"), PAIRS[0], ("chat", "plain"), *PAIRS[1:]]
+    expected_pairs = [
+        ("character", "other_characters"),
+        ("chat+character", "other_characters"),
+        PAIRS[0],
+        ("chat", "plain"),
+        *PAIRS[1:],
+    ]
     if [(r["source"], r["target"]) for r in instruct["transfers"]] != expected_pairs:
         raise ValueError("Unexpected transfer-panel rows")
     displayed_transfers = [
@@ -357,9 +465,10 @@ def render(data: dict, output: Path) -> dict:
                 error_kw={"ecolor": INK, "capsize": 2, "elinewidth": 0.8, "capthick": 0.8},
             )
     b.set_yticks(
-        range(4),
+        range(5),
         [
             "One character\n→ other characters",
+            "Chat + one character\n→ other characters",
             "Assistant (story)\n→ characters",
             "Assistant (chat)\n→ assistant (story)",
             "Assistant (story)\n→ assistant (chat)",
@@ -367,7 +476,7 @@ def render(data: dict, output: Path) -> dict:
     )
     for tick in b.get_yticklabels():
         tick.set_linespacing(TICK_LINESPACING)
-    b.set_ylim(3.5, -0.5)
+    b.set_ylim(4.5, -0.5)
     endpoints = [
         v
         for pair in displayed_transfers
@@ -470,6 +579,11 @@ def main() -> None:
         type=Path,
         default=ROOT / "figures/paper/inputs/speaker_character_transfer",
     )
+    parser.add_argument(
+        "--assistant-results",
+        type=Path,
+        default=ROOT / "figures/paper/inputs/speaker_character_transfer/assistant_sources.json",
+    )
     args = parser.parse_args()
     sources = {
         "k5": ROOT / "eval_results/issue_2054/section44_k5/k5_results.json",
@@ -505,6 +619,11 @@ def main() -> None:
             "path": str(path.relative_to(ROOT)),
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         }
+    add_joint_character_transfers(data, args.assistant_results)
+    source_records["joint_chat_character"] = {
+        "path": str(args.assistant_results.relative_to(ROOT)),
+        "sha256": hashlib.sha256(args.assistant_results.read_bytes()).hexdigest(),
+    }
     args.output.mkdir(parents=True, exist_ok=True)
     result = render(data, args.output)
     result["data"] = data
@@ -542,7 +661,8 @@ def main() -> None:
         "panel_b_error_bars": "Minimum and maximum across five fold means",
         "gridlines": "Removed; panel B retains a zero reference",
         "character_aggregation": (
-            "Twelve directed character pairs or four story-assistant targets within each fold"
+            "Twelve directed character pairs; twelve chat-plus-character/unseen-target pairs; "
+            "or four story-assistant targets within each fold"
         ),
         "turn_heatmaps": {"colormap": "cividis", "limits": [0, 0.6]},
     }
