@@ -1,15 +1,18 @@
 """Exercise capacity, handoff and failure boundaries without allocating hardware."""
 
 import hashlib
+import io
 import json
 import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import create_autospec
+from urllib.error import HTTPError
 
 import pytest
 
 from scripts import experiment_watchdog as W
+from scripts import runpod_api as API
 from scripts import story_persona_capacity_monitor as M
 
 
@@ -17,7 +20,8 @@ def quote(status=None, price=None):
     """Construct the provider's exact quoted-shape response."""
     q = {"stockStatus": status, "uninterruptablePrice": price}
     return {
-        "gpuTypes": [{"id": "NVIDIA H200", "memoryInGb": 141, "secure": q, "community": dict(q)}]
+        "myself": {"id": "personal-user", "teams": []},
+        "gpuTypes": [{"id": "NVIDIA H200", "memoryInGb": 141, "secure": q, "community": dict(q)}],
     }
 
 
@@ -140,6 +144,34 @@ def test_delivery_retry_and_capacity_loss(setup):
     assert r.starts == 2
 
 
+def test_repeated_verified_capacity_losses_do_not_exhaust_daily_attempts(setup):
+    c, r = setup
+    c["interval_seconds"] = 60
+    r.data = quote("Low", 36.72)
+    for number in range(1, 5):
+        now = 1000 + (number - 1) * 120
+        assert M.tick(c, r, now)["status"] == "continuation_requested"
+        assert state(c)["worker"]["number"] == number
+        r.state = "inactive"
+        finish(c, "capacity_lost")
+        M.write(
+            Path(state(c)["worker"]["directory"]) / "exit.json",
+            {"returncode": 0, "ended_at": now + 10},
+        )
+        assert M.tick(c, r, now + 10)["status"] == "capacity_lost_waiting_again"
+        assert state(c)["retry_after"] == now + 70
+    assert state(c)["verified_capacity_losses"] == [1, 2, 3, 4]
+    assert r.starts == 4
+
+
+def test_unverified_attempts_still_count_towards_daily_limit(setup):
+    c, r = setup
+    M.write(c["capacity_state"], {"attempts": [800, 900], "worker": None, "notifications": []})
+    r.data = quote("Low", 36.72)
+    assert M.tick(c, r, 1000)["status"] == "capacity_available_attempt_limit"
+    assert r.starts == 0
+
+
 @pytest.mark.parametrize("bad", ["pod", "handle", "ledger"])
 def test_capacity_loss_cannot_discard_an_allocation(setup, bad):
     c, r = setup
@@ -156,6 +188,7 @@ def test_capacity_loss_cannot_discard_an_allocation(setup, bad):
     with pytest.raises(ValueError):
         M.tick(c, r, 1100)
     assert state(c)["worker"]
+    assert not state(c).get("verified_capacity_losses")
 
 
 def test_missing_outcome_and_stale_logs_surface_to_watchdog(setup):
@@ -245,6 +278,7 @@ def test_completion_is_not_sticky_until_notifications_acknowledged(setup):
 def test_runtime_start_body_and_query_shape(setup, monkeypatch):
     c, _ = setup
     r = M.Runtime.__new__(M.Runtime)
+    r.expected_account_id = "personal-user"
     run = create_autospec(subprocess.run, return_value=subprocess.CompletedProcess([], 0))
     monkeypatch.setattr(M.subprocess, "run", run)
     r.start(c)
@@ -256,7 +290,77 @@ def test_runtime_start_body_and_query_shape(setup, monkeypatch):
     r.transport = create_autospec(graphql, side_effect=graphql)
     assert M.eligible(r.query())
     assert "gpuCount:8" in r.transport.call_args.args[0]
+    assert "myself { id teams { id } }" in r.transport.call_args.args[0]
     r.system = SimpleNamespace(unit=create_autospec(W.Runtime.unit, instance=True))
+
+
+@pytest.mark.parametrize(
+    "account", [{"id": "wrong", "teams": []}, {"id": "personal-user", "teams": [{"id": "team"}]}]
+)
+def test_actual_query_rejects_account_change(account):
+    r = M.Runtime.__new__(M.Runtime)
+    r.expected_account_id = "personal-user"
+
+    def graphql(query, variables=None, timeout=60):
+        return {**quote("Low", 36.72), "myself": account}
+
+    r.transport = create_autospec(graphql, side_effect=graphql)
+    with pytest.raises(ValueError, match="identity/scope changed"):
+        r.query()
+
+
+def test_owned_pods_verifies_personal_identity(setup):
+    c, _ = setup
+    r = M.Runtime.__new__(M.Runtime)
+    r.expected_account_id = "personal-user"
+
+    def graphql(query, variables=None, timeout=60):
+        return {
+            "myself": {
+                "id": "personal-user",
+                "teams": [],
+                "pods": [
+                    {"id": "owned", "name": c["pod_name"]},
+                    {"id": "unrelated", "name": "another"},
+                ],
+            }
+        }
+
+    r.transport = create_autospec(graphql, side_effect=graphql)
+    assert r.owned_pods(c) == [{"id": "owned", "name": c["pod_name"]}]
+
+
+@pytest.mark.parametrize("team", ["legacy-team-that-must-not-be-sent", ""])
+def test_personal_runtime_uses_headerless_transport_and_retries(setup, monkeypatch, tmp_path, team):
+    c, _ = setup
+    env_file = tmp_path / "empty.env"
+    env_file.write_text("")
+    c.update(
+        account_scope="personal",
+        expected_account_id="personal-user",
+        workdir=str(Path(M.__file__).resolve().parent.parent),
+        dotenv=str(env_file),
+        watchdog_helper=W.__file__,
+    )
+    monkeypatch.setenv("RUNPOD_API_KEY", "test-api-key-not-real")
+    monkeypatch.setenv("RUNPOD_TEAM_ID", team)
+    monkeypatch.setattr(API.time, "sleep", create_autospec(API.time.sleep))
+    boundary = create_autospec(
+        API.urlrequest.urlopen,
+        side_effect=[
+            HTTPError(API.GRAPHQL_URL, 503, "temporary", {}, io.BytesIO(b"temporary")),
+            io.BytesIO(json.dumps({"data": quote("Low", 36.72)}).encode()),
+        ],
+    )
+    monkeypatch.setattr(API.urlrequest, "urlopen", boundary)
+    runtime = M.Runtime(c)
+    assert M.eligible(runtime.query())
+    assert boundary.call_count == 2
+    for call in boundary.call_args_list:
+        request = call.args[0]
+        assert request.get_header("X-team-id") is None
+        assert request.get_header("Authorization") == "Bearer test-api-key-not-real"
+        assert request.get_full_url() == API.GRAPHQL_URL
 
 
 def test_worker_body_executes_real_subprocess(setup, tmp_path):

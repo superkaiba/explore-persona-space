@@ -1,12 +1,10 @@
-"""RunPod GraphQL client, hard-scoped to the Anthropic Safety Research team.
+"""RunPod GraphQL client with legacy team defaults and explicit personal queries.
 
 Why this module exists
 ----------------------
-Every RunPod request from this project MUST carry the `X-Team-Id` header. Without
-it the API silently returns zero pods (different account scope), so a missing
-header looks like "you have no pods" instead of "you used the wrong scope" — a
-deeply confusing footgun. This module fails closed if the team-id is unset or if
-a response does not match the expected team.
+Existing callers retain the `X-Team-Id` header. Callers explicitly authorized
+for the personal account pass `personal=True` to `graphql` and verify returned
+account identity; a configured header alone does not prove usable team access.
 
 It also pins the SSH-bring-up parameters that RunPod pytorch images need
 (`startSsh: true`, expose `22/tcp`) so callers can't accidentally create
@@ -132,17 +130,17 @@ def _load_dotenv() -> None:
             os.environ[key] = value
 
 
-def _require_env() -> tuple[str, str]:
-    """Return (api_key, team_id). Raises RuntimeError if either is missing."""
+def _require_env(*, personal: bool = False) -> tuple[str, str]:
+    """Require an API key and, unless explicitly personal, a nonempty team selector."""
     _load_dotenv()
     api_key = os.environ.get("RUNPOD_API_KEY", "").strip()
-    team_id = os.environ.get("RUNPOD_TEAM_ID", DEFAULT_TEAM_ID).strip()
+    team_id = "" if personal else os.environ.get("RUNPOD_TEAM_ID", DEFAULT_TEAM_ID).strip()
     if not api_key:
         raise RuntimeError(
             "RUNPOD_API_KEY not set. Add it to .env or export it. The RunPod GraphQL "
             "API needs it AND the team-id header — both are mandatory."
         )
-    if not team_id:
+    if not team_id and not personal:
         raise RuntimeError(
             "RUNPOD_TEAM_ID resolved to empty. Either unset (uses Anthropic Safety "
             "Research default) or set explicitly to your team id."
@@ -421,13 +419,15 @@ def _backoff_sleep_secs(attempt: int) -> float:
     return random.uniform(0.0, window)
 
 
-def _graphql_once(query: str, variables: dict | None, timeout: int) -> dict[str, Any]:
+def _graphql_once(
+    query: str, variables: dict | None, timeout: int, *, personal: bool = False
+) -> dict[str, Any]:
     """Single GraphQL round-trip. Raises RunPodTransientError on retryable
     transport failures (5xx, 429, CF-1010, network) and RunPodError on
     everything else (non-retryable 4xx, GraphQL-level `errors`, malformed
     payloads). Returns the parsed ``data`` dict. Never returns None.
     """
-    api_key, team_id = _require_env()
+    api_key, team_id = _require_env(personal=True) if personal else _require_env()
 
     payload = {"query": query}
     if variables:
@@ -447,6 +447,9 @@ def _graphql_once(query: str, variables: dict | None, timeout: int) -> dict[str,
         },
         method="POST",
     )
+    if personal:
+        # Explicit caller scope; never send a stale team selector for a personal request.
+        req.remove_header("X-team-id")
 
     try:
         with urlrequest.urlopen(req, timeout=timeout) as resp:
@@ -489,8 +492,10 @@ def _graphql_once(query: str, variables: dict | None, timeout: int) -> dict[str,
     return parsed["data"]
 
 
-def graphql(query: str, variables: dict | None = None, timeout: int = 60) -> dict[str, Any]:
-    """Execute a GraphQL query against RunPod with team-id header enforced.
+def graphql(
+    query: str, variables: dict | None = None, timeout: int = 60, *, personal: bool = False
+) -> dict[str, Any]:
+    """Execute GraphQL in the default team scope or an explicitly requested personal scope.
 
     Wraps the single round-trip (:func:`_graphql_once`) in bounded exponential
     backoff with jitter (issue #2). RETRIES on transient transport failures
@@ -504,6 +509,8 @@ def graphql(query: str, variables: dict | None = None, timeout: int = 60) -> dic
     last_exc: RunPodTransientError | None = None
     for attempt in range(1, GRAPHQL_MAX_ATTEMPTS + 1):
         try:
+            if personal:
+                return _graphql_once(query, variables, timeout, personal=True)
             return _graphql_once(query, variables, timeout)
         except RunPodTransientError as exc:
             last_exc = exc

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+from functools import partial
 import hashlib
 import importlib.util
 import json
@@ -36,13 +37,25 @@ class Runtime:
         )
         self.helper = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.helper)
-        self.transport = graphql
+        self.transport = partial(graphql, personal=True)
         self.system = self.helper.Runtime()
+        if config["account_scope"] != "personal":
+            raise ValueError("this monitor is authorized for the personal account only")
+        self.expected_account_id = config["expected_account_id"]
+
+    def verify_account(self, data):
+        """Reject changed identity or team membership instead of trusting an old header."""
+        account = data["myself"]
+        if account["id"] != self.expected_account_id or account["teams"] != []:
+            raise ValueError(
+                "personal RunPod account identity/scope changed; inspect before launch"
+            )
 
     def query(self):
-        """Ask for the approved eight-H200 shape, not a catalog-only match."""
-        return self.transport(
+        """Verify the personal identity and ask for the approved eight-H200 shape."""
+        data = self.transport(
             """query {
+          myself { id teams { id } }
           gpuTypes(input:{id:"NVIDIA H200"}) {
             id memoryInGb
             secure:lowestPrice(input:{gpuCount:8,secureCloud:true}) {
@@ -55,10 +68,15 @@ class Runtime:
         }""",
             timeout=45,
         )
+        self.verify_account(data)
+        return data
 
     def owned_pods(self, config):
         """Prove exact-name pod absence before accepting a capacity-loss retry."""
-        data = self.transport("query { myself { pods { id name desiredStatus } } }", timeout=45)
+        data = self.transport(
+            "query { myself { id teams { id } pods { id name desiredStatus } } }", timeout=45
+        )
+        self.verify_account(data)
         pods = data["myself"]["pods"]
         if not isinstance(pods, list):
             raise ValueError("invalid live pod response")
@@ -183,6 +201,9 @@ def tick(config, runtime, now=None):
                 ledger = Path(config["allocation_ledger"]).read_text()
                 if ledger != worker["ledger_before"]:
                     raise ValueError("allocation ledger changed; bounded recovery required")
+                losses = state.setdefault("verified_capacity_losses", [])
+                if worker["number"] not in losses:
+                    losses.append(worker["number"])
                 state["worker"] = None
                 state["retry_after"] = now + config["interval_seconds"]
                 observation["status"] = "capacity_lost_waiting_again"
@@ -190,7 +211,8 @@ def tick(config, runtime, now=None):
                     state,
                     f"lost-{worker['number']}",
                     "Task 2673: the quoted H200 capacity disappeared before allocation. "
-                    "No GPU was allocated; the five-minute capacity checks are continuing.",
+                    "No GPU was allocated; capacity checks continue every "
+                    f"{config['interval_seconds']} seconds.",
                     now,
                 )
             elif outcome["status"] == "complete":
@@ -256,7 +278,13 @@ def tick(config, runtime, now=None):
         offers = eligible(data)
         observation["capacity"] = data
         if offers:
-            recent = [x for x in state["attempts"] if now - x < 86400]
+            # Verified no-allocation outcomes do not consume a paid/recovery attempt.
+            losses = set(state.get("verified_capacity_losses", []))
+            recent = [
+                stamp
+                for number, stamp in enumerate(state["attempts"], start=1)
+                if now - stamp < 86400 and number not in losses
+            ]
             if len(recent) >= config["max_attempts_per_day"]:
                 observation["status"] = "capacity_available_attempt_limit"
                 enqueue(
