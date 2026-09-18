@@ -1,0 +1,14 @@
+{
+  "overleaf_commit": "8481235ccf97dcf669fa01d0c7f450ac67b1f3b0",
+  "overleaf_url": "https://www.overleaf.com/project/6a59c927290f8b8b5eee0055",
+  "committed_sha256": {
+    "sections/results/06_behavior.tex": "0b5a5ba4a3c74b4f265f175b7c2854d9bd6713531ebbb372980bb0ff6ebc527e",
+    "sections/05_method_details.tex": "4d4ec73843649ce703bc148d87456834d1d18837ffd445cf6f226ec26aaa5b40",
+    "sections/05_discussion.tex": "60a9824a60bfb86a1fbe1845d6a00d11120b73c598b81f1d81cbf7075f550190",
+    "figures/paper/c5_preimage_qualitative_top100.pdf": "e6afb2f8fb7f699223c5962a8f6ef6675dcf157e34358417fb396064e63e0c00"
+  },
+  "section": "4.7",
+  "appendix": "H.2",
+  "figure_number": 27,
+  "figure_url": "https://eps.superkaiba.com/tasks/1739/figure/c5_preimage_qualitative_top100.png?v=6849b78db373"
+}

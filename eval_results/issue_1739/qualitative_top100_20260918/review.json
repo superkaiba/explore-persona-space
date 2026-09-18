@@ -1,0 +1,23 @@
+{
+  "date_utc": "2026-09-18",
+  "reviewer": "gpt-5.6-luna, fresh-context independent review",
+  "verdict": "pass",
+  "scope": "New second claim of Section 4.7 and qualitative-preimage appendix block only.",
+  "checks": [
+    "Only top 100 per behavior; no context baseline comparison in revised claim.",
+    "All seven examples occur in the matching top-100 selection at verified ranks.",
+    "All 100 hallucination prompts request long chemical-company introductions.",
+    "Prompt associations are distinguished from verified outcomes and reliable deployment.",
+    "Singleton Birch date checked against company brochure; address-to-future-year transformation verified against saved prompt and answer."
+  ],
+  "additional_validation": [
+    "Exact category ci/rank coverage for all 300 selected contexts.",
+    "Figure generator verifies source SHA, selected ranks, literal quoted spans and text bounds.",
+    "Ruff and scoped workflow lint pass.",
+    "Writing gate passes with no hard-ban hits.",
+    "Full manuscript compiled; Section 4.7 page 8 and appendix Figure 27 page 57 visually inspected.",
+    "Color and grayscale figures visually inspected.",
+    "Public PNG fetched and SHA verified."
+  ],
+  "figure_url": "https://eps.superkaiba.com/tasks/1739/figure/c5_preimage_qualitative_top100.png?v=6849b78db373"
+}
