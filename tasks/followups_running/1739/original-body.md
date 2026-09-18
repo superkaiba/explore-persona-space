@@ -24,7 +24,9 @@ relates_to:
 
 **Methodology:** [docs/methodology/issue_1739.md](https://github.com/superkaiba/explore-persona-space/blob/82a82557a36fd2952316e564e3c763c20eb20efd/docs/methodology/issue_1739.md) · [gist mirror](https://gist.github.com/superkaiba/5af4cb475aa4caa55cf69a02a5393427)
 
-**Latest follow-up, 2026-09-08:** the requested no-recombination sweep is complete at 150/150 cells, through 100,000 generic pairs plus fixed trait pools. The new P-B result is appended at the end under “Natural context–answer scaling follow-up”: a hallucination advantage (+0.0528 mean ρ at 100k), with slightly negative mean gaps for evil and sycophancy. The historical title, Goal, and prior-round classifications below are preserved; they are not a classification of this new descriptive follow-up.
+**Latest follow-up, 2026-09-16:** the fixed-answer-direction comparison is complete using the 963,444-pair generic map, without downstream behavior regression. Positive transfer is dataset dependent and does not consistently beat the context-native direction. Five natural-dataset cells are informative; three WildChat cells retain only four contexts each. Full methods, paired results, and limitations are appended under “Fixed answer-direction transfer — 2026-09-16.”
+
+**Earlier follow-up, 2026-09-08:** the requested no-recombination sweep is complete at 150/150 cells, through 100,000 generic pairs plus fixed trait pools. The new P-B result is appended at the end under “Natural context–answer scaling follow-up”: a hallucination advantage (+0.0528 mean ρ at 100k), with slightly negative mean gaps for evil and sycophancy. The historical title, Goal, and prior-round classifications below are preserved; they are not a classification of this new descriptive follow-up.
 
 ## Takeaways
 
@@ -370,11 +372,11 @@ Sycophancy has a large deficit on mimicry (−0.2342), but a gain on model-writt
 evaluations (+0.1457). Hallucination improves on both NQ-Open (+0.0699) and
 SimpleQA (+0.0357). No single aggregate establishes an across-dataset guarantee.
 
-[Scaling overview](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_overview.png)
+[Scaling overview files](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2417628daed58f460a881b379c9b8d2bc3474a50/issue1739_natural100k_20260906/analysis_figures)
 and dataset panels for
-[evil](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_evil.png),
-[sycophancy](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_sycophancy.png),
-and [hallucination](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/main/issue1739_natural100k_20260906/analysis_figures/natural_scaling_hallucination.png).
+[evil](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2417628daed58f460a881b379c9b8d2bc3474a50/issue1739_natural100k_20260906/analysis_figures),
+[sycophancy](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2417628daed58f460a881b379c9b8d2bc3474a50/issue1739_natural100k_20260906/analysis_figures),
+and [hallucination](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2417628daed58f460a881b379c9b8d2bc3474a50/issue1739_natural100k_20260906/analysis_figures).
 Lines show five-seed means; bands show the seed minima and maxima.
 
 ### What was actually varied
@@ -463,7 +465,7 @@ predictions, the full audit, and preservation evidence are under the HF dataset
 prefix `issue1739_natural100k_20260906`.
 
 Pinned public artifacts: [numeric analysis and artifact guide](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/07460fb4f01c4a692b141eaf2a8a081352aacaf5/issue1739_natural100k_20260906/analysis),
-[complete audit](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/19d49bb069353826ded1da23e26dea46f8191d4f/issue1739_natural100k_20260906/final_preservation_20260908/audit/natural_scaling_audit.json),
+[complete audit files](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/19d49bb069353826ded1da23e26dea46f8191d4f/issue1739_natural100k_20260906/final_preservation_20260908/audit),
 and [source census and lossless metadata archive](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3f864b4053d5f95c5cafe4869e455d74278416f9/issue1739_natural100k_20260906/final_preservation_20260908/snapshot).
 All four published plot URLs returned HTTP200 anonymously. Color panels and the
 overview's grayscale export were visually inspected; numeric rendering sidecars
@@ -471,4 +473,84 @@ retain exact values, file hashes, fonts, and intended-size text measurements.
 The four-H100 pod was terminated only after complete preservation passed;
 the fresh live task-scoped inventory reports no remaining compute pod.
 
-**Final validation notes (natural follow-up):** The 63 focused tests, independent numeric review and file-scoped workflow checks passed. The whole-repository no-flags lint was explicitly stopped after exceeding ten minutes during its AST scan; no whole-repository PASS is claimed. The [overview PDF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/resolve/2417628daed58f460a881b379c9b8d2bc3474a50/issue1739_natural100k_20260906/analysis_figures/natural_scaling_overview.pdf) renders legibly at the intended manuscript width, but Poppler reports a font-type/embedded-file metadata warning to revisit before submission. No manuscript was changed. Detailed scopes and the behavior-preserving retry annotation are recorded in `eval_results/issue_1739/natural_scaling/gpu_audit_20260907/final_quality_checks_20260908.json`.
+**Final validation notes (natural follow-up):** The 63 focused tests, independent numeric review and file-scoped workflow checks passed. The whole-repository no-flags lint was explicitly stopped after exceeding ten minutes during its AST scan; no whole-repository PASS is claimed. The [overview PDF files](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/2417628daed58f460a881b379c9b8d2bc3474a50/issue1739_natural100k_20260906/analysis_figures) renders legibly at the intended manuscript width, but Poppler reports a font-type/embedded-file metadata warning to revisit before submission. No manuscript was changed. Detailed scopes and the behavior-preserving retry annotation are recorded in `eval_results/issue_1739/natural_scaling/gpu_audit_20260907/final_quality_checks_20260908.json`.
+
+
+## Fixed answer-direction transfer — 2026-09-16
+
+### Result
+
+Fixed answer directions predict held-out behavior through the generic context-to-answer map on several datasets without a downstream behavior regression. The map does not consistently improve over directions extracted directly in context space.
+
+### Method
+
+Frozen Qwen2.5-7B-Instruct layer 19, common raw activation coordinates, and the #779 generic map trained on **963,444 pairs**. Each behavior direction is the positive-minus-negative mean from 1,000 positive and 1,000 negative instruction-conditioned rollouts (100 contexts per polarity). These are **unfiltered instruction contrasts**, not judge-filtered canonical Persona Vectors. No evaluation-label-based regression, layer selection, sign flip, or hyperparameter selection is used. All methods share the retained evaluation contexts and existing on-policy behavior judgments.
+
+The five methods are: answer direction on actual answers (instrument validation); the same answer direction on mapped contexts; independently extracted context direction on contexts; answer direction directly on contexts; and the mean correlation of five maps refitted after shuffling training and validation answer identities. All five null fits use the entire original map training pool and original fit recipe. Uncertainty uses 2,000 paired context-group bootstraps, conditional on the fixed directions and maps.
+
+### Results
+
+Spearman correlation with behavior expression; actual-answer scoring requires generation and is a validation reference.
+
+| Behavior / dataset | n | Actual answer | Mapped | Context direction | Answer direction on context | Shuffled mean |
+|---|---:|---:|---:|---:|---:|---:|
+| evil / hhrt | 1,847 | 0.072 | 0.058 | 0.001 | 0.042 | 0.003 |
+| evil / toxicchat | 370 | 0.440 | 0.426 | 0.403 | 0.449 | 0.091 |
+| evil / wildchat_rung | 4 | undefined | undefined | undefined | undefined | undefined |
+| sycophancy / aita | 1,304 | 0.215 | 0.255 | 0.319 | 0.186 | -0.026 |
+| sycophancy / wildchat_rung | 4 | -0.400 | -0.400 | -0.800 | -0.800 | 0.200 |
+| hallucination / nqopen | 3,164 | -0.009 | -0.085 | -0.127 | -0.133 | 0.047 |
+| hallucination / simpleqa | 4,021 | 0.605 | 0.449 | 0.507 | 0.464 | -0.054 |
+| hallucination / wildchat_rung | 4 | 0.800 | 0.800 | -0.200 | 0.800 | 0.520 |
+
+### Hypotheses and paired comparisons
+
+- **H1, answer-direction validity:** positive on HH red-team, ToxicChat, AITA, and SimpleQA; weak on HH. Fails on NQ-Open (rho -0.009). WildChat is uninformative.
+- **H2, transfer without downstream retraining:** supported descriptively on ToxicChat, AITA, and SimpleQA, and weakly on HH. NQ-Open has negative mapped correlation and fails H1; it does not support transfer. WildChat is uninformative.
+- **H3, advantage over a context-native direction:** HH map-minus-context delta 0.057 [0.024, 0.088]; ToxicChat 0.023 [-0.026, 0.072]; AITA -0.064 [-0.116, -0.016]; SimpleQA -0.057 [-0.068, -0.047]. The positive NQ delta reflects less-negative correlations, not successful prediction. Thus there is no consistent mapping advantage.
+
+### Coverage and limitations
+
+All eight registered cells completed. Five non-WildChat cells provide interpretable sample sizes; three WildChat cells retain only four contexts each after overlap and valid-label filtering. Of 419 planned WildChat contexts, 415 match a map-training/validation first user question after normalization, including 411 exact stripped matches. No exclusion relies solely on a later user turn. These are first-question content matches, not identical full rendered conversation prompts. Evil's four retained WildChat labels are constant, so its correlation is undefined.
+
+Shuffled-map seed variation is substantial: AITA seed 0 scores 0.443, above the true map's 0.255. Bootstrap intervals for the five-seed mean condition on those five maps; they do not establish superiority over the distribution of random pairings. Extraction-direction uncertainty is also outside the reported intervals. The archived map targets include closing assistant template tokens, whereas evaluation answer activations average completion tokens only.
+
+### Integrity and artifacts
+
+The true-map refit reproduced archived predictions to maximum absolute error 1.26e-8. Held-out map R² is 0.7542; identity-plus-training-bias R² is -0.9196. Cosine nearest-neighbor retrieval is 81.0% on a 1,000-answer pool (chance 0.1%; identity-plus-bias 56.9%). Five shuffled maps retrieve at chance. This verifies the intended ~1M map and does not establish a behavioral advantage by itself.
+
+Source commit: `722ce8ae2c003209df22ab8adc4442cf72afb3df`. Forty-one focused tests passed. Independent review verified all behavior completion hashes, map parity, paired comparisons, null-seed variability, and WildChat overlap witnesses.
+
+[All-methods plot](https://eps.superkaiba.com/tasks/1739/figure/fixed_transfer_all_methods_20260916.png) · [Paired differences](https://eps.superkaiba.com/tasks/1739/figure/fixed_transfer_paired_differences_20260916.png)
+
+[Verified source, raw predictions, directions, map payloads, bootstraps, exclusions, provenance, and figures](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/750831d2f8d5b7cdf2cc3859ddd69f0ce6825dac/issue1739_fixed_transfer_20260916): all 92 files, 1,402,357,312 bytes, verified against the remote immutable revision. Inputs are pinned to prior archived generation and judge artifacts. No fresh generations or judgments were needed.
+
+The monitored run exited successfully; the independent watchdog acknowledged completion notification delivery. Both completed-run services were disabled after upload verification.
+
+
+## Cached CPU follow-up: million-map covariance and preimage retrieval
+
+User-authorized inline cached analysis, completed 2026-09-17 UTC with source `2cf01b584b922c0df3db7405feffc6666f2ce60d`. No GPU, generation, judging, activation capture, map refit, or new compute provision was used.
+
+### Findings
+
+Using the frozen layer-19 map trained on 963,444 context–answer pairs, we transferred fixed instruction-contrast answer directions into context space with a regularized inverse, selecting its rank using generic validation pairs only. Preimage scores correlated with behavior on ToxicChat (ρ = .410), AITA (.322), and SimpleQA (.435), compared with .403, .319, and .507 for context-native directions. Prediction was weak on HH (ρ = .051), and transfer was not uniform: the hallucination preimage was negatively correlated with hallucination on NQ (ρ = −.171), where the original answer-side direction also failed validation (ρ = −.009).
+
+Retrieval from the generic context pool revealed interpretable but imperfect associations: explicit malicious-persona requests for the evil direction, benign interpersonal-response prompts for sycophancy, and requests for detailed obscure-company descriptions for hallucination—all 30 top hallucination prompts shared the same company-introduction template. These training-pool examples are descriptive. On held-out SimpleQA, the highest versus lowest preimage-similarity deciles had mean retained-response fabrication rates of 88.1% versus 32.2%; NQ showed the opposite ordering, 38.8% versus 47.5%. Thus, coherent retrieval does not establish a general behavior detector.
+
+Finally, matched behavior regressions showed no statistically supported advantage for mapped over raw-context features on any of the five natural datasets; mapping performed worse on AITA and SimpleQA. The context-only covariance control beat mapping on SimpleQA and lost on AITA, where raw contexts remained stronger. These results support dataset-dependent behavioral transfer and exploratory interpretation, but do not establish a consistent predictive advantage from the map.
+
+*Scope: Pointwise 95% paired group-bootstrap intervals condition on fitted models. Scores average retained judged responses and can exclude refusals; answer-token pooling remains mismatched. WildChat retained only four contexts per behavior and is not used for substantive conclusions.*
+
+
+### Artifacts and validation
+
+[Immutable archive](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/449c48d4047efffec50dbe8492d78c905b4bb588/issue1739_million_cached_20260916): 99 files, 527,619,423 bytes, all remote hashes verified. Compact tables, deterministic prompt examples and judge-coverage audit are in `eval_results/issue_1739/million_cached_20260916/`; results commit `ce62c45be4a` on `codex/1739-covariance-ablation-20260916`. Independent audit checked 1,096 numerical comparisons (max discrepancy 2.22e-16), training/evaluation content separation, generic inverse-rank selection, and every retrieved prompt hash. Four focused tests passed; global tests/lint retain documented pre-existing failures outside this round’s payload. The supervised CPU run took about 17 minutes including upload; the independent watchdog acknowledged the completion alert and completed-run services were disabled.
+
+## Fixed contrastive projections across real-data regimes (2026-09-17)
+
+User-requested cached CPU extension with no synthetic evaluation, map/readout fitting, generation, or judging. The three methods are answer direction on predicted answers, answer direction on observed answers, and context direction on contexts. The frozen layer-19 map uses 963,444 generic training pairs. Added 38,455 in-distribution contexts to the 10,706 OOD contexts. Generic chat retains only four non-overlapping contexts per behavior and is marked insufficient.
+
+In-distribution mapped/context correlations are 0.597/0.571 for harmful compliance, 0.289/0.275 for sycophancy, and -0.108/-0.351 for hallucination. TriviaQA observed-answer correlation is -0.099, so the hallucination direction fails validation there. OOD means weight constituent datasets equally and use 2,000 paired group-bootstrap draws with independent dataset streams. The NQ-Open/SimpleQA sign reversal remains visible in the individual-dataset appendix. Existing per-context predictions are bit-for-bit unchanged; all finite correlations match SciPy, and independent review passed after strengthening input provenance checks.
+
+[Main figure](https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_transfer.png?v=422bf05a85e3); [individual OOD datasets and preimages](https://eps.superkaiba.com/tasks/1739/figure/c5_behavior_datasets.png?v=f7b386666f46). [Archive](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/09cb65bd25a90e322059504f0fce379702f9e054/issue1739_fixed_regimes_20260917): 27 files, 28,000,140 bytes, all remote hashes verified. Scoring source ec2c2e903285932d67cec00ed5361a464ea7d4bb; result commit 30dd8c51919. [Overleaf](https://www.overleaf.com/project/6a59c927290f8b8b5eee0055) main 9d5cb6dc66b2f22e07cdaf97ac268c94a9d9dcce, compiled to 53 pages with no unresolved references. Active supervision and a 30-second process/output monitor covered scoring through verified completion.
