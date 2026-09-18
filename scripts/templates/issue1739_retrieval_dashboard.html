@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light"><title>Behavior retrieval · Task 1739</title>
+<style>
+:root{--ink:#242a2a;--muted:#616969;--line:#dce1df;--paper:#fff;--wash:#f6f8f7;--accent:#24645a;--selected:#edf5f2;--negative:#8c4034;--unknown:#9a7534;font-family:"Helvetica Neue",Helvetica,sans-serif;color:var(--ink);font-size:14px;background:var(--paper)}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit;color:inherit}button,select{cursor:pointer}button,a,input,select,summary{touch-action:manipulation}button{background:white;border:1px solid var(--line);border-radius:5px;padding:7px 11px;line-height:1.35}button:hover{background:var(--wash)}button:disabled{opacity:.45;cursor:default}a{color:var(--accent);text-underline-offset:3px}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}h1,h2,h3,p{margin:0}h1{font-size:22px;letter-spacing:-.5px;font-weight:600}h2{font-size:17px;font-weight:600}h3{font-size:14px;font-weight:600}.muted{color:var(--muted)}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-variant-numeric:tabular-nums}.row{display:flex;align-items:center;gap:12px}.between{justify-content:space-between}.wrap{flex-wrap:wrap}[hidden]{display:none!important}
+header{padding:20px 28px 0;border-bottom:1px solid var(--line)}.heading{align-items:flex-start}.heading p{margin-top:6px;line-height:1.6}.header-actions{flex-shrink:0}.header-actions a{font-size:13px}.tabs{display:flex;gap:26px;margin-top:19px}.tab{border:0;border-radius:0;padding:10px 0 13px;border-bottom:3px solid transparent;background:none;color:var(--muted);font-weight:500}.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}.tab:hover{background:none;color:var(--ink)}
+.overview{padding:18px 28px 14px;background:var(--wash);border-bottom:1px solid var(--line)}.overview-head{margin-bottom:10px}.overview-head p{font-size:12px;color:var(--muted)}.summary-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;text-align:left;font-variant-numeric:tabular-nums}th{font-size:12px;color:var(--muted);font-weight:500}th,td{padding:7px 12px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{padding-left:0}th:last-child,td:last-child{padding-right:0}.summary-table{max-width:1120px}.summary-table th:first-child{width:30%}.summary-table td:first-child button{padding:2px 0;border:0;background:none;text-align:left;color:var(--ink)}.summary-table tr.active td:first-child button{font-weight:600;color:var(--accent)}.summary-table tbody tr:last-child td{border-bottom:0}.rate-cell{display:flex;align-items:center;gap:12px}.track{width:130px;height:8px;background:#e4e9e6;display:flex;flex-shrink:0}.fill{background:var(--accent);height:100%}.missing{background:repeating-linear-gradient(135deg,#c9ae7b 0,#c9ae7b 2px,#f0e8d9 2px,#f0e8d9 5px);height:100%}.rate-text{min-width:84px}.caption{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px}.caption strong{font-weight:600;color:var(--ink)}.scope{font-size:12px;line-height:1.5;color:var(--muted);margin-top:4px}
+.toolbar{display:flex;align-items:end;gap:12px;padding:14px 28px;border-bottom:1px solid var(--line);flex-wrap:wrap}label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:5px}input,select{border:1px solid #cbd2cf;border-radius:4px;padding:8px 10px;background:white;height:36px}input{width:100%}.search-field{flex:1;min-width:190px}.toolbar select{max-width:240px}.toolbar-actions{display:flex;gap:8px;align-items:center;height:36px}.toolbar-actions button{height:36px}.browser{display:grid;grid-template-columns:370px minmax(0,1fr);height:calc(100vh - 476px);min-height:500px;max-height:1050px}.list-pane{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}.list-heading{padding:14px 20px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.5}.list-heading strong{color:var(--ink)}.examples{overflow-y:auto;flex:1}.example{display:block;width:100%;border:0;border-bottom:1px solid var(--line);border-radius:0;text-align:left;padding:14px 20px;background:white}.example:hover{background:var(--wash)}.example[aria-current="true"]{background:var(--selected);box-shadow:inset 3px 0 var(--accent)}.example-meta{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted);margin-bottom:7px}.excerpt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;line-height:1.55;overflow-wrap:anywhere}.example-foot{margin-top:8px;font-size:11px;color:var(--muted)}.positive{color:var(--negative);font-weight:600}.unknown{color:#866322}.pager{padding:10px 16px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;font-size:12px}.pager button{padding:4px 9px}.detail{padding:20px 28px 36px;overflow-y:auto;min-width:0}.detail-head{margin-bottom:16px}.detail-head p{font-size:12px;margin-top:5px;color:var(--muted)}.detail-actions{display:flex;gap:6px}.detail-actions button{font-size:12px;padding:5px 9px}.judgment{padding:13px 15px;background:var(--wash);border-left:3px solid #9ba9a2;margin-bottom:17px}.judgment.is-positive{border-left-color:var(--negative)}.judgment.is-unknown{border-left-color:var(--unknown)}.judgment-title{display:flex;justify-content:space-between;gap:14px;margin-bottom:8px;font-size:13px;font-weight:600}.rationale{font-size:13px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}.sources{font-size:12px;line-height:1.65;margin-top:7px}.sources a{margin-right:12px;overflow-wrap:anywhere}.ranking{margin:0 0 20px;overflow-x:auto}.ranking table{font-size:12px}.ranking td{padding-top:6px;padding-bottom:6px}.ranking th:first-child{width:45%}.ranking tr.selected-rank td{font-weight:600}.ranking .caption{margin-top:7px}.transcripts{display:grid;grid-template-columns:1fr 1fr;gap:24px}.transcript h3{padding-bottom:9px;border-bottom:1px solid var(--line);margin-bottom:12px}.transcript-text{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;font-size:13px;tab-size:4}.detail details{margin-top:20px;border-top:1px solid var(--line);padding-top:12px}.detail summary{cursor:pointer;font-size:12px;color:var(--muted);margin-bottom:10px}.correction{font-size:12px;line-height:1.6;margin:12px 0;padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.empty{padding:32px 24px;color:var(--muted);line-height:1.7}.mobile-switch{display:none}.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:white;padding:10px 16px;border-radius:4px;max-width:90vw;overflow-wrap:anywhere;font-size:13px;z-index:9}dialog{border:1px solid var(--line);border-radius:6px;padding:26px;width:min(790px,calc(100vw - 28px));max-height:85vh;color:var(--ink)}dialog::backdrop{background:#1118}dialog h2{margin-bottom:16px}dialog p{line-height:1.7;font-size:13px;margin:12px 0}dialog table{font-size:13px}dialog td{vertical-align:top;line-height:1.6}dialog code{font-size:12px;white-space:nowrap}.dialog-top{align-items:flex-start}dialog pre{white-space:pre-wrap;font-size:12px;line-height:1.6}dialog summary{cursor:pointer;margin-top:12px}.error{padding:40px;font-size:16px;color:#8c4034;white-space:pre-wrap}
+@media(min-width:1650px){header,.overview,.toolbar{padding-left:40px;padding-right:40px}.browser{grid-template-columns:420px minmax(0,1fr)}.detail{padding-left:36px;padding-right:36px}.transcript-text{font-size:14px}}
+@media(max-width:1100px){.browser{grid-template-columns:315px minmax(0,1fr)}.transcripts{grid-template-columns:1fr;gap:25px}.detail{padding:18px}.track{width:90px}.heading{flex-wrap:wrap}.header-actions{margin-top:8px}}
+@media(max-width:700px){header{padding:16px 16px 0}.heading{gap:8px}h1{font-size:20px}.header-actions{width:100%;margin:0}.tabs{gap:17px;margin-top:9px;overflow-x:auto}.tab{font-size:12px;white-space:nowrap}.overview{padding:14px 16px}.overview-head{align-items:flex-start}.summary-table{min-width:565px}.track{width:60px}.toolbar{padding:12px 16px;gap:10px}.search-field{flex-basis:100%}.toolbar label{flex:1;min-width:130px}.toolbar select{max-width:none;width:100%}.toolbar-actions{flex-basis:100%}.browser{display:block;min-height:0;height:68vh;max-height:none}.list-pane{height:100%;border:0}.detail{height:100%}.mobile-switch{display:flex;padding:8px 16px;gap:10px;border-bottom:1px solid var(--line)}.mobile-switch button[aria-pressed="true"]{background:var(--selected);color:var(--accent);border-color:var(--accent)}body[data-mobile="list"] .detail{display:none}body[data-mobile="detail"] .list-pane{display:none}.caption{font-size:11px}.detail-head{align-items:flex-start}.detail-actions{flex-wrap:wrap;justify-content:end}.overview-head p{max-width:180px;text-align:right}}
+.overview-toggle{display:none}@media(max-width:700px){.overview-toggle{display:inline-block;font-size:12px}.overview:not(.expanded) .overview-content{display:none}.overview-head>p{display:none}.overview-head{margin-bottom:0}.overview.expanded .overview-head{margin-bottom:10px}}
+</style>
+</head>
+<body data-mobile="list">
+<header>
+  <div class="row between heading"><div><h1>Behavior retrieval</h1><p class="muted" id="population">Loading verified examples…</p></div><div class="row header-actions"><a href="https://eps.superkaiba.com/tasks/1739">Task 1739</a><a id="figure-link" target="_blank" rel="noopener">Results figure ↗</a><button id="open-guide">Methods &amp; caveats</button></div></div>
+  <div class="tabs" role="tablist" aria-label="Behavior"><button class="tab" role="tab" data-behavior="harmful_compliance" aria-selected="true">Harmful compliance</button><button class="tab" role="tab" data-behavior="sycophancy" aria-selected="false">Sycophancy</button><button class="tab" role="tab" data-behavior="hallucination" aria-selected="false">Hallucination</button></div>
+</header>
+<main id="main">
+<section class="overview" aria-label="Method comparison">
+  <div class="row between overview-head"><h2 id="summary-title">Top 200 per method</h2><p>Click a method to browse its examples.</p><button class="overview-toggle" id="toggle-overview" aria-expanded="false" aria-controls="comparison-content">Show comparison</button></div>
+  <div class="overview-content" id="comparison-content">
+  <div class="summary-scroll"><table class="summary-table"><thead><tr><th scope="col">Retrieval method</th><th scope="col">Detected positive / selected</th><th scope="col">Unassessable</th><th scope="col">Mean score</th></tr></thead><tbody id="summary-rows"></tbody></table></div>
+  <p class="caption" id="behavior-note"></p><p class="scope">Cached contexts and answers used to train the map. These results describe the training pool; they do not measure risk on new contexts or fresh answers. Judge: Luna. Positive = score ≥ 50.</p>
+</div></section>
+<section class="toolbar" aria-label="Example filters">
+  <label class="search-field">Search contexts, answers, or rationales<input id="search" type="search" placeholder="e.g. Singleton Birch, Dogecoin, or a context ID" autocomplete="off"></label>
+  <label>Method<select id="method"><option value="all">All inspected contexts</option><option value="preimage_cosine">Preimage retrieval</option><option value="mapped_answer_projection">Mapped answer projection</option><option value="context_native_cosine">Context-derived direction</option><option value="answer_on_context_cosine">Answer direction on context</option><option value="random">Random baseline</option></select></label>
+  <label>Retrieval depth<select id="depth"><option value="200">Top 200</option><option value="100">Top 100</option><option value="50">Top 50</option></select></label>
+  <label>Judge outcome<select id="outcome"><option value="all">All outcomes</option><option value="positive">Positive (≥ 50)</option><option value="negative">Scored below 50</option><option value="unassessable">Unassessable</option><option value="judge_refusal">Judge refusal</option><option value="disagreement">Repeat disagreement</option></select></label>
+  <label>Sort by<select id="sort"><option value="rank">Retrieval rank</option><option value="score">Judge score ↓</option><option value="gap">Preimage rank advantage</option><option value="id">Context ID</option></select></label>
+  <div class="toolbar-actions"><button id="reset">Reset</button><button id="download">Download selection</button></div>
+</section>
+<div class="mobile-switch"><button id="show-list" aria-pressed="true">Examples</button><button id="show-detail" aria-pressed="false">Selected transcript</button></div>
+<section class="browser" aria-label="Example browser"><aside class="list-pane"><div class="list-heading" id="list-count" aria-live="polite"></div><div class="examples" id="examples" aria-label="Retrieved contexts"></div><div class="pager"><button id="previous-page" aria-label="Previous page">← Previous</button><span id="page-status"></span><button id="next-page" aria-label="Next page">Next →</button></div></aside><article class="detail" id="detail" aria-label="Selected context and answer"></article></section>
+</main>
+<dialog id="guide"><div class="row between dialog-top"><h2>What the methods measure</h2><button id="close-guide" aria-label="Close methods guide">Close</button></div>
+<p>Let <code>z</code> be the standardized context, <code>A z</code> the centered predicted answer, and <code>v</code> a fixed answer-derived persona direction.</p>
+<table><thead><tr><th>Method</th><th>Score and interpretation</th></tr></thead><tbody>
+<tr><td>Mapped answer projection</td><td><code>vᵀ A z = (Aᵀ v)ᵀ z</code><br>Predict the answer, then apply the answer readout. The equivalent context readout uses the map’s transpose.</td></tr>
+<tr><td>Preimage retrieval</td><td><code>q = A⁺₃₇₈ v; score = cos(z, q)</code><br>Approximately invert the answer direction, then retrieve contexts resembling that direction. This uses a truncated inverse, plus cosine normalization.</td></tr>
+<tr><td>Context-derived direction</td><td><code>cos(z, D v_C)</code><br>Apply the contrastive context-derived direction, converted to the standardized coordinates.</td></tr>
+<tr><td>Answer direction on context</td><td><code>cos(z, D v)</code><br>Apply the answer persona vector directly to context, with the same coordinate conversion.</td></tr>
+<tr><td>Random baseline</td><td>The same frozen sample of 1,000 contexts, independently judged for each behavior.</td></tr>
+</tbody></table>
+<p><strong>Projection and inverse retrieval are different rankings.</strong> The transpose emphasizes strongly transmitted map components; the inverse divides by retained singular values. Preimage cosine also normalizes the context length. Only mapped projection directly transfers the fixed answer readout.</p>
+<p>Here <code>z = D⁻¹(x − μ_C)</code>, with <code>D</code> the diagonal context standard deviations. Model: Qwen2.5-7B-Instruct, layer 19. The map was trained on 963,444 pairs; 959,844 saved answers were available, yielding 952,067 unique full prompts. The inverse retains 378 singular components, selected on 400 generic validation pairs before judging.</p>
+<p><strong>Coverage:</strong> this browser includes every inspected transcript, not the full pool’s text. Full-pool ranks are available for all four methods. Behavior labels exist only for the frozen selection for that behavior; an absent label is never shown as a negative. The top-200 sets and shared random baseline overlap.</p>
+<p><strong>Reading the table:</strong> the green bar is detected positives divided by all selected contexts; hatching indicates missing judgments. The mean excludes unassessable answers. Search and outcome filters change the example list, not the method summary. Random always uses 1,000 examples.</p>
+<p><strong>Interpretation:</strong> Luna judgments are reviewable model annotations, not human ground truth. Repeated judging checks repeatability, not accuracy. Hallucination retrieval is dominated by company-introduction prompts whose claims often cannot be checked. Near-duplicate templates remain even after exact-prompt deduplication.</p>
+<p>One role-play sycophancy record was corrected from 50 to 0 after outcome inspection because its score contradicted its rationale. This version includes that correction; the prior record is retained in the archive.</p>
+<details><summary>Read the current behavior’s frozen judging rubric</summary><pre id="rubric"></pre></details>
+<p class="mono muted" id="provenance"></p>
+</dialog>
+<div class="toast" role="status" id="toast" hidden></div>
+<script id="data" type="application/json">__DASHBOARD_DATA__</script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const D = JSON.parse($("data").textContent);
+const names = {preimage_cosine:"Preimage retrieval",mapped_answer_projection:"Mapped answer projection",context_native_cosine:"Context-derived direction",answer_on_context_cosine:"Answer direction on context",random:"Random baseline"};
+const methods = Object.keys(names);
+const behaviors = {harmful_compliance:"Harmful compliance",sycophancy:"Sycophancy",hallucination:"Hallucination"};
+const state = {behavior:"harmful_compliance",method:"preimage_cosine",depth:200,outcome:"all",sort:"rank",search:"",ci:null,page:0};
+const pageSize = 40;
+let filtered = [], toastTimer;
+const number = n => n.toLocaleString("en-US");
+const el = (tag, cls, text) => {const n = document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
+const isPositive = j => j.status === "scored" && j.score >= 50;
+const verdict = j => j.status === "scored" ? `${j.score}/100 · ${isPositive(j)?"Positive":"Below 50"}` : j.status === "unassessable" ? "Unassessable" : "Judge refusal";
+const judgeCategory = j => j.status === "scored" ? (isPositive(j)?"positive":"negative") : j.status;
+const rankFor = (r,m) => m === "random" ? r.random_order : r.ranks[state.behavior][m].rank;
+const selections = r => methods.filter(m => m === "random" ? r.random_order !== null : rankFor(r,m) <= state.depth);
+const bestRank = r => Math.min(...methods.filter(m=>m!=="random").map(m=>rankFor(r,m)));
+function validLink(url){try {const u=new URL(url);return ["https:","http:"].includes(u.protocol)?u.href:null;}catch{return null;}}
+function showToast(message){$("toast").textContent=message;$("toast").hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$("toast").hidden=true,3500);}
+function setMobile(view){document.body.dataset.mobile=view;$("show-list").setAttribute("aria-pressed",view==="list");$("show-detail").setAttribute("aria-pressed",view==="detail");if(view==="detail"&&innerWidth<=700)document.querySelector(".mobile-switch").scrollIntoView({block:"start"});}
+function encodeState(){const q=new URLSearchParams();for(const k of ["behavior","method","depth","outcome","sort","search","ci"])if(state[k]!==null&&state[k]!=="")q.set(k,state[k]);history.replaceState(null,"","#"+q);}
+function restoreState(){const q=new URLSearchParams(location.hash.slice(1));for(const k of ["behavior","method","outcome","sort","search"])if(q.has(k))state[k]=q.get(k);if(!behaviors[state.behavior])state.behavior="harmful_compliance";if(!["all",...methods].includes(state.method))state.method="preimage_cosine";if(!["all","positive","negative","unassessable","judge_refusal","disagreement"].includes(state.outcome))state.outcome="all";if(!["rank","score","gap","id"].includes(state.sort))state.sort="rank";if([50,100,200].includes(Number(q.get("depth"))))state.depth=Number(q.get("depth"));state.ci=q.has("ci")&&Number.isInteger(Number(q.get("ci")))?Number(q.get("ci")):null;state.page=0;}
+function renderSummary(){
+  $("summary-title").textContent=`Top ${state.depth} per method`;
+  $("summary-rows").replaceChildren();
+  for(const method of methods){
+    const cell=D.behaviors[state.behavior].cells[`${method}/${method==="random"?1000:state.depth}`];
+    const tr=el("tr",method===state.method?"active":"");const td=el("td");const button=el("button","",names[method]);button.onclick=()=>{state.method=method;state.page=0;state.ci=null;render();};button.setAttribute("aria-pressed",method===state.method);td.append(button);tr.append(td);
+    const rate=el("td");const row=el("div","rate-cell");const track=el("div","track");track.setAttribute("aria-hidden","true");const fill=el("span","fill");fill.style.width=`${100*cell.n_positive/cell.n}%`;const missing=el("span","missing");missing.style.width=`${100*cell.n_missing/cell.n}%`;track.append(fill,missing);row.append(track,el("span","rate-text",`${cell.n_positive}/${number(cell.n)} · ${(100*cell.n_positive/cell.n).toFixed(1)}%`));rate.append(row);tr.append(rate);
+    tr.append(el("td",cell.n_missing?"unknown":"",`${cell.n_missing}/${number(cell.n)}`));tr.append(el("td","mono",cell.mean_scored===null?"—":cell.mean_scored.toFixed(1)));$("summary-rows").append(tr);
+  }
+  const notes={harmful_compliance:"Preimage retrieval enriches harmful compliance relative to random sampling. It does not establish an advantage over the two context controls.",sycophancy:"No positive labels in the preimage or mapped-answer top 200. Control positives include preference-matching recommendations and requested flattery; inspect the rationales before treating these as strong sycophancy cases.",hallucination:"193 of the preimage top 200 answers are unassessable. All 200 prompts ask for company introductions. The missing judgments prevent a reliable comparison of hallucination rates."};
+  $("behavior-note").textContent=notes[state.behavior];
+}
+function filterRecords(){
+  const query=state.search.trim().toLocaleLowerCase();
+  filtered=D.records.filter(r=>{
+    const j=r.judgments[state.behavior];if(!j)return false;
+    const selected=selections(r);
+    if(state.method==="all" ? !selected.length : !selected.includes(state.method))return false;
+    if(state.outcome==="disagreement"){const repeat=r.repeat[state.behavior];if(!repeat||judgeCategory(j)===judgeCategory(repeat))return false;}
+    else if(state.outcome!=="all"&&judgeCategory(j)!==state.outcome)return false;
+    if(query&&!`${r.ci} ${r.prompt} ${r.response} ${j.rationale}`.toLocaleLowerCase().includes(query))return false;
+    return true;
+  });
+  const rank=r=>state.method==="all"?bestRank(r):rankFor(r,state.method);
+  const gap=r=>rankFor(r,"context_native_cosine")-rankFor(r,"preimage_cosine");
+  filtered.sort((a,b)=>{
+    if(state.sort==="score")return (b.judgments[state.behavior].score??-1)-(a.judgments[state.behavior].score??-1)||rank(a)-rank(b)||a.ci-b.ci;
+    if(state.sort==="gap")return gap(b)-gap(a)||a.ci-b.ci;
+    if(state.sort==="id")return a.ci-b.ci;
+    return rank(a)-rank(b)||a.ci-b.ci;
+  });
+  if(!filtered.some(r=>r.ci===state.ci))state.ci=filtered.length?filtered[0].ci:null;
+  state.page=Math.min(state.page,Math.max(0,Math.ceil(filtered.length/pageSize)-1));
+}
+function renderList(){
+  $("list-count").replaceChildren(el("strong","",`${number(filtered.length)} contexts`),document.createTextNode(` · ${behaviors[state.behavior]}`));
+  $("examples").replaceChildren();
+  if(!filtered.length)$("examples").append(el("div","empty","No contexts match these filters. Try all outcomes or reset the search."));
+  for(const r of filtered.slice(state.page*pageSize,(state.page+1)*pageSize)){
+    const j=r.judgments[state.behavior],button=el("button","example");button.setAttribute("aria-current",r.ci===state.ci);button.dataset.ci=r.ci;
+    const m=state.method==="all"?null:state.method;const rank=m==="random"?`Random draw ${r.random_order}`:m?`Rank ${number(rankFor(r,m))}`:`Best rank ${number(bestRank(r))}`;
+    const meta=el("div","example-meta");meta.append(el("span","mono",rank),el("span",j.status!=="scored"?"unknown":isPositive(j)?"positive":"",verdict(j)));button.append(meta,el("div","excerpt",r.prompt));
+    const chosen=selections(r);button.append(el("div","example-foot",`Context ${r.ci} · ${chosen.length} selected ${chosen.length===1?"method":"methods"}${r.repeat[state.behavior]?" · repeat judged":""}`));
+    button.onclick=()=>{state.ci=r.ci;renderList();renderDetail();encodeState();setMobile("detail");};$("examples").append(button);
+  }
+  $("page-status").textContent=filtered.length?`${state.page*pageSize+1}–${Math.min((state.page+1)*pageSize,filtered.length)} of ${number(filtered.length)}`:"0 results";
+  $("previous-page").disabled=state.page===0;$("next-page").disabled=(state.page+1)*pageSize>=filtered.length;
+}
+function renderJudgment(j,title){
+  const box=el("div",`judgment ${j.status!=="scored"?"is-unknown":isPositive(j)?"is-positive":""}`);const head=el("div","judgment-title");head.append(el("span","",title),el("span",j.status!=="scored"?"unknown":isPositive(j)?"positive":"",verdict(j)));box.append(head,el("p","rationale",j.rationale));
+  if(j.sources.length){const sources=el("div","sources");sources.append(el("span","muted","Judge’s cited sources: "));for(const source of j.sources){const url=validLink(typeof source==="string"?source:source.url);if(url){const a=el("a","",new URL(url).hostname);a.href=url;a.target="_blank";a.rel="noopener noreferrer";sources.append(a);}}box.append(sources);}
+  return box;
+}
+function renderDetail(){
+  const detail=$("detail");detail.replaceChildren();detail.scrollTop=0;
+  const r=filtered.find(r=>r.ci===state.ci);if(!r){detail.append(el("div","empty","Select a context to inspect its answer and judging rationale."));return;}
+  const j=r.judgments[state.behavior],head=el("div","row between detail-head"),title=el("div");title.append(el("h2","",`Context ${r.ci}`),el("p","",`${behaviors[state.behavior]} · saved Qwen2.5-7B-Instruct answer`));head.append(title);
+  const actions=el("div","detail-actions");for(const [text,step] of [["←",-1],["→",1]]){const button=el("button","",text);button.setAttribute("aria-label",step<0?"Previous context":"Next context");const i=filtered.indexOf(r)+step;button.disabled=i<0||i>=filtered.length;button.onclick=()=>{state.ci=filtered[i].ci;state.page=Math.floor(i/pageSize);renderList();renderDetail();encodeState();};actions.append(button);}const share=el("button","","Copy link");share.onclick=async()=>{encodeState();try{await navigator.clipboard.writeText(location.href);showToast("Link copied");}catch{showToast(location.href);}};actions.append(share);head.append(actions);detail.append(head,renderJudgment(j,"Luna judgment"));
+  if(r.corrected&&state.behavior==="sycophancy")detail.append(el("p","correction","Corrected after review: the original score of 50 contradicted its rationale. The unchanged rubric excludes this fictional role-play case; the current score is 0."));
+  const ranking=el("div","ranking");const table=el("table");const thead=el("thead"),trhead=el("tr");for(const t of ["Method","Full-pool rank","Retrieval score"])trhead.append(el("th","",t));thead.append(trhead);table.append(thead);const tbody=el("tbody");
+  for(const m of methods.filter(m=>m!=="random")){const s=r.ranks[state.behavior][m],tr=el("tr",s.rank<=state.depth?"selected-rank":"");tr.append(el("td","",names[m]),el("td","mono",`${number(s.rank)}${s.rank<=state.depth?" · selected":""}`),el("td","mono",s.score.toPrecision(5)));tbody.append(tr);}table.append(tbody);ranking.append(table,el("p","caption",`Ranks among ${number(D.pool.n_unique_candidate_prompts)} unique contexts. Scores have different scales; compare ranks.${r.random_order!==null?" Also in the shared random baseline.":""}`));detail.append(ranking);
+  const transcripts=el("div","transcripts");for(const [label,text] of [["Context",r.prompt],["Saved answer",r.response]]){const section=el("section","transcript");section.append(el("h3","",label),el("div","transcript-text",text));transcripts.append(section);}detail.append(transcripts);
+  if(r.repeat[state.behavior]){const audit=el("details");audit.append(el("summary","","Independent repeat judgment"),renderJudgment(r.repeat[state.behavior],"Luna repeat"));detail.append(audit);}
+  const others=Object.keys(r.judgments).filter(b=>b!==state.behavior);if(others.length){const other=el("details");other.append(el("summary","","Other available behavior judgments"));for(const b of others)other.append(renderJudgment(r.judgments[b],behaviors[b]));detail.append(other);}
+  const metadata=el("details");metadata.append(el("summary","","Record provenance"),el("p","caption mono",`Annotation ID: ${j.id}\nAnswer SHA-256: ${r.response_sha256}`));detail.append(metadata);
+}
+function render(){
+  for(const button of document.querySelectorAll("[data-behavior]"))button.setAttribute("aria-selected",button.dataset.behavior===state.behavior);
+  for(const id of ["method","depth","outcome","sort","search"])$(id).value=state[id];
+  $("rubric").textContent=D.rubrics[state.behavior];renderSummary();filterRecords();renderList();renderDetail();encodeState();
+}
+function boot(){
+  $("population").textContent=`${number(D.pool.n_unique_candidate_prompts)} contexts ranked · ${number(D.records.length)} transcripts inspected · 1M-pair map`;
+  $("figure-link").href=D.figure;$("provenance").textContent=`Results snapshot ${D.summary_sha256.slice(0,16)} · corrected 18 September 2026`;
+  for(const button of document.querySelectorAll("[data-behavior]"))button.onclick=()=>{state.behavior=button.dataset.behavior;state.ci=null;state.page=0;render();};
+  for(const id of ["method","depth","outcome","sort"]){$(id).onchange=()=>{state[id]=id==="depth"?Number($(id).value):$(id).value;state.page=0;state.ci=null;render();};}
+  let searchTimer;$("search").oninput=()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{state.search=$("search").value;state.page=0;state.ci=null;render();},140);};
+  $("reset").onclick=()=>{state.method="all";state.depth=200;state.outcome="all";state.sort="rank";state.search="";state.ci=null;state.page=0;render();setMobile("list");};
+  $("previous-page").onclick=()=>{state.page--;renderList();$("examples").scrollTop=0;};$("next-page").onclick=()=>{state.page++;renderList();$("examples").scrollTop=0;};
+  $("open-guide").onclick=()=>$("guide").showModal();$("close-guide").onclick=()=>$("guide").close();
+  $("show-list").onclick=()=>setMobile("list");$("show-detail").onclick=()=>setMobile("detail");
+  $("toggle-overview").onclick=()=>{const open=document.querySelector(".overview").classList.toggle("expanded");$("toggle-overview").setAttribute("aria-expanded",open);$("toggle-overview").textContent=open?"Hide comparison":"Show comparison";};
+  $("download").onclick=()=>{const content={filters:{...state},summary_sha256:D.summary_sha256,interpretation:D.interpretation,records:filtered};const blob=new Blob([JSON.stringify(content,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob),a=el("a");a.href=url;a.download=`task1739-${state.behavior}-${state.method}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast(`Downloaded ${number(filtered.length)} contexts`);};
+  window.addEventListener("hashchange",()=>{restoreState();render();});restoreState();render();
+  if(state.ci!==null){const i=filtered.findIndex(r=>r.ci===state.ci);state.page=Math.floor(Math.max(0,i)/pageSize);renderList();}
+}
+try{boot();}catch(error){$("main").replaceChildren(el("div","error",`Could not load the verified result browser: ${error.message}`));throw error;}
+</script>
+</body></html>

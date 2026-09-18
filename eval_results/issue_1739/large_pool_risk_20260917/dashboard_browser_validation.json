@@ -1,0 +1,17 @@
+{
+  "checked_at": "2026-09-18T03:40:19.178Z",
+  "checks": [
+    "harmful_compliance: all five cohort and positive counts",
+    "sycophancy: all five cohort and positive counts",
+    "hallucination: all five cohort and positive counts",
+    "193 missing hallucination labels remain missing",
+    "search, depths, selected context deep link round-trip",
+    "methods dialog, Escape dismissal, actual JSON download",
+    "corrected role-play record renders score zero with correction note",
+    "empty state, reset, 8 unique sycophancy positives",
+    "390px mobile: no page overflow and working list/detail navigation"
+  ],
+  "console_errors": [],
+  "initial_html_sha256": "7b02d7edf33d2fdc918755afb7bc7bffbf7b2e048092fe672791fa30a84b2bbe",
+  "final_mobile_and_publication_check": "dashboard_publication.json"
+}

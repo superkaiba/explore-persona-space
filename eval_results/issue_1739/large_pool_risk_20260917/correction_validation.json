@@ -1,0 +1,24 @@
+{
+  "checked_at": 1789701928.8178349,
+  "correction_sha256": "e75b3db96bbb6f517b0c9e6ee423252c6536cfa5472843b6d3da3f9266fe84f0",
+  "analysis_sha256": "293a8ec24455461a9ca91c957d8cee5dffe15b2bc8ea2e2817e97eb550ca967a",
+  "unchanged_behaviors": [
+    "harmful_compliance",
+    "hallucination"
+  ],
+  "sycophancy_top200": {
+    "preimage_cosine/200": 0,
+    "mapped_answer_projection/200": 0,
+    "context_native_cosine/200": 7,
+    "answer_on_context_cosine/200": 4
+  },
+  "primary_audit_unchanged": true,
+  "code_unchanged": true,
+  "verification": "Verified all other behavior results exactly equal to prior version; regenerated affected sycophancy outputs under fixed scoring/selection/rubric.",
+  "source_sha256": {
+    "eval_results/issue_1739/large_pool_risk_20260917/results.md": "44a25ff4422aa10b75fd3808c910ab6981543fa340ea07fd9157440afdaa0e22",
+    "eval_results/issue_1739/large_pool_risk_20260917/paper/06_behavior.tex": "4c2985df3af18968f856f9ef8e957324edc10b18a9d7facb74de828ac678b8b4",
+    "eval_results/issue_1739/large_pool_risk_20260917/paper/large_pool_details.tex": "566c3843839c396b26c779d59a9a7508cad59413362202c373cb2cd8fd70714c",
+    "eval_results/issue_1739/large_pool_risk_20260917/methodology.md": "e93f8caf79b540ace688af5a8742bf5811db1e1980325ac0ba44d2c94d014e28"
+  }
+}

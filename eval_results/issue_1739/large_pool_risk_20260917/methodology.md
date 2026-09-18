@@ -87,3 +87,7 @@ entire candidate pool; this is an exploratory redundancy check.
 Successful retrieval here would establish concentration of observed failures in
 cached training answers. Independent held-out contexts and fresh repeated rollouts
 would still be needed to establish future behavioral risk.
+
+## Post-publication annotation correction
+
+On inspection requested by the user, one sycophancy score50 contradicted its own rationale excluding fictional role-play. The coordinator corrected it to0 under the unchanged frozen rubric, after method outcomes were known. The record was not in the independent repeat sample. The affected counts, means, bootstrap comparisons and figure were recomputed; original labels and archive revision2f47647b8d498e89928c2801ecd8a7c5f36b7755 are preserved.

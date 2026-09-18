@@ -1,0 +1,25 @@
+{
+  "checked_at": 1789703103.5597878,
+  "reviewer": "gpt-5.6-luna native subagent",
+  "scope": [
+    "scripts/issue1739_retrieval_dashboard.py",
+    "scripts/templates/issue1739_retrieval_dashboard.html"
+  ],
+  "findings": [],
+  "conclusion": "No substantive correctness, security, or UX bugs found. Full-pool ranks and ties, missing labels, joins, random ordering, transcript escaping, filters/deep links and formula notation checked.",
+  "source_sha256": {
+    "scripts/issue1739_retrieval_dashboard.py": "ab405b039f28b62214b5faab0abfcae53d6f56953135690a1f2640246dce2b33",
+    "scripts/templates/issue1739_retrieval_dashboard.html": "80e6c03a81bef189f16f24519651d464b2b424c6b6f3002f46b4445a78cfa9b2"
+  },
+  "post_review_format_only_change": {
+    "file": "scripts/issue1739_retrieval_dashboard.py",
+    "change": "Indent embedded JSON for source review and efficient scanning; exact decoded payload equality verified",
+    "sha256": "d71574994538db293f6e13fee2f6b030981d34a8856e686a395f55254ea91289"
+  },
+  "post_review_thread_setup": {
+    "file": "scripts/issue1739_retrieval_dashboard.py",
+    "change": "Load project environment before numpy imports, satisfying thread-cap workflow check",
+    "sha256": "f682d3d4bb60c798a99fb77e59e17b636108e4285bf7b8ca32d436a504e9ae2d",
+    "verification": "Builder rerun reproduces identical HTML SHA256 b972597729f94181f44eaecee6e57f388b8cfdc9f7a291925c876b5b3f5c8697; ruff and scoped workflow lint pass"
+  }
+}

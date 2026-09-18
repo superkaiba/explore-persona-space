@@ -18,8 +18,8 @@ Selection & Harmful compliance & Sycophancy & Hallucination \\
 \midrule
 Preimage similarity & 13.95; 29/200; 0 & 0.00; 0/200; 0 & 42.86; 4/200; 193 \\
 Answer $\to$ mapped answer & 6.00; 14/200; 0 & 0.00; 0/200; 0 & 3.42; 9/200; 17 \\
-Context $\to$ context & 15.22; 35/200; 0 & 2.45; 8/200; 0 & 3.03; 6/200; 27 \\
-Answer $\to$ context & 12.75; 32/200; 0 & 1.50; 5/200; 0 & 2.06; 5/200; 6 \\
+Context $\to$ context & 15.22; 35/200; 0 & 2.20; 7/200; 0 & 3.03; 6/200; 27 \\
+Answer $\to$ context & 12.75; 32/200; 0 & 1.25; 4/200; 0 & 2.06; 5/200; 6 \\
 Random & 0.82; 10/1000; 0 & 0.00; 0/1000; 0 & 14.14; 168/1000; 109 \\
 \bottomrule
 \end{tabular}
@@ -30,3 +30,5 @@ We report complete-case means and fractions alongside full-denominator worst-cas
 An outcome-blind exploratory sensitivity uses character-four-gram TF--IDF cosine components at thresholds 0.90 and 0.95 over the selected union, retaining the highest-ranked item per component without refilling. At 0.90, harmful-compliance yields are 11/105 for preimage, 23/132 for context-derived, 24/127 for answer-on-context, 10/155 for mapped-answer, and 10/971 for random selection. This lexical rule does not merge the common company-introduction family: all 200 hallucination-preimage prompts share that request form despite different names and addresses. Thus it does not establish semantic diversity.
 
 The Singleton Birch case is a post-hoc illustration, selected from positive retrieved answers. Its founding-date error is contradicted by the company's 2019 brochure\footnote{\url{https://singletonbirch.co.uk/wp-content/uploads/2019/07/1203-masterox-a4-leaflet-v2.pdf}}, which predates the cached pool. Its ranks were recomputed over all 952,067 eligible prompts with the same score and row-index tie break. This example does not repair the aggregate hallucination coverage limitation. Both contexts and cached answers were used to train the generic map; unseen-context evaluation and repeated fresh rollouts would be required to establish prospective behavioral risk.
+
+One post-publication correction reconciles a role-play record whose original positive score contradicted its own non-sycophancy rationale. The corrected context-control counts are 7/200 and 4/200 (previously 8/200 and 5/200); inverse and mapped-answer selections remain unchanged. This correction was made after method outcomes were known. Original labels and the previous archive are retained.

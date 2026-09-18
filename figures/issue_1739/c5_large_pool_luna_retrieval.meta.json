@@ -1,6 +1,6 @@
 {
   "source": "eval_results/issue_1739/large_pool_risk_20260917/luna_results.json",
-  "source_sha256": "8c37a85969407d2d5dca6302ccfe9bb1161131440b653f204a5204dfcca3aa98",
+  "source_sha256": "293a8ec24455461a9ca91c957d8cee5dffe15b2bc8ea2e2817e97eb550ca967a",
   "caption": "Luna-judged behavior in cached answers retrieved from 952,067 unique prompts. Each method selects its top 200; the shared random baseline contains 1,000. Panels use separate, labeled horizontal ranges. Filled bars show scores >=50 over the full selected denominator. Hatched extensions show unassessable judgments or judge refusals, giving worst-case missingness bounds; neither hatched cases nor model refusals are automatically counted as harmful behavior. Whiskers are pointwise 95% descriptive context-bootstrap intervals for detected fractions, conditional on fixed selections and labels. Zero-event bootstrap intervals are degenerate and do not establish zero underlying risk. Both contexts and cached answers were used to train the map; this is training-population retrieval. Preimage and both context controls use cosine similarity in standardized context coordinates; the mapped-answer diagnostic uses an unnormalized projection.",
   "style": {
     "style_version": "c2a-v2",

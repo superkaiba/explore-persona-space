@@ -1,0 +1,27 @@
+{
+  "checked_at": "2026-09-18T03:43:59.267Z",
+  "url": "https://eps.superkaiba.com/tasks/1739/behavior-explorer.html",
+  "http_status": 200,
+  "served_html_sha256": "b972597729f94181f44eaecee6e57f388b8cfdc9f7a291925c876b5b3f5c8697",
+  "browser_verified": true,
+  "checks": [
+    "live URL renders verified data",
+    "eight distinct sycophancy positives",
+    "mobile comparison toggle",
+    "mobile transcript navigation",
+    "no horizontal page overflow"
+  ],
+  "console_errors": [],
+  "format_only_republication": {
+    "checked_at": 1789703518.808934,
+    "payload_identical_to_browser_tested_version": true,
+    "browser_tested_html_sha256": "f18d3164fe183ae443196b839fa6c42854fa0a63a936151a1fad1602ab6bd417",
+    "http_status": 200
+  },
+  "restored_after_false_positive_scan": {
+    "checked_at": "2026-09-18T04:10:12.969249+00:00",
+    "http_status": 200,
+    "served_html_sha256": "b972597729f94181f44eaecee6e57f388b8cfdc9f7a291925c876b5b3f5c8697",
+    "finding": "Two Sourcegraph rule false positives on verified dataset Git revisions; exact line/rule fingerprints recorded in .gitleaksignore. No transcript redaction required."
+  }
+}

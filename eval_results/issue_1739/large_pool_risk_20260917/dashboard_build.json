@@ -1,0 +1,12 @@
+{
+  "built_at": 1789704906.2310717,
+  "html_sha256": "b972597729f94181f44eaecee6e57f388b8cfdc9f7a291925c876b5b3f5c8697",
+  "summary_sha256": "293a8ec24455461a9ca91c957d8cee5dffe15b2bc8ea2e2817e97eb550ca967a",
+  "template_sha256": "80e6c03a81bef189f16f24519651d464b2b424c6b6f3002f46b4445a78cfa9b2",
+  "builder_sha256": "f682d3d4bb60c798a99fb77e59e17b636108e4285bf7b8ca32d436a504e9ae2d",
+  "n_transcripts": 2955,
+  "n_primary": 4958,
+  "n_repeat": 300,
+  "full_pool_ranks_verified_against_frozen_top200": true,
+  "every_cohort_verified_against_current_summary": true
+}

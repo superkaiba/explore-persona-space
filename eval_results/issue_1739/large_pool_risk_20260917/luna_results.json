@@ -1,8 +1,8 @@
 {
-  "created_at": 1789698167.9004915,
+  "created_at": 1789701843.367355,
   "annotation_complete": true,
   "analysis_complete": true,
-  "quality_acceptance_sha256": "9302c0b1deff0059bafb29e017bd27b3f766a497a495cbb5796c96c709b8b531",
+  "quality_acceptance_sha256": "3e69aff51d2070a509c0cf6d0bf1b5cd11449609ef3207b7b1c2d358586e8f66",
   "annotations": {
     "harmful_compliance/labels_pilot/packet_0000.json": "0ddf828f1b20d8a0fb2bd85827a4adb25f25cda6ba93afda197adaf7a1505dc0",
     "harmful_compliance/labels_pilot/packet_0001.json": "35416ec7c716664b1486c05462139287a97964b08ab24c4d7daffc3f9c0cdb2f",
@@ -235,7 +235,7 @@
     "sycophancy/labels_production/packet_0073.json": "c192a614048e28e915247290661b6af4cbcd566c50ac2ce578b0a5d83bc6ba70",
     "sycophancy/labels_production/packet_0074.json": "5faf99316b414ef85fc6b5aa9f34bc166e6af101d136bd111ccb6fbe66374181",
     "sycophancy/labels_production/packet_0075.json": "b2bc9328d83619be364d3ae4c68d5746f213fb7ca0b79afbf0c707122b79f698",
-    "sycophancy/labels_production/packet_0076.json": "054502a51a28d7a98e8c1ac2f9b87891626ab06a27a88513d1c0ed02a97aa40f",
+    "sycophancy/labels_production/packet_0076.json": "cce3c0f8240585681aefcfac64f37cae47d6392c1470936026490867bb789505",
     "sycophancy/labels_production/packet_0077.json": "d45868743fcd0f6009473f57f657a7c83b8bd23baf02e5d60e3e621a071f8566",
     "sycophancy/labels_production/packet_0078.json": "75041ffb49a739a225d3add23c741ff3236640128832b5abcec93cba7ee9ab91",
     "sycophancy/labels_production/packet_0079.json": "349811b0a3f8b282dda5616cae7a2353ce62b03d4b9e12120b9007bd1c2252a0",
@@ -2335,17 +2335,17 @@
           "n": 50,
           "n_scored": 50,
           "n_missing": 0,
-          "n_positive": 5,
+          "n_positive": 4,
           "coverage": 1.0,
-          "mean_scored": 6.3,
+          "mean_scored": 5.3,
           "mean_full_bounds": [
-            6.3,
-            6.3
+            5.3,
+            5.3
           ],
-          "fraction_scored": 0.1,
+          "fraction_scored": 0.08,
           "fraction_full_bounds": [
-            0.1,
-            0.1
+            0.08,
+            0.08
           ],
           "status_counts": {
             "scored": 50,
@@ -2354,28 +2354,28 @@
           },
           "intervals": {
             "mean_scored": [
-              1.560202205882353,
-              12.501453488372086
+              0.9433962264150944,
+              11.25
             ],
             "fraction_scored": [
-              0.022714646464646465,
-              0.19148936170212766
+              0.017536297640653356,
+              0.16666666666666666
             ],
             "fraction_lower": [
-              0.022714646464646465,
-              0.19148936170212766
+              0.017536297640653356,
+              0.16666666666666666
             ],
             "fraction_upper": [
-              0.022714646464646465,
-              0.19148936170212766
+              0.017536297640653356,
+              0.16666666666666666
             ],
             "mean_lower": [
-              1.560202205882353,
-              12.501453488372086
+              0.9433962264150944,
+              11.25
             ],
             "mean_upper": [
-              1.560202205882353,
-              12.501453488372086
+              0.9433962264150944,
+              11.25
             ]
           },
           "enrichment_scored_over_random": null
@@ -2384,17 +2384,17 @@
           "n": 100,
           "n_scored": 100,
           "n_missing": 0,
-          "n_positive": 6,
+          "n_positive": 5,
           "coverage": 1.0,
-          "mean_scored": 3.9,
+          "mean_scored": 3.4,
           "mean_full_bounds": [
-            3.9,
-            3.9
+            3.4,
+            3.4
           ],
-          "fraction_scored": 0.06,
+          "fraction_scored": 0.05,
           "fraction_full_bounds": [
-            0.06,
-            0.06
+            0.05,
+            0.05
           ],
           "status_counts": {
             "scored": 100,
@@ -2403,28 +2403,28 @@
           },
           "intervals": {
             "mean_scored": [
-              1.1904761904761905,
-              7.374877810361675
+              0.6944444444444444,
+              6.699079171254128
             ],
             "fraction_scored": [
-              0.0196078431372549,
-              0.10870103314679291
+              0.010416666666666666,
+              0.09526098901098888
             ],
             "fraction_lower": [
-              0.0196078431372549,
-              0.10870103314679291
+              0.010416666666666666,
+              0.09526098901098888
             ],
             "fraction_upper": [
-              0.0196078431372549,
-              0.10870103314679291
+              0.010416666666666666,
+              0.09526098901098888
             ],
             "mean_lower": [
-              1.1904761904761905,
-              7.374877810361675
+              0.6944444444444444,
+              6.699079171254128
             ],
             "mean_upper": [
-              1.1904761904761905,
-              7.374877810361675
+              0.6944444444444444,
+              6.699079171254128
             ]
           },
           "enrichment_scored_over_random": null
@@ -2433,17 +2433,17 @@
           "n": 200,
           "n_scored": 200,
           "n_missing": 0,
-          "n_positive": 8,
+          "n_positive": 7,
           "coverage": 1.0,
-          "mean_scored": 2.45,
+          "mean_scored": 2.2,
           "mean_full_bounds": [
-            2.45,
-            2.45
+            2.2,
+            2.2
           ],
-          "fraction_scored": 0.04,
+          "fraction_scored": 0.035,
           "fraction_full_bounds": [
-            0.04,
-            0.04
+            0.035,
+            0.035
           ],
           "status_counts": {
             "scored": 200,
@@ -2452,28 +2452,28 @@
           },
           "intervals": {
             "mean_scored": [
-              0.8916876178504085,
-              4.430693069306931
+              0.679605054875475,
+              4.033208766862047
             ],
             "fraction_scored": [
-              0.015,
-              0.06829268292682927
+              0.010256410256410256,
+              0.0625
             ],
             "fraction_lower": [
-              0.015,
-              0.06829268292682927
+              0.010256410256410256,
+              0.0625
             ],
             "fraction_upper": [
-              0.015,
-              0.06829268292682927
+              0.010256410256410256,
+              0.0625
             ],
             "mean_lower": [
-              0.8916876178504085,
-              4.430693069306931
+              0.679605054875475,
+              4.033208766862047
             ],
             "mean_upper": [
-              0.8916876178504085,
-              4.430693069306931
+              0.679605054875475,
+              4.033208766862047
             ]
           },
           "enrichment_scored_over_random": null
@@ -2580,17 +2580,17 @@
           "n": 200,
           "n_scored": 200,
           "n_missing": 0,
-          "n_positive": 5,
+          "n_positive": 4,
           "coverage": 1.0,
-          "mean_scored": 1.5,
+          "mean_scored": 1.25,
           "mean_full_bounds": [
-            1.5,
-            1.5
+            1.25,
+            1.25
           ],
-          "fraction_scored": 0.025,
+          "fraction_scored": 0.02,
           "fraction_full_bounds": [
-            0.025,
-            0.025
+            0.02,
+            0.02
           ],
           "status_counts": {
             "scored": 200,
@@ -2599,28 +2599,28 @@
           },
           "intervals": {
             "mean_scored": [
-              0.33783783783783783,
-              2.97305341055341
+              0.2403846153846154,
+              2.638208403126745
             ],
             "fraction_scored": [
-              0.00510204081632653,
-              0.04865792262851082
+              0.0045871559633027525,
+              0.04145617443868736
             ],
             "fraction_lower": [
-              0.00510204081632653,
-              0.04865792262851082
+              0.0045871559633027525,
+              0.04145617443868736
             ],
             "fraction_upper": [
-              0.00510204081632653,
-              0.04865792262851082
+              0.0045871559633027525,
+              0.04145617443868736
             ],
             "mean_lower": [
-              0.33783783783783783,
-              2.97305341055341
+              0.2403846153846154,
+              2.638208403126745
             ],
             "mean_upper": [
-              0.33783783783783783,
-              2.97305341055341
+              0.2403846153846154,
+              2.638208403126745
             ]
           },
           "enrichment_scored_over_random": null
@@ -2702,26 +2702,26 @@
         },
         "preimage_cosine/50_minus_context_native_cosine/50": {
           "mean_scored": {
-            "estimate": -6.3,
+            "estimate": -5.3,
             "interval": [
-              -12.501453488372093,
-              -1.5602022058823655
+              -11.25,
+              -0.9433962264150944
             ]
           },
           "fraction_scored": {
-            "estimate": -0.1,
+            "estimate": -0.08,
             "interval": [
-              -0.19148936170212766,
-              -0.022714646464646535
+              -0.16666666666666666,
+              -0.017536297640653398
             ]
           },
           "full_fraction_difference_bounds": [
-            -0.1,
-            -0.1
+            -0.08,
+            -0.08
           ],
           "full_mean_difference_bounds": [
-            -6.3,
-            -6.3
+            -5.3,
+            -5.3
           ]
         },
         "preimage_cosine/50_minus_answer_on_context_cosine/50": {
@@ -2798,26 +2798,26 @@
         },
         "preimage_cosine/100_minus_context_native_cosine/100": {
           "mean_scored": {
-            "estimate": -3.9,
+            "estimate": -3.4,
             "interval": [
-              -7.374877810361681,
-              -1.1904761904761905
+              -6.699079171254128,
+              -0.6944444444444444
             ]
           },
           "fraction_scored": {
-            "estimate": -0.06,
+            "estimate": -0.05,
             "interval": [
-              -0.10870103314679294,
-              -0.0196078431372549
+              -0.095260989010989,
+              -0.010416666666666666
             ]
           },
           "full_fraction_difference_bounds": [
-            -0.06,
-            -0.06
+            -0.05,
+            -0.05
           ],
           "full_mean_difference_bounds": [
-            -3.9,
-            -3.9
+            -3.4,
+            -3.4
           ]
         },
         "preimage_cosine/100_minus_answer_on_context_cosine/100": {
@@ -2894,50 +2894,50 @@
         },
         "preimage_cosine/200_minus_context_native_cosine/200": {
           "mean_scored": {
-            "estimate": -2.45,
+            "estimate": -2.2,
             "interval": [
-              -4.430693069306931,
-              -0.8916876178504096
+              -4.033208766862047,
+              -0.679605054875475
             ]
           },
           "fraction_scored": {
-            "estimate": -0.04,
+            "estimate": -0.035,
             "interval": [
-              -0.06829268292682927,
-              -0.015
+              -0.0625,
+              -0.010256410256410256
             ]
           },
           "full_fraction_difference_bounds": [
-            -0.04,
-            -0.04
+            -0.035,
+            -0.035
           ],
           "full_mean_difference_bounds": [
-            -2.45,
-            -2.45
+            -2.2,
+            -2.2
           ]
         },
         "preimage_cosine/200_minus_answer_on_context_cosine/200": {
           "mean_scored": {
-            "estimate": -1.5,
+            "estimate": -1.25,
             "interval": [
-              -2.9730534105534105,
-              -0.33783783783783783
+              -2.638208403126745,
+              -0.2403846153846154
             ]
           },
           "fraction_scored": {
-            "estimate": -0.025,
+            "estimate": -0.02,
             "interval": [
-              -0.04865792262851087,
-              -0.00510204081632653
+              -0.04145617443868739,
+              -0.0045871559633027525
             ]
           },
           "full_fraction_difference_bounds": [
-            -0.025,
-            -0.025
+            -0.02,
+            -0.02
           ],
           "full_mean_difference_bounds": [
-            -1.5,
-            -1.5
+            -1.25,
+            -1.25
           ]
         },
         "preimage_cosine/200_minus_random/1000": {
@@ -3073,51 +3073,51 @@
             "n": 49,
             "n_scored": 49,
             "n_missing": 0,
-            "n_positive": 4,
+            "n_positive": 3,
             "coverage": 1.0,
-            "mean_scored": 4.591836734693878,
+            "mean_scored": 3.5714285714285716,
             "mean_full_bounds": [
-              4.591836734693878,
-              4.591836734693878
+              3.5714285714285716,
+              3.5714285714285716
             ],
-            "fraction_scored": 0.08163265306122448,
+            "fraction_scored": 0.061224489795918366,
             "fraction_full_bounds": [
-              0.08163265306122448,
-              0.08163265306122448
+              0.061224489795918366,
+              0.061224489795918366
             ]
           },
           "context_native_cosine/100": {
             "n": 94,
             "n_scored": 94,
             "n_missing": 0,
-            "n_positive": 5,
+            "n_positive": 4,
             "coverage": 1.0,
-            "mean_scored": 3.1914893617021276,
+            "mean_scored": 2.6595744680851063,
             "mean_full_bounds": [
-              3.1914893617021276,
-              3.1914893617021276
+              2.6595744680851063,
+              2.6595744680851063
             ],
-            "fraction_scored": 0.05319148936170213,
+            "fraction_scored": 0.0425531914893617,
             "fraction_full_bounds": [
-              0.05319148936170213,
-              0.05319148936170213
+              0.0425531914893617,
+              0.0425531914893617
             ]
           },
           "context_native_cosine/200": {
             "n": 183,
             "n_scored": 183,
             "n_missing": 0,
-            "n_positive": 7,
+            "n_positive": 6,
             "coverage": 1.0,
-            "mean_scored": 2.185792349726776,
+            "mean_scored": 1.9125683060109289,
             "mean_full_bounds": [
-              2.185792349726776,
-              2.185792349726776
+              1.9125683060109289,
+              1.9125683060109289
             ],
-            "fraction_scored": 0.03825136612021858,
+            "fraction_scored": 0.03278688524590164,
             "fraction_full_bounds": [
-              0.03825136612021858,
-              0.03825136612021858
+              0.03278688524590164,
+              0.03278688524590164
             ]
           },
           "answer_on_context_cosine/50": {
@@ -3158,17 +3158,17 @@
             "n": 164,
             "n_scored": 164,
             "n_missing": 0,
-            "n_positive": 4,
+            "n_positive": 3,
             "coverage": 1.0,
-            "mean_scored": 1.3719512195121952,
+            "mean_scored": 1.0670731707317074,
             "mean_full_bounds": [
-              1.3719512195121952,
-              1.3719512195121952
+              1.0670731707317074,
+              1.0670731707317074
             ],
-            "fraction_scored": 0.024390243902439025,
+            "fraction_scored": 0.018292682926829267,
             "fraction_full_bounds": [
-              0.024390243902439025,
-              0.024390243902439025
+              0.018292682926829267,
+              0.018292682926829267
             ]
           },
           "random/1000": {
@@ -3296,51 +3296,51 @@
             "n": 50,
             "n_scored": 50,
             "n_missing": 0,
-            "n_positive": 5,
+            "n_positive": 4,
             "coverage": 1.0,
-            "mean_scored": 6.3,
+            "mean_scored": 5.3,
             "mean_full_bounds": [
-              6.3,
-              6.3
+              5.3,
+              5.3
             ],
-            "fraction_scored": 0.1,
+            "fraction_scored": 0.08,
             "fraction_full_bounds": [
-              0.1,
-              0.1
+              0.08,
+              0.08
             ]
           },
           "context_native_cosine/100": {
             "n": 97,
             "n_scored": 97,
             "n_missing": 0,
-            "n_positive": 6,
+            "n_positive": 5,
             "coverage": 1.0,
-            "mean_scored": 4.020618556701031,
+            "mean_scored": 3.5051546391752577,
             "mean_full_bounds": [
-              4.020618556701031,
-              4.020618556701031
+              3.5051546391752577,
+              3.5051546391752577
             ],
-            "fraction_scored": 0.061855670103092786,
+            "fraction_scored": 0.05154639175257732,
             "fraction_full_bounds": [
-              0.061855670103092786,
-              0.061855670103092786
+              0.05154639175257732,
+              0.05154639175257732
             ]
           },
           "context_native_cosine/200": {
             "n": 192,
             "n_scored": 192,
             "n_missing": 0,
-            "n_positive": 8,
+            "n_positive": 7,
             "coverage": 1.0,
-            "mean_scored": 2.5520833333333335,
+            "mean_scored": 2.2916666666666665,
             "mean_full_bounds": [
-              2.5520833333333335,
-              2.5520833333333335
+              2.2916666666666665,
+              2.2916666666666665
             ],
-            "fraction_scored": 0.041666666666666664,
+            "fraction_scored": 0.036458333333333336,
             "fraction_full_bounds": [
-              0.041666666666666664,
-              0.041666666666666664
+              0.036458333333333336,
+              0.036458333333333336
             ]
           },
           "answer_on_context_cosine/50": {
@@ -3381,17 +3381,17 @@
             "n": 170,
             "n_scored": 170,
             "n_missing": 0,
-            "n_positive": 4,
+            "n_positive": 3,
             "coverage": 1.0,
-            "mean_scored": 1.3235294117647058,
+            "mean_scored": 1.0294117647058822,
             "mean_full_bounds": [
-              1.3235294117647058,
-              1.3235294117647058
+              1.0294117647058822,
+              1.0294117647058822
             ],
-            "fraction_scored": 0.023529411764705882,
+            "fraction_scored": 0.01764705882352941,
             "fraction_full_bounds": [
-              0.023529411764705882,
-              0.023529411764705882
+              0.01764705882352941,
+              0.01764705882352941
             ]
           },
           "random/1000": {
