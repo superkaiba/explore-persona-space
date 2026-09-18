@@ -8,6 +8,7 @@ whitener is fit on individual rows disjoint from its evaluated question means.
 from __future__ import annotations
 
 import json
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +16,17 @@ from pathlib import Path
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
+
+
+def _ensure_repo_root_on_syspath() -> Path:
+    """Resolve sibling scripts independently of the caller's working directory."""
+    repo_root = Path(__file__).resolve().parents[1]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    return repo_root
+
+
+ROOT = _ensure_repo_root_on_syspath()
 
 import hydra  # noqa: E402
 import numpy as np  # noqa: E402
@@ -37,10 +49,10 @@ from scripts.story_persona_qwen38_pilot import (  # noqa: E402
     write_json,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
 NAMES = ["hhh", "fred", "helpful", "dismissive", "sarcastic", "saboteur", "peer", "help_seeker"]
 ALTERNATIVES = NAMES[3:]
 EXPECTED_QUESTIONS = 240
+# SHA_PIN_DOMAIN: BYTES
 SOURCE_IMAGE_SHA256 = "0d80dd99ecfaf97e049215a1cca04c65232e466009999845186230b70e3f483f"
 MODELS = {
     "qwen": {

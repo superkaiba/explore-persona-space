@@ -1,0 +1,37 @@
+{
+  "checked_at_unix": 1789690663.2133768,
+  "worktree": "/home/thomasjiralerspong/.codex/worktrees/story-persona-qwen38-pilot-20260917",
+  "source_sha256": {
+    "scripts/story_persona_crossmodel_capture.py": "415f271ac6192b3bf0acd6485aa2eb1eb66a8cb7f1a7dfe3c234feb37901c8a0",
+    "scripts/story_persona_crossmodel_analysis.py": "2bc19e687fa6dea027ea442bbd8fbf36745509b2ebf204a4ccaa4da1e08c687d",
+    "scripts/story_persona_crossmodel_artifacts.py": "ba33aac295f9d9af02153f00ec3fec14a40ce5b56bb2fa19a3976a57c171a364",
+    "scripts/story_persona_qwen38_artifacts.py": "cacae4493682574088c287213c1065748f6a53086fe42d2674b62e8f8b8c602f",
+    "tests/test_story_persona_crossmodel_artifacts.py": "8e10d43cb7c7159ea4fc79d15d02a528db24aed47be06802627d01cede6c7026"
+  },
+  "changes": [
+    "Canonical script-mode import guard in all three entrypoints; dotenv before torch in capture",
+    "Model-specific exact result branch allowlist; optional expected_branch retains old default",
+    "One full-store live headroom probe, typed overflow destination, existing bulk shard uploader with per-directory path preservation",
+    "Immutable hardlink upload staging; equal-size metadata always recommitted; original files never deleted",
+    "Exact immutable actual-repository hash verification; mixed destinations refuse receipt"
+  ],
+  "tests_log": "/tmp/issue2673-startup-tests.log",
+  "workflow_lint_log": "/tmp/issue2673-startup-workflow-lint.log",
+  "script_mode_smoke": {
+    "cwd": "/tmp",
+    "PYTHONPATH": "unset",
+    "UV_OFFLINE": "1",
+    "command_suffix": "--cfg job model_key=deepseek",
+    "entrypoints": [
+      "capture",
+      "analysis",
+      "artifacts"
+    ],
+    "status": "PASS"
+  },
+  "limits": [
+    "No real network upload or GPU/model forward performed in these local tests",
+    "Mixed canonical/overflow store fails loudly rather than automatically consolidating",
+    "Shared upload pointer write is best-effort; actual typed immutable receipt remains authoritative"
+  ]
+}

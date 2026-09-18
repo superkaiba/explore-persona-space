@@ -22,17 +22,35 @@ from contextlib import nullcontext
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-import hydra
-import torch
-from omegaconf import DictConfig, OmegaConf
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.extraction import (
+load_dotenv()
+
+
+def _ensure_repo_root_on_syspath() -> Path:
+    """Resolve sibling scripts independently of the caller's working directory."""
+    repo_root = Path(__file__).resolve().parents[1]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    return repo_root
+
+
+ROOT = _ensure_repo_root_on_syspath()
+
+import hydra  # noqa: E402
+import torch  # noqa: E402
+from omegaconf import DictConfig, OmegaConf  # noqa: E402
+
+from explore_persona_space.analysis.extraction import (  # noqa: E402
     _logits_to_keep_kwargs,
     _resolve_decoder_blocks,
     _unwrap,
 )
-from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
-from scripts.story_persona_qwen38_pilot import (
+from explore_persona_space.orchestrate.provenance import (  # noqa: E402
+    as_metadata_dict,
+    git_provenance,
+)
+from scripts.story_persona_qwen38_pilot import (  # noqa: E402
     digest,
     file_digest,
     load_model as load_qwen_model,
@@ -46,7 +64,6 @@ from scripts.story_persona_qwen38_pilot import (
     write_json,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
 PERSONAS = ["hhh", "fred", "helpful", "dismissive", "sarcastic", "saboteur", "peer", "help_seeker"]
 
 

@@ -7,20 +7,33 @@ import json
 import os
 import re
 import shutil
+import sys
+import tempfile
 import time
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
 
+
+def _ensure_repo_root_on_syspath() -> Path:
+    """Resolve sibling scripts independently of the caller's working directory."""
+    repo_root = Path(__file__).resolve().parents[1]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    return repo_root
+
+
+ROOT = _ensure_repo_root_on_syspath()
+
 import hydra  # noqa: E402
 from huggingface_hub import HfApi  # noqa: E402
 from hydra.core.config_store import ConfigStore  # noqa: E402
 
 from explore_persona_space.backends.artifacts import write_completion_sentinel  # noqa: E402
-from explore_persona_space.orchestrate import hub  # noqa: E402
+from explore_persona_space.orchestrate import hub, upload_sharded  # noqa: E402
 from scripts.story_persona_qwen38_artifacts import (  # noqa: E402
     inventory,
     push_results,
@@ -35,8 +48,11 @@ from scripts.story_persona_qwen38_pilot import (  # noqa: E402
     write_json,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
 RUN = "20260917_v3"
+RESULT_BRANCHES = {
+    "qwen": "codex/story-persona-qwen38-pilot-20260917",
+    "deepseek": "codex/story-persona-deepseek-capture-20260917",
+}
 
 
 @dataclass
@@ -49,6 +65,13 @@ class ArtifactConfig:
 
 
 ConfigStore.instance().store(name="story_persona_crossmodel_artifacts", node=ArtifactConfig)
+
+
+def push_model_results(repo: Path, paths: list[Path], model_key: str) -> str:
+    """Keep each model's result commits on its explicitly authorized source branch."""
+    if model_key not in RESULT_BRANCHES:
+        raise ValueError("unknown model arm for result publication")
+    return push_results(repo, paths, expected_branch=RESULT_BRANCHES[model_key])
 
 
 def validate_analysis_files(out: Path, fingerprint: str, model_id: str) -> None:
@@ -130,6 +153,95 @@ def validate_capture(out: Path, *, final: bool) -> dict:
     return manifest
 
 
+def upload_snapshot(out: Path, expected: dict, prefix: str, api) -> tuple[str, str, dict]:
+    """Upload every inventoried path to one destination, preserving the directory tree."""
+    if not expected:
+        raise RuntimeError("cannot publish an empty artifact inventory")
+    canonical = hub.DEFAULT_DATASET_REPO
+    projected = sum(record["size"] for record in expected.values())
+    # This pilot is below the shared 100-GB probe floor but its account is already
+    # over the public soft ceiling. Probe the WHOLE store, including tiny checkpoints.
+    headroom = hub.check_projected_upload_headroom(projected, probe_floor_gb=0)
+    destination = (canonical, "dataset")
+    if headroom.verdict == "insufficient":
+        private = hub._retry_upload(
+            lambda: api.repo_info(canonical, repo_type="dataset").private,
+            what="confirm canonical checkpoint repository privacy",
+        )
+        if private is False:
+            destination = (hub.DEFAULT_OVERFLOW_REPO, "model")
+            upload_sharded._ensure_overflow_repo(api)
+            hub._emit_overflow_routing_event(
+                original_repo=canonical,
+                effective_repo=destination[0],
+                path_in_repo=prefix,
+                reason="projected-headroom-proactive",
+                projected_gb=projected / 1e9,
+            )
+            upload_sharded._write_overflow_pointer(
+                api,
+                canonical_repo=canonical,
+                canonical_repo_type="dataset",
+                path_in_repo=prefix,
+                overflow_repo=destination[0],
+            )
+    actual_destination = None
+    # upload_dir_sharded is deliberately NON-recursive and uses shard.name. Mirror
+    # only inventoried real files and upload each directory to its exact relative
+    # prefix. Hardlinks retain the original bytes without another tensor-sized copy.
+    with tempfile.TemporaryDirectory(prefix=".crossmodel-upload-", dir=out.parent) as temp:
+        staging = Path(temp)
+        directories: set[Path] = set()
+        for name in expected:
+            relative = Path(name)
+            target = staging / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            os.link(out / relative, target)
+            directories.add(relative.parent)
+        for relative_dir in sorted(directories):
+            group_prefix = (
+                prefix if relative_dir == Path(".") else f"{prefix}/{relative_dir.as_posix()}"
+            )
+            result = upload_sharded.upload_dir_sharded(
+                staging / relative_dir,
+                repo_id=destination[0],
+                repo_type=destination[1],
+                path_in_repo=group_prefix,
+                shard_glob="*",
+                verify=True,
+                delete_local=False,
+                api=api,
+                proactive_overflow=False,  # Whole-store live decision above stays fixed.
+                batch=True,
+                resume_skip=False,  # Equal-size changed metadata must still be committed.
+            )
+            wanted = {f"{prefix}/{name}" for name in expected if Path(name).parent == relative_dir}
+            if (
+                result.repo_id != destination[0]
+                or result.deleted
+                or result.skipped_existing
+                or len(result.uploaded) != len(wanted)
+                or set(result.uploaded) != wanted
+            ):
+                raise RuntimeError("sharded upload did not preserve the complete file inventory")
+            effective = destination
+            if result.rerouted:
+                if (
+                    set(result.rerouted) != wanted
+                    or result.overflow_repo != hub.DEFAULT_OVERFLOW_REPO
+                ):
+                    raise RuntimeError(
+                        "sharded upload split the artifact store across repositories"
+                    )
+                effective = (result.overflow_repo, "model")
+            if actual_destination is not None and effective != actual_destination:
+                raise RuntimeError("sharded upload split the artifact store across repositories")
+            actual_destination = destination = effective
+    if actual_destination is None:
+        raise RuntimeError("no artifact directory was uploaded")
+    return *actual_destination, asdict(headroom)
+
+
 def persist(out: Path, model_key: str, *, final: bool, failed: bool) -> dict:
     """Upload a stable snapshot and verify every path, byte count and content hash."""
     if model_key not in {"qwen", "deepseek"}:
@@ -148,35 +260,19 @@ def persist(out: Path, model_key: str, *, final: bool, failed: bool) -> dict:
     suffix = f"failure_{time.time_ns()}" if failed else "analysis_tensors"
     prefix = f"issue2673_deepseek_comparison/{RUN}/{model_key}/{suffix}"
     print(f"[upload] {model_key} {len(expected)} files -> {prefix}", flush=True)
-    destination = hub._upload_folder_filtered(
-        out,
-        hub.DEFAULT_DATASET_REPO,
-        "dataset",
-        prefix,
-        allow_patterns=["*"],
-        ignore_patterns=[
-            "wandb/latest-run",
-            "wandb/latest-run/**",
-            "wandb/debug.log",
-            "wandb/debug-internal.log",
-        ],
-        expected_repo_paths=[f"{prefix}/{p}" for p in expected],
-        delete_after=False,
-    )
-    if not destination or not destination.endswith("/" + prefix):
-        raise RuntimeError("upload returned no valid destination")
-    repo_id = destination[: -len("/" + prefix)]
     api = HfApi()
+    repo_id, repo_type, headroom = upload_snapshot(out, expected, prefix, api)
     revision = hub._retry_upload(
-        lambda: api.repo_info(repo_id, repo_type="dataset").sha,
+        lambda: api.repo_info(repo_id, repo_type=repo_type).sha,
         what="resolve cross-model checkpoint revision",
     )
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise RuntimeError("upload lacks immutable revision")
     entries = hub._retry_upload(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: Entire paginated listing is consumed inside hub._retry_upload.
             api.list_repo_tree(
-                repo_id, repo_type="dataset", revision=revision, path_in_repo=prefix, recursive=True
+                repo_id, repo_type=repo_type, revision=revision, path_in_repo=prefix, recursive=True
             )
         ),
         what="verify cross-model checkpoint contents",
@@ -192,8 +288,13 @@ def persist(out: Path, model_key: str, *, final: bool, failed: bool) -> dict:
         "fingerprint": manifest["fingerprint"] if manifest else None,
         "verified_revision": revision,
         "hf_repo": repo_id,
+        "hf_repo_type": repo_type,
         "hf_prefix": prefix,
+        "canonical_hf_repo": hub.DEFAULT_DATASET_REPO,
+        "canonical_hf_repo_type": "dataset",
+        "upload_headroom": headroom,
         "repo_id": repo_id,
+        "repo_type": repo_type,
         "prefix": prefix,
         "files": expected,
         "file_count": len(expected),
@@ -201,7 +302,8 @@ def persist(out: Path, model_key: str, *, final: bool, failed: bool) -> dict:
         "verified_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "complete": final,
         "failed_attempt": failed,
-        "url": f"https://huggingface.co/datasets/{repo_id}/tree/{revision}/{prefix}",
+        "url": f"https://huggingface.co/{'datasets/' if repo_type == 'dataset' else ''}"
+        f"{repo_id}/tree/{revision}/{prefix}",
     }
     receipt_path = out.parent / f"{out.name}_receipts" / f"receipt_{time.time_ns()}.json"
     write_json(receipt_path, receipt)
@@ -238,7 +340,7 @@ def main(cfg: ArtifactConfig) -> None:
         paths.append(target)
     write_json(result_dir / "upload_receipt.json", receipt)
     paths.append(result_dir / "upload_receipt.json")
-    revision = push_results(ROOT, paths)
+    revision = push_model_results(ROOT, paths, cfg.model_key)
     completion = {**receipt, "phase": "done", "row_count": 1920, "result_git_revision": revision}
     sentinel = Path(os.environ["EPS_SENTINEL_PATH"])
     tmp = sentinel.with_suffix(".tmp")

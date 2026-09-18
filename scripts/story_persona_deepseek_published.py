@@ -21,7 +21,7 @@ from scipy.stats import rankdata  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 URL = "https://arxiv.org/html/2609.10883v1/images/selectivity/fxbc_bloom_deepseek_base_grid.png"
-SHA = "0d80dd99ecfaf97e049215a1cca04c65232e466009999845186230b70e3f483f"
+SHA = "0d80dd99ecfaf97e049215a1cca04c65232e466009999845186230b70e3f483f"  # SHA_PIN_DOMAIN: BYTES
 PAIRS = ["dismissive", "sarcastic", "saboteur", "peer", "help_seeker"]
 
 

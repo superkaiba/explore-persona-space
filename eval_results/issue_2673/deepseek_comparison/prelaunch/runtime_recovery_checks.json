@@ -1,0 +1,18 @@
+{
+  "tests": {
+    "passed": 82,
+    "seconds": 13.17
+  },
+  "scoped_workflow_lint": "PASS, 40 applicable checks",
+  "ruff": "PASS",
+  "script_mode_smokes": "PASS, 3 entrypoints, offline, /tmp cwd and PYTHONPATH unset",
+  "full_repository_workflow_lint": "FAIL; remaining unrelated existing findings, no full-green claim",
+  "qwen_allocation": {
+    "pod_id": "pezyfqt6qzvzgv",
+    "paid_start": "2026-09-18T00:01:00.524Z",
+    "deadline": "2026-09-18T01:01:00.524Z",
+    "gpu_count": 1
+  },
+  "scientific_recipe_changed": false,
+  "recovery": "operator injects live PID1-verified pod identity and exact-handle completion path; armed private-overflow routing; no budget reset"
+}

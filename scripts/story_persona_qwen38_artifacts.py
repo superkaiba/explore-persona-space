@@ -316,6 +316,7 @@ def persist_failure(out: Path, logs: Path) -> dict | None:
         raise RuntimeError("failed-output upload lacks immutable revision")
     entries = hub._retry_upload(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: The complete paginated listing is inside hub._retry_upload.
             api.list_repo_tree(
                 repo_id, repo_type="dataset", revision=revision, path_in_repo=prefix, recursive=True
             )
@@ -345,11 +346,11 @@ def persist_failure(out: Path, logs: Path) -> dict | None:
     return receipt
 
 
-def push_results(repo: Path, paths: list[Path]) -> str:
+def push_results(repo: Path, paths: list[Path], *, expected_branch: str = BRANCH) -> str:
     """Commit explicit files, push with bounded rebase retries, then check remote blobs."""
     branch = git(repo, "branch", "--show-current").stdout.strip()
-    if branch != BRANCH:
-        raise RuntimeError(f"results must stay on {BRANCH}; current branch is {branch!r}")
+    if branch != expected_branch:
+        raise RuntimeError(f"results must stay on {expected_branch}; current branch is {branch!r}")
     rels = [p.resolve().relative_to(repo.resolve()).as_posix() for p in paths]
     local_blobs = {rel: git(repo, "hash-object", "--", rel).stdout.strip() for rel in rels}
     git(repo, "add", "--", *rels)
@@ -416,6 +417,7 @@ def publish(out: Path, repo: Path, logs: Path, sentinel_path: Path) -> None:
         raise RuntimeError("Hub upload has no immutable revision")
     entries = hub._retry_upload(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: The complete paginated listing is inside hub._retry_upload.
             api.list_repo_tree(
                 actual_repo,
                 repo_type="dataset",

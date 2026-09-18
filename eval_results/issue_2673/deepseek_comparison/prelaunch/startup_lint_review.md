@@ -1,0 +1,22 @@
+# Startup lint contract review — pinned source 8c0b3bbc82f88bdfa932244f9e1aa96de614d7a5
+
+**No runtime halt is indicated for the running Qwen arm by the reviewed task-specific lint findings, provided the canonical launcher environment is present.** This is a runtime-contract assessment, not a claim that the full workflow lint passed: its saved result remains FAIL (36 findings). No source or runtime mutation was performed.
+
+## Verified wrapper contracts
+
+- `scripts/bootstrap_pod.sh:627–637` appends `PYTHONPATH=/workspace/explore-persona-space` to the pod `.env` if no PYTHONPATH assignment already exists. `src/explore_persona_space/backends/runpod.py:1092–1094` changes to that checkout and sources `.env` with automatic export before invoking the workload. Consequently Python starts with the repo root on its import path; its child checkpoint publisher inherits that environment. This covers the flagged `scripts.*` imports under the authorized wrapper. It does not make those scripts independently safe when launched from an arbitrary shell without PYTHONPATH. Because bootstrap intentionally preserves any existing PYTHONPATH assignment, check the actual exported value rather than treating the static append code alone as proof of the live value.
+- `scripts/story_persona_crossmodel_workload.sh:19–20` exports OMP, MKL, OpenBLAS and NumExpr thread limits plus MALLOC_ARENA_MAX before invoking any Python runtime. These exports exist in the pinned source. Thus the capture's top-level torch import does not precede its process-level thread caps on this route. This does not exempt uncapped direct VM invocation.
+- The cross-model `api.list_repo_tree(...)` at line 178 is materialized with `list(...)` inside `hub._retry_upload(lambda: ...)`. That wrapper retries transient 5xx/429/timeout/connection failures, including failures during pagination. The two flagged inherited Qwen-publisher listings use the same protected pattern. The lint deliberately flags raw spellings even inside explicit retry lambdas; these sites need an explanatory `HUB_VERIFY_RETRY_EXEMPT` annotation in a later reviewed commit, not a different retry mechanism during this running capture.
+- The shared hash is consistently a SHA256 of the exact published PNG bytes. `story_persona_deepseek_published.py` compares it directly to `hashlib.sha256(data)` before decoding the image. The analyzer's `SOURCE_IMAGE_SHA256` checks that same source identity. A later `# SHA_PIN_DOMAIN: BYTES` annotation at both pins resolves the missing-domain documentation; no wrong-domain runtime binding was found.
+
+Recommended live evidence is a read-only child-interpreter check showing the repo root in sys.path, the thread-cap environment, and the source HEAD, without printing the rest of `.env` or credentials. The parent is already handling the separate absent RUNPOD_POD_ID issue through a live verified pod identity; that storage contract must still pass.
+
+## Real upcoming DeepSeek branch blocker
+
+The proposed separate DeepSeek source branch is **not supported by the currently pinned publisher**. At the exact running SHA, `scripts/story_persona_qwen38_artifacts.py:350–352` rejects any branch other than `codex/story-persona-qwen38-pilot-20260917`. The cross-model publisher imports and calls that function unchanged. A DeepSeek workload launched on `codex/story-persona-deepseek-capture-20260917` would upload its HF output, then fail Git publication and never emit successful completion.
+
+Resolve this before the DeepSeek launch by making the publication branch contract explicit in a reviewed source/launch arrangement. Do not merely assume the reused function pushes whatever branch it is on, and do not force-push or reset the shared results branch. There is no reason to stop or modify the running Qwen source for this issue. Any revised DeepSeek source SHA must be recorded honestly, with the implementation-only difference identified.
+
+## Minimal follow-up after the active source is safe to revise
+
+Prefer adding a repo-root guard before the `scripts.*` imports and calling the project dotenv wrapper before the capture's heavy imports so standalone entrypoints satisfy the same contracts. Add the retry and image-byte-domain annotations described above. Alternatively, a scripts-import waiver may explicitly cite the wrapper's required PYTHONPATH contract, but it should not claim universal standalone safety. Preserve the current lint log and separate task-relevant findings from unrelated repository findings; do not label the full lint result green.
