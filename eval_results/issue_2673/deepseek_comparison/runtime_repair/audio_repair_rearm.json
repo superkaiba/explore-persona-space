@@ -1,0 +1,15 @@
+{
+  "checked_at": 1789839374.5498002,
+  "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
+  "pod_id": "m492bxre2m9f00",
+  "deadline_unix": 1789845253.349,
+  "preserved_previous_incident": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-crossmodel/deepseek/watchdog-repair-20260919",
+  "previous_recoveries": [
+    1789838880.2310138
+  ],
+  "new_incident": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-crossmodel/deepseek/watchdog-audio-repair-20260919",
+  "new_incident_max_recoveries": 1,
+  "runtime_environment_repair_sha256": "96cc16aee634d076ab19ee26743dbef4a51ab0755b37dd9fbfce53a3332cafd4",
+  "independent_review": "review_retry_repair: no remaining blocker; verify fresh positive progress and real canary/ACK/timer",
+  "authority": "User requested automatic retries; parent reviewed a separate tested torchaudio ABI repair, unchanged cumulative17GPUh and existing pod deadline. This is an additional incident allowance; history and rolling-day recovery count are not erased."
+}
