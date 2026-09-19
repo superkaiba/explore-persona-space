@@ -1,0 +1,49 @@
+{
+  "checked_at": 1789840334.5422423,
+  "attempt": 8,
+  "status": "needs_attention",
+  "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
+  "model_key": "deepseek",
+  "pod_id": "m492bxre2m9f00",
+  "capture_chunks": 0,
+  "row_count": 0,
+  "has_clean_result": false,
+  "diagnosis": "Native FP8 kernel and full checkpoint load passed. Transformers5.15.0 loading_info contains sets, embedded unchanged into spec.runtime.loading_info; digest(spec) raises TypeError: Object of type set is not JSON serializable before numerical smoke or capture.",
+  "initial_failure": "Inherited torchaudio2.8 ABI mismatch repaired on the same pod by installing matched torchaudio2.9.1 into the exact Torch2.9.1 overlay; fresh production model-class import passed.",
+  "scientific_changes": false,
+  "source_modified": false,
+  "numerical_smoke_passed": false,
+  "throughput_gate_passed": false,
+  "failure_revisions": [
+    "46b821970f1b157501a434a22fce6e24fd34dc7d",
+    "044a869e71ff08e460253ba53f005c29aa63098d"
+  ],
+  "independently_verified_failure_file_counts": [
+    5,
+    6
+  ],
+  "personal_provider_state": {
+    "myself": {
+      "id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+      "teams": [],
+      "pods": []
+    }
+  },
+  "allocation": {
+    "model_key": "deepseek",
+    "pod_id": "m492bxre2m9f00",
+    "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
+    "gpu_count": 8,
+    "provider_created_at": "2026-09-19T17:24:13.349Z",
+    "paid_start_unix": 1789838653.349,
+    "deadline_unix": 1789845253.349,
+    "allowed_gpu_hours": 14.666666666666666,
+    "termination_confirmed_at_unix": 1789840334.5422423,
+    "gpu_hours_upper_bound": 3.735984982914395
+  },
+  "remaining_gpu_hours": 11.380771569675868,
+  "teardown_route": "scripts/pod.py terminate --issue 2673 --name-suffix crossmodel-deepseek --yes",
+  "teardown_verified": true,
+  "successful_terminal_written": false,
+  "next_required_work": "Review a deterministic JSON normalization for loading metadata and an explicit matched torchaudio runtime pin. Any new launch must pass a newly reviewed source and allocation contract; remaining11.380771569675868GPUh cannot fund existing6600-second eight-H200 request."
+}

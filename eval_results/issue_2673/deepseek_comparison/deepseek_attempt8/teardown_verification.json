@@ -1,0 +1,25 @@
+{
+  "checked_at": 1789840334.5422423,
+  "personal_provider_state": {
+    "myself": {
+      "id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+      "teams": [],
+      "pods": []
+    }
+  },
+  "allocation": {
+    "model_key": "deepseek",
+    "pod_id": "m492bxre2m9f00",
+    "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
+    "gpu_count": 8,
+    "provider_created_at": "2026-09-19T17:24:13.349Z",
+    "paid_start_unix": 1789838653.349,
+    "deadline_unix": 1789845253.349,
+    "allowed_gpu_hours": 14.666666666666666,
+    "termination_confirmed_at_unix": 1789840334.5422423,
+    "gpu_hours_upper_bound": 3.735984982914395
+  },
+  "remaining_gpu_hours": 11.380771569675868,
+  "teardown_route": "scripts/pod.py terminate --issue 2673 --name-suffix crossmodel-deepseek --yes",
+  "teardown_verified": true
+}
