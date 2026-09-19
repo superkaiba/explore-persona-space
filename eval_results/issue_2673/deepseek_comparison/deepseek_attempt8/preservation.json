@@ -1,5 +1,5 @@
 {
-  "checked_at": 1789840213.8574877,
+  "checked_at": 1789840265.3260272,
   "pod_id": "m492bxre2m9f00",
   "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
   "captured_rows": 0,
@@ -9,5 +9,9 @@
   "failed_prior_tree_files": "five originals in immutable first failure snapshot; extra full log persisted here",
   "planned_rows": 1920,
   "planned_chunks": 240,
-  "successful_terminal_written": false
+  "successful_terminal_written": false,
+  "full_log_sha256": {
+    "audio_failure_full.txt": "f7be90242adbb2e58340fc297a583b03ad833d4254e85808b1baedbb3ba1c7c1",
+    "serialization_failure_full.txt": "a63edb33fea8d7113dcd1db7ab69d1b1d3bebed0916789c1df27d57bf3269a53"
+  }
 }
