@@ -1,0 +1,56 @@
+{
+  "issue": 2673,
+  "model_key": "deepseek",
+  "run": "20260919_v4",
+  "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
+  "fingerprint": null,
+  "verified_revision": "46b821970f1b157501a434a22fce6e24fd34dc7d",
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_repo_type": "dataset",
+  "hf_prefix": "issue2673_deepseek_comparison/20260919_v4/deepseek/failure_1789838964001229974",
+  "canonical_hf_repo": "superkaiba1/explore-persona-space-data",
+  "canonical_hf_repo_type": "dataset",
+  "upload_headroom": {
+    "verdict": "unknown",
+    "projected_tb": 1.3754e-08,
+    "used_tb": null,
+    "ceiling_tb": 20.0,
+    "basis": "suspect (407/407 missing usedStorage; all repos missing usedStorage usually indicates an auth/endpoint condition, not zero storage)"
+  },
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "prefix": "issue2673_deepseek_comparison/20260919_v4/deepseek/failure_1789838964001229974",
+  "files": {
+    "capture_failure.json": {
+      "size": 241,
+      "sha256": "4bb2631c8ed2ed503289ffb672a9327e88432188f05181a4d0b9e67d85efc3dd",
+      "git_blob_sha1": "a3f8f1ed44f5a5d31199ff491c0dccdd598be4d1"
+    },
+    "failure.json": {
+      "size": 144,
+      "sha256": "029e477138eb1ae7deb7aa9b9fef1f83af33578203d46fd7716f6e5007870850",
+      "git_blob_sha1": "8299779ab3d15c79e57bf6236bd3a04f9d9a50f2"
+    },
+    "failure_workload.log": {
+      "size": 11138,
+      "sha256": "51b622adef24652ae13a0a6dc3c98dc1e0398b7bdb163574f823b65e92dad723",
+      "git_blob_sha1": "942e2cbc711134f7900f47406a85b3ca7c796f86"
+    },
+    "progress.json": {
+      "size": 132,
+      "sha256": "3cce3b8495d71aec2be70153f561e71d010e4814c807f9703029eadbe353d700",
+      "git_blob_sha1": "a4bc07a39d6f86be4d4734c6196183debebc2690"
+    },
+    "storage_preflight.json": {
+      "size": 2099,
+      "sha256": "515594a54c8ddb1d28249d39f6d866daa0262cf9b89b78792546dfbb9d496ba2",
+      "git_blob_sha1": "f7c9e1245e085422158ebe2ee374521e9cdb232e"
+    }
+  },
+  "file_count": 5,
+  "total_bytes": 13754,
+  "verified_at_utc": "2026-09-19T17:30:19Z",
+  "complete": false,
+  "failed_attempt": true,
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/46b821970f1b157501a434a22fce6e24fd34dc7d/issue2673_deepseek_comparison/20260919_v4/deepseek/failure_1789838964001229974"
+}

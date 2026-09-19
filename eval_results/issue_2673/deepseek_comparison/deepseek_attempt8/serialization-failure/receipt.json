@@ -1,0 +1,61 @@
+{
+  "issue": 2673,
+  "model_key": "deepseek",
+  "run": "20260919_v4",
+  "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
+  "fingerprint": null,
+  "verified_revision": "044a869e71ff08e460253ba53f005c29aa63098d",
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_repo_type": "dataset",
+  "hf_prefix": "issue2673_deepseek_comparison/20260919_v4/deepseek/failure_1789840035909608638",
+  "canonical_hf_repo": "superkaiba1/explore-persona-space-data",
+  "canonical_hf_repo_type": "dataset",
+  "upload_headroom": {
+    "verdict": "unknown",
+    "projected_tb": 2.7146e-08,
+    "used_tb": null,
+    "ceiling_tb": 20.0,
+    "basis": "suspect (407/407 missing usedStorage; all repos missing usedStorage usually indicates an auth/endpoint condition, not zero storage)"
+  },
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "prefix": "issue2673_deepseek_comparison/20260919_v4/deepseek/failure_1789840035909608638",
+  "files": {
+    "capture_failure.json": {
+      "size": 159,
+      "sha256": "fdb4bbc032784a67dbc3d28c2f56c56c61434e36b5aa0738a95e5664f4b16e4c",
+      "git_blob_sha1": "2514d1739bf7469c732dbb5b7ee34994a7a46ec5"
+    },
+    "failure.json": {
+      "size": 144,
+      "sha256": "9670f9d3382ec59b38d18344e6eb108bde65ed3f6bc4eb7df81ee2388ac4dfec",
+      "git_blob_sha1": "834bf7c55f23d193aed8099e309ddd02efce2603"
+    },
+    "failure_workload.log": {
+      "size": 23749,
+      "sha256": "81b473bd05ebd6fddbc11abe18ef7aa56a8d24720b1631e019673152c4534d4c",
+      "git_blob_sha1": "847cca9fc7eeea97179b0cf936c063ea38a8f6f6"
+    },
+    "progress.json": {
+      "size": 132,
+      "sha256": "3b2edfb147375e09e00f9fd1badb5e4f733c7af9182868b62d1340117eebe4c7",
+      "git_blob_sha1": "aa68509e453b75a230a9f78596d0725cfd9658e9"
+    },
+    "runtime_environment_repair.json": {
+      "size": 863,
+      "sha256": "96cc16aee634d076ab19ee26743dbef4a51ab0755b37dd9fbfce53a3332cafd4",
+      "git_blob_sha1": "1552713b3d233af562d693790bfe873679dfd435"
+    },
+    "storage_preflight.json": {
+      "size": 2099,
+      "sha256": "43dd103d5df14f48e551ca1b5275cb846c7dc333fc78a2e8fed52a5454db0ea5",
+      "git_blob_sha1": "2080ee5ea892d6f0cd4ea02e2211f8503cfa2daf"
+    }
+  },
+  "file_count": 6,
+  "total_bytes": 27146,
+  "verified_at_utc": "2026-09-19T17:48:05Z",
+  "complete": false,
+  "failed_attempt": true,
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/044a869e71ff08e460253ba53f005c29aa63098d/issue2673_deepseek_comparison/20260919_v4/deepseek/failure_1789840035909608638"
+}

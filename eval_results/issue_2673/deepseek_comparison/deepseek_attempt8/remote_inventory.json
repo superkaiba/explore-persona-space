@@ -1,0 +1,64 @@
+{
+  "/workspace/analysis_tensors_issue2673_crossmodel_deepseek": {
+    "runtime_environment_repair.json": {
+      "size": 863,
+      "sha256": "96cc16aee634d076ab19ee26743dbef4a51ab0755b37dd9fbfce53a3332cafd4"
+    },
+    "storage_preflight.json": {
+      "size": 2099,
+      "sha256": "43dd103d5df14f48e551ca1b5275cb846c7dc333fc78a2e8fed52a5454db0ea5"
+    },
+    "progress.json": {
+      "size": 132,
+      "sha256": "3b2edfb147375e09e00f9fd1badb5e4f733c7af9182868b62d1340117eebe4c7"
+    },
+    "capture_failure.json": {
+      "size": 159,
+      "sha256": "fdb4bbc032784a67dbc3d28c2f56c56c61434e36b5aa0738a95e5664f4b16e4c"
+    },
+    "failure.json": {
+      "size": 144,
+      "sha256": "9670f9d3382ec59b38d18344e6eb108bde65ed3f6bc4eb7df81ee2388ac4dfec"
+    },
+    "failure_workload.log": {
+      "size": 23749,
+      "sha256": "81b473bd05ebd6fddbc11abe18ef7aa56a8d24720b1631e019673152c4534d4c"
+    }
+  },
+  "/workspace/issue2673_attempt8_audio_failure": {
+    "storage_preflight.json": {
+      "size": 2099,
+      "sha256": "515594a54c8ddb1d28249d39f6d866daa0262cf9b89b78792546dfbb9d496ba2"
+    },
+    "progress.json": {
+      "size": 132,
+      "sha256": "3cce3b8495d71aec2be70153f561e71d010e4814c807f9703029eadbe353d700"
+    },
+    "capture_failure.json": {
+      "size": 241,
+      "sha256": "4bb2631c8ed2ed503289ffb672a9327e88432188f05181a4d0b9e67d85efc3dd"
+    },
+    "failure.json": {
+      "size": 144,
+      "sha256": "029e477138eb1ae7deb7aa9b9fef1f83af33578203d46fd7716f6e5007870850"
+    },
+    "failure_workload.log": {
+      "size": 11138,
+      "sha256": "51b622adef24652ae13a0a6dc3c98dc1e0398b7bdb163574f823b65e92dad723"
+    },
+    "full_postfailure_upload.log": {
+      "size": 89159,
+      "sha256": "f7be90242adbb2e58340fc297a583b03ad833d4254e85808b1baedbb3ba1c7c1"
+    }
+  },
+  "/workspace/analysis_tensors_issue2673_crossmodel_deepseek_receipts": {
+    "receipt_1789839019207756205.json": {
+      "size": 2339,
+      "sha256": "f48470caacb924dc90b4ddddf471949769da4ce2ec56a00c819d12aa0f3671b3"
+    },
+    "receipt_1789840085338041268.json": {
+      "size": 2556,
+      "sha256": "bee57f04b36760507dd8e0c374cc9dd245fb47192dd10d85c82f8ae9a6d1c95e"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py:137:class LoadStateDictInfo:
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-138-    """
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-139-    Mutable container for state-dict loading results and diagnostics. Each entry in this structure is mutable,
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-140-    and will usually be mutated in-place during the loading pipeline.
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-141-
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-142-    Attributes:
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-143-        missing_keys (`set[str]`):
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-144-            Keys that are missing from the loaded checkpoints but expected in the model's architecture.
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-145-        unexpected_keys (`set[str]`):
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-146-            Keys that are found in the checkpoints, but not expected in the model's architecture.
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-147-        mismatched_keys (`set[tuple[str, tuple[int], tuple[int]]]`):
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-148-            Keys that are found in the checkpoints and are expected in the model's architecture, but with a different shape.
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-149-        error_msgs ( `list[str]`):
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-150-            Some potential error messages.
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-151-        conversion_errors (`dict[str, str]`):
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-152-            Errors happening during the on-the-fly weight conversion process.
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-153-    """
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-154-
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-155-    missing_keys: set[str]
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-156-    unexpected_keys: set[str]
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-157-    mismatched_keys: set[tuple[str, tuple[int], tuple[int]]]
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-158-    error_msgs: list[str]
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-159-    conversion_errors: dict[str, str]
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-160-
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-161-    def missing_and_mismatched(self):
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-162-        """Return all effective missing keys, including `missing` and `mismatched` keys."""
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-163-        return self.missing_keys | {k[0] for k in self.mismatched_keys}
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-164-
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-165-    def to_dict(self):
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-166-        # Does not include the `conversion_errors` to be coherent with legacy reporting in the tests
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-167-        return {
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-168-            "missing_keys": self.missing_keys,
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-169-            "unexpected_keys": self.unexpected_keys,
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-170-            "mismatched_keys": self.mismatched_keys,
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-171-            "error_msgs": self.error_msgs,
+/workspace/.cache/uv/archive-v0/x_nt14Prl3ODAO55/lib/python3.11/site-packages/transformers/utils/loading_report.py-172-        }

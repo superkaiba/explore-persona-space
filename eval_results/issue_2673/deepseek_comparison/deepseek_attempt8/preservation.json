@@ -1,0 +1,13 @@
+{
+  "checked_at": 1789840213.8574877,
+  "pod_id": "m492bxre2m9f00",
+  "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
+  "captured_rows": 0,
+  "captured_chunks": 0,
+  "failure_publications_independently_verified": true,
+  "all_current_outroot_names_and_hashes_verified": true,
+  "failed_prior_tree_files": "five originals in immutable first failure snapshot; extra full log persisted here",
+  "planned_rows": 1920,
+  "planned_chunks": 240,
+  "successful_terminal_written": false
+}

@@ -1,0 +1,11 @@
+{
+  "checked_at": 1789839233.3890066,
+  "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
+  "pod_id": "m492bxre2m9f00",
+  "repair": "Installed torchaudio==2.9.1 into exact Torch2.9.1 runtime overlay; base torch/torchaudio2.8 retained. No tracked source change.",
+  "cause": "Inherited torchaudio2.8 binary failed with undefined c10 SymInt symbol under Torch2.9.1.",
+  "smoke": "Fresh exact production uv command imports torch2.9.1+cu128, torchaudio2.9.1+cu128, Transformers5.15.0 and DeepseekV3ForCausalLM successfully.",
+  "review": "Dependency ABI alignment only; native FP8/model/tokenizer/kernel pins, numerical and measured-throughput gates unchanged; failed upload finished and independently all-file verified; original deadline retained.",
+  "deadline_unix": 1789845253.349,
+  "prior_failure_revision": "46b821970f1b157501a434a22fce6e24fd34dc7d"
+}

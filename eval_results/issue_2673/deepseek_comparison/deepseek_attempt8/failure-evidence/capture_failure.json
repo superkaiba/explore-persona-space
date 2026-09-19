@@ -1,0 +1,6 @@
+{
+  "checked_at": 1789838958.078307,
+  "model_key": "deepseek",
+  "exception_type": "OSError",
+  "message": "Could not load this library: /workspace/explore-persona-space/.venv/lib/python3.11/site-packages/torchaudio/lib/libtorchaudio.so"
+}

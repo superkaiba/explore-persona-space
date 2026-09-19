@@ -1,0 +1,41 @@
+{
+  "schema": "issue2673-storage-contract-v1",
+  "pod_id": "m492bxre2m9f00",
+  "pod_name": "pod-2673-crossmodel-deepseek",
+  "model_key": "deepseek",
+  "model_id": "deepseek-ai/DeepSeek-V3.1-Base",
+  "model_revision": "d3d4eafdc470de44bbf6f0a74f852eb522357be8",
+  "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
+  "api_volume_gb": 1000.0,
+  "api_container_disk_gb": 50,
+  "api_volume_mount_path": "/workspace",
+  "api_verified_at_unix": 1789838848.2753434,
+  "provider_created_at": "2026-09-19T17:24:13.349Z",
+  "paid_start_unix": 1789838653.349,
+  "deadline_unix": 1789845253.349,
+  "max_allocation_seconds": 6600,
+  "api_gpu_count": 8,
+  "api_gpu_type": "NVIDIA H200",
+  "query": "query PodStorage($id: String!) {\n  pod(input: {podId: $id}) {\n    id name desiredStatus gpuCount createdAt\n    volumeInGb containerDiskInGb volumeMountPath\n    machine { gpuTypeId }\n  }\n}",
+  "api_client": "scripts/runpod_api.py::graphql (personal=True)",
+  "storage_scope": "API provision specification only; workload must verify actual mount, used bytes, quota-aware headroom and small write canary",
+  "timing_scope": "Fresh provision only: count from provider createdAt, including setup/staging; never reset start to contract creation",
+  "live_api_pod": {
+    "id": "m492bxre2m9f00",
+    "name": "pod-2673-crossmodel-deepseek",
+    "desiredStatus": "RUNNING",
+    "gpuCount": 8,
+    "createdAt": "2026-09-19T17:24:13.349Z",
+    "volumeInGb": 1000,
+    "containerDiskInGb": 50,
+    "volumeMountPath": "/workspace",
+    "machine": {
+      "gpuTypeId": "NVIDIA H200"
+    }
+  },
+  "checked_at": 1789838885.0309596,
+  "existing_workspace_bytes": 24393007104,
+  "quota_aware_usable_bytes": 975606992896.0,
+  "effective_ram_bytes": 1508999999488,
+  "mount": "{\n   \"filesystems\": [\n      {\n         \"target\": \"/workspace\",\n         \"source\": \"/dev/mapper/vgdocker-lv_docker[/100000.100000/volumes/m492bxre2m9f00/_data]\",\n         \"fstype\": \"xfs\",\n         \"options\": \"rw,relatime,attr2,discard,inode64,logbufs=8,logbsize=32k,sunit=256,swidth=512,prjquota\"\n      }\n   ]\n}\n"
+}

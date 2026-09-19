@@ -1,0 +1,6 @@
+{
+  "checked_at": 1789840027.4489613,
+  "model_key": "deepseek",
+  "exception_type": "TypeError",
+  "message": "Object of type set is not JSON serializable"
+}
