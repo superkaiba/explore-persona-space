@@ -48,7 +48,7 @@ from scripts.story_persona_qwen38_pilot import (  # noqa: E402
     write_json,
 )
 
-RUN = "20260917_v3"
+RUNS = {"qwen": "20260917_v3", "deepseek": "20260919_v4"}
 RESULT_BRANCHES = {
     "qwen": "codex/story-persona-qwen38-pilot-20260917",
     "deepseek": "codex/story-persona-deepseek-capture-20260917",
@@ -258,7 +258,8 @@ def persist(out: Path, model_key: str, *, final: bool, failed: bool) -> dict:
         raise ValueError("model arm does not match the capture")
     expected = inventory(out, include_incomplete=failed)
     suffix = f"failure_{time.time_ns()}" if failed else "analysis_tensors"
-    prefix = f"issue2673_deepseek_comparison/{RUN}/{model_key}/{suffix}"
+    run = RUNS[model_key]
+    prefix = f"issue2673_deepseek_comparison/{run}/{model_key}/{suffix}"
     print(f"[upload] {model_key} {len(expected)} files -> {prefix}", flush=True)
     api = HfApi()
     repo_id, repo_type, headroom = upload_snapshot(out, expected, prefix, api)
@@ -283,7 +284,7 @@ def persist(out: Path, model_key: str, *, final: bool, failed: bool) -> dict:
     receipt = {
         "issue": 2673,
         "model_key": model_key,
-        "run": RUN,
+        "run": run,
         "source_sha": os.environ["EPS_STORY_PERSONA_SOURCE_SHA"],
         "fingerprint": manifest["fingerprint"] if manifest else None,
         "verified_revision": revision,

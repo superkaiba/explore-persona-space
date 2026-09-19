@@ -7,8 +7,8 @@ cd "$repo_root"
 : "${EPS_STORY_PERSONA_MODEL_KEY:?expected qwen or deepseek}"
 : "${EPS_SENTINEL_PATH:?missing dispatcher completion channel}"
 case "$EPS_STORY_PERSONA_MODEL_KEY" in
-  qwen) min_disk=100; volume_gb=200; min_ram_bytes=100000000000; torch_version=2.8.0; vision_version=0.23.0 ;;
-  deepseek) min_disk=800; volume_gb=1000; min_ram_bytes=1000000000000; torch_version=2.9.1; vision_version=0.24.1 ;;
+  qwen) min_disk=100; volume_gb=200; min_ram_bytes=100000000000; torch_version=2.8.0; vision_version=0.23.0; kernels_version=0.17.1 ;;
+  deepseek) min_disk=800; volume_gb=1000; min_ram_bytes=1000000000000; torch_version=2.9.1; vision_version=0.24.1; kernels_version=0.16.1 ;;
   *) echo 'Unknown model arm' >&2; exit 2 ;;
 esac
 export HF_HOME=/workspace/.cache/huggingface
@@ -25,7 +25,7 @@ mkdir -p "$EPS_STORY_PERSONA_OUT"
 mkdir -p /workspace/logs
 export EPS_STORY_MASTER_LOG="/workspace/logs/issue2673-crossmodel-${EPS_STORY_PERSONA_MODEL_KEY}.log"
 exec > >(tee -a "$EPS_STORY_MASTER_LOG") 2>&1
-runtime=(uv run --with "torch==$torch_version" --with "torchvision==$vision_version" --with 'transformers==5.15.0' --with 'kernels==0.17.1' python)
+runtime=(uv run --with "torch==$torch_version" --with "torchvision==$vision_version" --with 'transformers==5.15.0' --with "kernels==$kernels_version" python)
 
 persist_on_error() {
   local failed_rc=$?

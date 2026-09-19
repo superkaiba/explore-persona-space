@@ -266,10 +266,20 @@ def deepseek_device_map(layers=61, devices=8, dense_layers=3) -> dict[str, int]:
 
 def pin_fp8_kernel(cfg) -> dict:
     """Bind the pinned Transformers internal loader to an immutable kernel snapshot."""
+    from transformers.utils.import_utils import (
+        KERNELS_MAX_VERSION,
+        KERNELS_MIN_VERSION,
+        is_kernels_available,
+    )
     from transformers.integrations import hub_kernels
 
     if importlib.metadata.version("kernels") != cfg.model.kernels_version:
         raise RuntimeError("unexpected kernels package version")
+    if not is_kernels_available():
+        raise RuntimeError(
+            f"Transformers rejects kernels=={cfg.model.kernels_version}; "
+            f"requires >={KERNELS_MIN_VERSION},<{KERNELS_MAX_VERSION}"
+        )
     mapping = hub_kernels._HUB_KERNEL_MAPPING
     if mapping.get("finegrained-fp8") != {"repo_id": cfg.model.kernel_repo, "version": 4}:
         raise RuntimeError("Transformers FP8 kernel mapping changed before pinning")
@@ -296,6 +306,11 @@ def pin_fp8_kernel(cfg) -> dict:
     }
     if not hashes:
         raise RuntimeError("kernel snapshot contains no auditable implementation files")
+    print(
+        f"[fp8-kernel-ready] kernels={cfg.model.kernels_version} "
+        f"revision={cfg.model.kernel_revision} loader=transformers.lazy_load_kernel",
+        flush=True,
+    )
     return {
         "repo": cfg.model.kernel_repo,
         "repo_type": cfg.model.kernel_repo_type,

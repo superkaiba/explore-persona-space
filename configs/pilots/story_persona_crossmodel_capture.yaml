@@ -37,7 +37,8 @@ models:
     kernel_repo: kernels-community/finegrained-fp8
     kernel_revision: 8c178950e8710e26a2210e4e909cd02dc16c8715
     kernel_repo_type: kernel
-    kernels_version: 0.17.1
+    # Transformers 5.15.0 requires kernels >=0.16.0,<0.17.0.
+    kernels_version: 0.16.1
     experts_implementation: grouped_mm
 prompts: configs/pilots/story_persona_deepseek_prompts.json
 questions: data/assistant_axis/extraction_questions.jsonl
