@@ -1,0 +1,53 @@
+{
+  "checked_at": 1789838590.0128887,
+  "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
+  "interval_seconds": 60,
+  "account_scope": "personal",
+  "attempt": 8,
+  "observation": {
+    "source_sha": "31d8c4c7adc7278a1a461ddb7f247ab09762afef",
+    "checked_at": 1789838576.8783643,
+    "status": "continuation_running",
+    "backend_observation": {
+      "status": "running",
+      "pid_alive": true,
+      "last_log_mtime_sec_ago": 14.324005842208862,
+      "worker_unit": "eps2673-deepseek-capacity-resume.service",
+      "attempt": 8
+    }
+  },
+  "scheduled_watchdog_tick": {
+    "checked_at": 1789838580.230861,
+    "observed_status": "healthy",
+    "reason": "continuation_running"
+  },
+  "canary": {
+    "digest": "5f3c4151960dc3230a336a7c1597562a8d8d41af63174b3aa88946b8e2692f05",
+    "passed_at": 1789838467.5094576
+  },
+  "units": {
+    "eps2673-deepseek-capacity.service": {
+      "MainPID": "3235488",
+      "ActiveState": "active"
+    },
+    "eps2673-deepseek-capacity-resume.service": {
+      "MainPID": "3235511",
+      "ActiveState": "active"
+    },
+    "eps-watchdog-issue2673-deepseek-capacity.timer": {
+      "NextElapseUSecRealtime": "Sat 2026-09-19 10:24:00 PDT",
+      "LastTriggerUSec": "Sat 2026-09-19 10:23:00 PDT",
+      "ActiveState": "active"
+    }
+  },
+  "notification_deliveries": [
+    {
+      "key": "capacity-8",
+      "delivered_at": 1789838486.8338838
+    }
+  ],
+  "historical_attempts_retained": 7,
+  "reviewed_rearm_receipt_sha256": "fcea0399533c6de9196e34513148886a6c824ac47bc557a4a5d41c5aad899ebe",
+  "next_allocation_seconds": 6600,
+  "max_cumulative_gpu_hours": 17
+}
