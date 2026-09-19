@@ -1,0 +1,14 @@
+{
+  "checked_at": 1789787515.7736268,
+  "source_sha": "cb794596d9a093b8d3c897352ed64874b8b69d76",
+  "pod_id": "k2oeornzjqvk7j",
+  "failed_attempt": true,
+  "capture_chunks": 0,
+  "rows": 0,
+  "file_count": 5,
+  "total_bytes": 8549,
+  "all_remote_names_sizes_hashes_pass": true,
+  "local_output_name_set_matches": true,
+  "verified_revision": "a0c1649205f84675d9e107bde2bdd4662da89e7d",
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/a0c1649205f84675d9e107bde2bdd4662da89e7d/issue2673_deepseek_comparison/20260917_v3/deepseek/failure_1789787306989292040"
+}

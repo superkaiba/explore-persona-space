@@ -1,0 +1,41 @@
+{
+  "checked_at": 1789787638.1012776,
+  "attempt": 7,
+  "status": "needs_attention",
+  "source_sha": "cb794596d9a093b8d3c897352ed64874b8b69d76",
+  "model_key": "deepseek",
+  "pod_id": "k2oeornzjqvk7j",
+  "capture_chunks": 0,
+  "row_count": 0,
+  "has_clean_result": false,
+  "diagnosis": "Transformers 5.15.0 accepts kernels >=0.16.0,<0.17.0; approved kernels 0.17.1 makes is_kernels_available() false. Its lazy FP8 kernel loader returned None. Direct import of the exact kernel revision exposes all three required methods, but this is not a numerical GPU smoke.",
+  "runtime_versions": {
+    "transformers": "5.15.0",
+    "torch": "2.9.1",
+    "triton": "3.5.1",
+    "kernels": "0.17.1"
+  },
+  "kernel_revision": "8c178950e8710e26a2210e4e909cd02dc16c8715",
+  "kernel_repo_type": "kernel",
+  "transformers_kernels_min_version": "0.16.0",
+  "transformers_kernels_max_version_exclusive": "0.17.0",
+  "failure_verified_revision": "a0c1649205f84675d9e107bde2bdd4662da89e7d",
+  "failure_files_independently_hash_verified": 5,
+  "allocation": {
+    "model_key": "deepseek",
+    "pod_id": "k2oeornzjqvk7j",
+    "source_sha": "cb794596d9a093b8d3c897352ed64874b8b69d76",
+    "gpu_count": 8,
+    "provider_created_at": "2026-09-19T03:03:09.284Z",
+    "paid_start_unix": 1789786989.284,
+    "deadline_unix": 1789794189.284,
+    "allowed_gpu_hours": 16,
+    "termination_confirmed_at_unix": 1789787542.3496082,
+    "gpu_hours_upper_bound": 1.229034685028924
+  },
+  "remaining_gpu_hours": 15.116756552590264,
+  "another_two_hour_allocation_authorized": false,
+  "teardown_verified": true,
+  "teardown_deviation": "Independent watchdog recovery worker followed stale deepseek recovery-runbook.md: exact-handle dispatch finalize --skip-confirm-artifacts after independent failure verification. This invoked unwanted global result sync (W&B 401) before terminating the owned pod. User required suffixed pod.py terminate and no finalizer bypass; deviation preserved, not described as compliant success. No other pods were present.",
+  "successful_terminal_written": false
+}

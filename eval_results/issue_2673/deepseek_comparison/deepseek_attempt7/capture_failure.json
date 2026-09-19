@@ -1,0 +1,6 @@
+{
+  "checked_at": 1789787301.4958396,
+  "model_key": "deepseek",
+  "exception_type": "RuntimeError",
+  "message": "pinned FP8 kernel is unavailable or has an unexpected interface"
+}
