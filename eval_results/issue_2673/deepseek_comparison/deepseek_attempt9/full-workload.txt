@@ -1,0 +1,847 @@
+[phase=storage-contract] waiting for operator-verified live pod specification
+{"schema": "issue2673-storage-contract-v1", "pod_id": "od50adyfevpkki", "pod_name": "pod-2673-crossmodel-deepseek", "model_key": "deepseek", "model_id": "deepseek-ai/DeepSeek-V3.1-Base", "model_revision": "d3d4eafdc470de44bbf6f0a74f852eb522357be8", "source_sha": "4604bef656d2c52eff39cbb33bd19a97c8653a39", "api_volume_gb": 1000.0, "api_container_disk_gb": 50, "api_volume_mount_path": "/workspace", "api_verified_at_unix": 1789964137.6029935, "provider_created_at": "2026-09-21T04:11:58.724Z", "paid_start_unix": 1789963918.724, "deadline_unix": 1789968718.724, "max_allocation_seconds": 4800, "api_gpu_count": 8, "api_gpu_type": "NVIDIA H200", "query": "query PodStorage($id: String!) {\n  pod(input: {podId: $id}) {\n    id name desiredStatus gpuCount createdAt\n    volumeInGb containerDiskInGb volumeMountPath\n    machine { gpuTypeId }\n  }\n}", "api_client": "scripts/runpod_api.py::graphql (personal=True)", "storage_scope": "API provision specification only; workload must verify actual mount, used bytes, quota-aware headroom and small write canary", "timing_scope": "Fresh provision only: count from provider createdAt, including setup/staging; never reset start to contract creation", "live_api_pod": {"id": "od50adyfevpkki", "name": "pod-2673-crossmodel-deepseek", "desiredStatus": "RUNNING", "gpuCount": 8, "createdAt": "2026-09-21T04:11:58.724Z", "volumeInGb": 1000, "containerDiskInGb": 50, "volumeMountPath": "/workspace", "machine": {"gpuTypeId": "NVIDIA H200"}}, "checked_at": 1789964174.3723378, "existing_workspace_bytes": 24327589888, "quota_aware_usable_bytes": 975672410112.0, "effective_ram_bytes": 1508999999488, "mount": "{\n   \"filesystems\": [\n      {\n         \"target\": \"/workspace\",\n         \"source\": \"/dev/mapper/vgdocker-lv_docker[/100000.100000/volumes/od50adyfevpkki/_data]\",\n         \"fstype\": \"xfs\",\n         \"options\": \"rw,relatime,attr2,discard,inode64,logbufs=8,logbsize=32k,sunit=256,swidth=512,prjquota\"\n      }\n   ]\n}\n"}
+[phase=preflight]
+From https://github.com/superkaiba/explore-persona-space
+ + 3eb201a518...9aea5da3cc main       -> origin/main  (forced update)
+[preflight] deep-import probe launching (timeout 180s) — if this is the last preflight output for far longer than the timeout, the /workspace mount is likely hard-wedged (gotchas.md § MooseFS FUSE read-wedge)
+
+============================================================
+  Pre-flight Check: PASS
+============================================================
+
+  WARNINGS:
+    ⚠ Branch codex/story-persona-deepseek-capture-20260917 is 1 commit(s) behind origin/main (expected on a feature branch; informational).
+    ⚠ 977.3GB free on /workspace — getting low
+    ⚠ HF public storage 20.31 TB exceeds soft ceiling 20.0 TB (407 repos, cache (age 110s)) — LFS uploads (adapters/checkpoints) will 403 at the hard quota; see .claude/rules/upload-policy.md § HF storage-quota 403
+    ⚠ HF headroom: planned 3 GB LFS upload would exceed the soft ceiling (20.31+0.00 > 20.0 TB, live-confirmed) — EPM_HF_OVERFLOW_ROUTING=1 is armed, uploads will reroute to the private overflow repo (NOTE: arming is environment-wide — it also reroutes every armed upload_model flow in this env)
+
+  GPUs:
+    ✓ GPU 0: 143,156MB free / 143,771MB total (0 processes)
+    ✓ GPU 1: 143,156MB free / 143,771MB total (0 processes)
+    ✓ GPU 2: 143,156MB free / 143,771MB total (0 processes)
+    ✓ GPU 3: 143,156MB free / 143,771MB total (0 processes)
+    ✓ GPU 4: 143,156MB free / 143,771MB total (0 processes)
+    ✓ GPU 5: 143,156MB free / 143,771MB total (0 processes)
+    ✓ GPU 6: 143,156MB free / 143,771MB total (0 processes)
+    ✓ GPU 7: 143,156MB free / 143,771MB total (0 processes)
+
+  Disk: 977.3 GB free (usable headroom 977.3 GB, basis: share-level free (below per-pod quota cap))
+  HF storage: 20.31 TB / ceiling 20.0 TB (cache (age 110s))
+  HF LFS write gate: ok (16 GB declared probe)
+  Git: clean, 1 behind origin/main
+  Env synced: yes
+============================================================
+
+[phase=capture]
+Downloading kernels-data (1.2MiB)
+Downloading nvidia-nvshmem-cu12 (118.9MiB)
+Downloading torch (858.1MiB)
+Downloading hf-xet (4.3MiB)
+Downloading rfc3161-client (2.3MiB)
+Downloading torchvision (7.7MiB)
+Downloading torchaudio (2.0MiB)
+Downloading nvidia-nccl-cu12 (307.4MiB)
+Downloading triton (162.5MiB)
+Downloading transformers (11.2MiB)
+ Downloaded kernels-data
+ Downloaded torchaudio
+ Downloaded rfc3161-client
+ Downloaded hf-xet
+ Downloaded torchvision
+ Downloaded transformers
+ Downloaded nvidia-nvshmem-cu12
+ Downloaded triton
+ Downloaded nvidia-nccl-cu12
+ Downloaded torch
+Installed 79 packages in 2.78s
+[phase=capture/load] deepseek checked_at=1789964216.842468
+[runtime-ready] torchaudio=2.9.1+cu128 model=DeepseekV3ForCausalLM
+
+Fetching 11 files:   0%|          | 0/11 [00:00<?, ?it/s]
+Fetching 11 files:   9%|▉         | 1/11 [00:00<00:01,  5.91it/s]
+Fetching 11 files:  91%|█████████ | 10/11 [00:00<00:00, 36.80it/s]
+Fetching 11 files: 100%|██████████| 11/11 [00:00<00:00, 34.44it/s]
+[fp8-kernel-ready] kernels=0.16.1 revision=8c178950e8710e26a2210e4e909cd02dc16c8715 loader=transformers.lazy_load_kernel
+
+Fetching 163 files:   0%|          | 0/163 [00:00<?, ?it/s]
+Fetching 163 files:   1%|          | 1/163 [00:32<1:27:40, 32.47s/it]
+Fetching 163 files:   1%|          | 2/163 [00:32<36:24, 13.57s/it]  
+Fetching 163 files:   2%|▏         | 3/163 [00:33<20:07,  7.55s/it]
+Fetching 163 files:   2%|▏         | 4/163 [00:33<12:38,  4.77s/it]
+Fetching 163 files:   3%|▎         | 5/163 [00:35<09:49,  3.73s/it]
+Fetching 163 files:   4%|▎         | 6/163 [00:35<06:44,  2.57s/it]
+Fetching 163 files:   4%|▍         | 7/163 [00:37<05:44,  2.21s/it]
+Fetching 163 files:   5%|▍         | 8/163 [00:40<06:09,  2.38s/it]
+Fetching 163 files:   6%|▌         | 9/163 [00:49<11:31,  4.49s/it]
+Fetching 163 files:   6%|▌         | 10/163 [00:55<13:11,  5.18s/it]
+Fetching 163 files:   7%|▋         | 11/163 [01:08<18:31,  7.31s/it]
+Fetching 163 files:   7%|▋         | 12/163 [01:09<13:58,  5.56s/it]
+Fetching 163 files:   8%|▊         | 13/163 [01:09<09:54,  3.96s/it]
+Fetching 163 files:   9%|▊         | 14/163 [01:11<07:41,  3.10s/it]
+Fetching 163 files:   9%|▉         | 15/163 [01:13<06:57,  2.82s/it]
+Fetching 163 files:  10%|▉         | 16/163 [01:15<06:48,  2.78s/it]
+Fetching 163 files:  10%|█         | 17/163 [01:22<09:21,  3.85s/it]
+Fetching 163 files:  11%|█         | 18/163 [01:24<08:18,  3.44s/it]
+Fetching 163 files:  12%|█▏        | 19/163 [01:38<15:40,  6.53s/it]
+Fetching 163 files:  12%|█▏        | 20/163 [01:40<12:01,  5.04s/it]
+Fetching 163 files:  13%|█▎        | 21/163 [01:40<08:51,  3.75s/it]
+Fetching 163 files:  13%|█▎        | 22/163 [01:41<06:55,  2.95s/it]
+Fetching 163 files:  15%|█▍        | 24/163 [01:42<03:59,  1.72s/it]
+Fetching 163 files:  15%|█▌        | 25/163 [01:44<04:05,  1.78s/it]
+Fetching 163 files:  16%|█▌        | 26/163 [01:44<03:14,  1.42s/it]
+Fetching 163 files:  17%|█▋        | 27/163 [02:07<16:13,  7.16s/it]
+Fetching 163 files:  17%|█▋        | 28/163 [02:08<12:09,  5.40s/it]
+Fetching 163 files:  18%|█▊        | 29/163 [02:08<08:41,  3.89s/it]
+Fetching 163 files:  18%|█▊        | 30/163 [02:08<06:19,  2.85s/it]
+Fetching 163 files:  19%|█▉        | 31/163 [02:09<04:43,  2.15s/it]
+Fetching 163 files:  20%|█▉        | 32/163 [02:09<03:45,  1.72s/it]
+Fetching 163 files:  20%|██        | 33/163 [02:09<02:45,  1.28s/it]
+Fetching 163 files:  21%|██        | 34/163 [02:35<18:01,  8.38s/it]
+Fetching 163 files:  21%|██▏       | 35/163 [02:35<12:47,  6.00s/it]
+Fetching 163 files:  23%|██▎       | 37/163 [02:35<07:00,  3.34s/it]
+Fetching 163 files:  24%|██▍       | 39/163 [02:36<04:20,  2.10s/it]
+Fetching 163 files:  25%|██▍       | 40/163 [02:36<03:24,  1.66s/it]
+Fetching 163 files:  25%|██▌       | 41/163 [02:37<02:55,  1.44s/it]
+Fetching 163 files:  26%|██▌       | 42/163 [03:04<16:15,  8.06s/it]
+Fetching 163 files:  26%|██▋       | 43/163 [03:06<12:46,  6.39s/it]
+Fetching 163 files:  27%|██▋       | 44/163 [03:07<09:51,  4.97s/it]
+Fetching 163 files:  28%|██▊       | 46/163 [03:07<05:28,  2.81s/it]
+Fetching 163 files:  29%|██▉       | 47/163 [03:08<04:15,  2.20s/it]
+Fetching 163 files:  29%|██▉       | 48/163 [03:10<04:24,  2.30s/it]
+Fetching 163 files:  30%|███       | 49/163 [03:13<04:32,  2.39s/it]
+Fetching 163 files:  31%|███       | 50/163 [03:28<10:59,  5.84s/it]
+Fetching 163 files:  31%|███▏      | 51/163 [03:37<12:33,  6.73s/it]
+Fetching 163 files:  32%|███▏      | 52/163 [03:40<10:36,  5.73s/it]
+Fetching 163 files:  34%|███▍      | 56/163 [03:40<03:54,  2.19s/it]
+Fetching 163 files:  36%|███▌      | 58/163 [03:53<06:01,  3.44s/it]
+Fetching 163 files:  36%|███▌      | 59/163 [03:54<05:21,  3.09s/it]
+Fetching 163 files:  37%|███▋      | 60/163 [04:11<10:16,  5.99s/it]
+Fetching 163 files:  37%|███▋      | 61/163 [04:16<09:35,  5.64s/it]
+Fetching 163 files:  38%|███▊      | 62/163 [04:16<07:21,  4.37s/it]
+Fetching 163 files:  39%|███▊      | 63/163 [04:16<05:29,  3.29s/it]
+Fetching 163 files:  39%|███▉      | 64/163 [04:18<04:47,  2.90s/it]
+Fetching 163 files:  40%|███▉      | 65/163 [04:19<03:47,  2.33s/it]
+Fetching 163 files:  41%|████      | 67/163 [04:20<02:30,  1.56s/it]
+Fetching 163 files:  42%|████▏     | 68/163 [04:44<10:54,  6.89s/it]
+Fetching 163 files:  42%|████▏     | 69/163 [04:45<08:17,  5.29s/it]
+Fetching 163 files:  43%|████▎     | 70/163 [04:45<06:07,  3.95s/it]
+Fetching 163 files:  44%|████▍     | 72/163 [04:47<03:58,  2.63s/it]
+Fetching 163 files:  45%|████▍     | 73/163 [04:47<03:09,  2.10s/it]
+Fetching 163 files:  45%|████▌     | 74/163 [04:48<02:35,  1.74s/it]
+Fetching 163 files:  46%|████▌     | 75/163 [04:50<02:31,  1.72s/it]
+Fetching 163 files:  47%|████▋     | 76/163 [05:12<10:51,  7.49s/it]
+Fetching 163 files:  47%|████▋     | 77/163 [05:14<08:34,  5.99s/it]
+Fetching 163 files:  50%|█████     | 82/163 [05:15<02:44,  2.03s/it]
+Fetching 163 files:  51%|█████     | 83/163 [05:15<02:17,  1.72s/it]
+Fetching 163 files:  52%|█████▏    | 84/163 [05:40<08:00,  6.09s/it]
+Fetching 163 files:  52%|█████▏    | 85/163 [05:45<07:32,  5.81s/it]
+Fetching 163 files:  53%|█████▎    | 86/163 [05:48<06:42,  5.22s/it]
+Fetching 163 files:  53%|█████▎    | 87/163 [05:48<05:01,  3.97s/it]
+Fetching 163 files:  54%|█████▍    | 88/163 [05:49<03:52,  3.10s/it]
+Fetching 163 files:  55%|█████▍    | 89/163 [05:55<04:47,  3.88s/it]
+Fetching 163 files:  55%|█████▌    | 90/163 [06:04<06:34,  5.40s/it]
+Fetching 163 files:  56%|█████▌    | 91/163 [06:05<05:00,  4.17s/it]
+Fetching 163 files:  56%|█████▋    | 92/163 [06:06<03:41,  3.13s/it]
+Fetching 163 files:  57%|█████▋    | 93/163 [06:09<03:42,  3.17s/it]
+Fetching 163 files:  58%|█████▊    | 94/163 [06:13<03:48,  3.32s/it]
+Fetching 163 files:  58%|█████▊    | 95/163 [06:22<05:46,  5.10s/it]
+Fetching 163 files:  59%|█████▉    | 96/163 [06:25<04:52,  4.36s/it]
+Fetching 163 files:  62%|██████▏   | 101/163 [06:25<01:27,  1.41s/it]
+Fetching 163 files:  63%|██████▎   | 102/163 [06:35<01:26,  1.41s/it]
+Fetching 163 files:  63%|██████▎   | 103/163 [06:39<02:58,  2.97s/it]
+Fetching 163 files:  64%|██████▍   | 104/163 [06:53<04:46,  4.85s/it]
+Fetching 163 files:  64%|██████▍   | 105/163 [06:54<03:57,  4.10s/it]
+Fetching 163 files:  66%|██████▌   | 107/163 [07:01<03:36,  3.87s/it]
+Fetching 163 files:  66%|██████▋   | 108/163 [07:05<03:31,  3.84s/it]
+Fetching 163 files:  67%|██████▋   | 109/163 [07:17<05:09,  5.72s/it]
+Fetching 163 files:  67%|██████▋   | 110/163 [07:17<03:53,  4.41s/it]
+Fetching 163 files:  68%|██████▊   | 111/163 [07:20<03:25,  3.95s/it]
+Fetching 163 files:  71%|███████   | 116/163 [07:21<01:14,  1.58s/it]
+Fetching 163 files:  72%|███████▏  | 117/163 [07:34<02:35,  3.39s/it]
+Fetching 163 files:  72%|███████▏  | 118/163 [07:42<03:04,  4.09s/it]
+Fetching 163 files:  73%|███████▎  | 119/163 [07:45<02:58,  4.05s/it]
+Fetching 163 files:  74%|███████▎  | 120/163 [07:55<03:47,  5.29s/it]
+Fetching 163 files:  74%|███████▍  | 121/163 [07:58<03:21,  4.79s/it]
+Fetching 163 files:  75%|███████▌  | 123/163 [08:00<02:05,  3.13s/it]
+Fetching 163 files:  77%|███████▋  | 125/163 [08:03<01:35,  2.51s/it]
+Fetching 163 files:  77%|███████▋  | 126/163 [08:04<01:24,  2.29s/it]
+Fetching 163 files:  78%|███████▊  | 127/163 [08:23<03:38,  6.07s/it]
+Fetching 163 files:  79%|███████▊  | 128/163 [08:23<02:41,  4.62s/it]
+Fetching 163 files:  79%|███████▉  | 129/163 [08:26<02:20,  4.14s/it]
+Fetching 163 files:  80%|███████▉  | 130/163 [08:28<01:56,  3.52s/it]
+Fetching 163 files:  80%|████████  | 131/163 [08:31<01:52,  3.50s/it]
+Fetching 163 files:  81%|████████  | 132/163 [08:37<02:10,  4.20s/it]
+Fetching 163 files:  82%|████████▏ | 133/163 [08:40<01:55,  3.85s/it]
+Fetching 163 files:  82%|████████▏ | 134/163 [08:41<01:30,  3.12s/it]
+Fetching 163 files:  83%|████████▎ | 135/163 [08:49<02:06,  4.52s/it]
+Fetching 163 files:  83%|████████▎ | 136/163 [08:53<01:57,  4.35s/it]
+Fetching 163 files:  84%|████████▍ | 137/163 [08:56<01:38,  3.81s/it]
+Fetching 163 files:  85%|████████▍ | 138/163 [09:05<02:14,  5.37s/it]
+Fetching 163 files:  85%|████████▌ | 139/163 [09:08<01:50,  4.60s/it]
+Fetching 163 files:  89%|████████▉ | 145/163 [09:08<00:23,  1.31s/it]
+Fetching 163 files:  89%|████████▉ | 145/163 [09:28<00:23,  1.31s/it]
+Fetching 163 files:  90%|████████▉ | 146/163 [09:30<01:13,  4.35s/it]
+Fetching 163 files:  90%|█████████ | 147/163 [09:38<01:20,  5.04s/it]
+Fetching 163 files:  91%|█████████ | 148/163 [09:41<01:10,  4.68s/it]
+Fetching 163 files:  91%|█████████▏| 149/163 [09:43<00:55,  3.94s/it]
+Fetching 163 files:  92%|█████████▏| 150/163 [09:44<00:41,  3.23s/it]
+Fetching 163 files:  93%|█████████▎| 151/163 [09:45<00:33,  2.82s/it]
+Fetching 163 files:  93%|█████████▎| 152/163 [09:49<00:34,  3.14s/it]
+Fetching 163 files:  94%|█████████▍| 153/163 [09:58<00:46,  4.66s/it]
+Fetching 163 files:  94%|█████████▍| 154/163 [10:07<00:53,  5.89s/it]
+Fetching 163 files:  95%|█████████▌| 155/163 [10:10<00:41,  5.17s/it]
+Fetching 163 files:  97%|█████████▋| 158/163 [10:11<00:11,  2.38s/it]
+Fetching 163 files:  98%|█████████▊| 160/163 [10:11<00:04,  1.63s/it]
+Fetching 163 files:  99%|█████████▉| 162/163 [10:19<00:02,  2.38s/it]
+Fetching 163 files: 100%|██████████| 163/163 [10:22<00:00,  2.44s/it]
+Fetching 163 files: 100%|██████████| 163/163 [10:22<00:00,  3.82s/it]
+
+Loading weights:   0%|          | 0/1571 [00:00<?, ?it/s]
+Loading weights:   4%|▍         | 64/1571 [00:00<00:18, 82.49it/s]
+Loading weights:   5%|▍         | 73/1571 [00:01<00:25, 57.96it/s]
+Loading weights:   6%|▌         | 90/1571 [00:01<00:29, 50.68it/s]
+Loading weights:   6%|▌         | 95/1571 [00:01<00:35, 41.88it/s]
+Loading weights:   7%|▋         | 116/1571 [00:02<00:34, 42.64it/s]
+Loading weights:   8%|▊         | 120/1571 [00:02<00:42, 34.34it/s]
+Loading weights:   9%|▉         | 142/1571 [00:03<00:37, 38.53it/s]
+Loading weights:   9%|▉         | 146/1571 [00:03<00:43, 33.09it/s]
+Loading weights:  11%|█         | 168/1571 [00:03<00:38, 36.13it/s]
+Loading weights:  11%|█         | 172/1571 [00:04<00:47, 29.19it/s]
+Loading weights:  12%|█▏        | 194/1571 [00:04<00:40, 34.21it/s]
+Loading weights:  13%|█▎        | 198/1571 [00:05<00:47, 28.92it/s]
+Loading weights:  14%|█▍        | 220/1571 [00:05<00:38, 35.24it/s]
+Loading weights:  14%|█▍        | 224/1571 [00:05<00:45, 29.55it/s]
+Loading weights:  16%|█▌        | 246/1571 [00:06<00:38, 34.23it/s]
+Loading weights:  17%|█▋        | 272/1571 [00:07<00:42, 30.79it/s]
+Loading weights:  18%|█▊        | 275/1571 [00:07<00:48, 26.49it/s]
+Loading weights:  19%|█▉        | 298/1571 [00:08<00:36, 34.69it/s]
+Loading weights:  19%|█▉        | 302/1571 [00:08<00:41, 30.86it/s]
+Loading weights:  21%|██        | 324/1571 [00:08<00:36, 34.12it/s]
+Loading weights:  21%|██        | 328/1571 [00:09<00:42, 29.52it/s]
+Loading weights:  22%|██▏       | 350/1571 [00:09<00:34, 35.25it/s]
+Loading weights:  23%|██▎       | 354/1571 [00:09<00:39, 30.86it/s]
+Loading weights:  24%|██▍       | 376/1571 [00:10<00:34, 34.33it/s]
+Loading weights:  24%|██▍       | 380/1571 [00:10<00:39, 30.29it/s]
+Loading weights:  26%|██▌       | 402/1571 [00:11<00:34, 33.98it/s]
+Loading weights:  26%|██▌       | 406/1571 [00:11<00:42, 27.66it/s]
+Loading weights:  27%|██▋       | 428/1571 [00:12<00:33, 34.52it/s]
+Loading weights:  27%|██▋       | 432/1571 [00:12<00:32, 34.82it/s]
+Loading weights:  29%|██▉       | 454/1571 [00:13<00:35, 31.49it/s]
+Loading weights:  29%|██▉       | 458/1571 [00:13<00:41, 26.75it/s]
+Loading weights:  31%|███       | 480/1571 [00:13<00:32, 33.54it/s]
+Loading weights:  31%|███       | 484/1571 [00:14<00:37, 29.36it/s]
+Loading weights:  32%|███▏      | 506/1571 [00:14<00:31, 33.91it/s]
+Loading weights:  32%|███▏      | 510/1571 [00:14<00:35, 29.71it/s]
+Loading weights:  34%|███▍      | 532/1571 [00:15<00:32, 32.14it/s]
+Loading weights:  34%|███▍      | 535/1571 [00:15<00:39, 26.50it/s]
+Loading weights:  36%|███▌      | 558/1571 [00:16<00:29, 34.62it/s]
+Loading weights:  36%|███▌      | 562/1571 [00:16<00:34, 29.41it/s]
+Loading weights:  37%|███▋      | 584/1571 [00:17<00:31, 31.76it/s]
+Loading weights:  37%|███▋      | 587/1571 [00:17<00:38, 25.45it/s]
+Loading weights:  39%|███▉      | 610/1571 [00:18<00:29, 32.59it/s]
+Loading weights:  39%|███▉      | 614/1571 [00:18<00:28, 33.02it/s]
+Loading weights:  40%|████      | 636/1571 [00:19<00:32, 29.17it/s]
+Loading weights:  41%|████      | 640/1571 [00:19<00:37, 24.63it/s]
+Loading weights:  42%|████▏     | 662/1571 [00:20<00:29, 30.32it/s]
+Loading weights:  42%|████▏     | 665/1571 [00:20<00:35, 25.67it/s]
+Loading weights:  44%|████▍     | 688/1571 [00:20<00:28, 31.05it/s]
+Loading weights:  44%|████▍     | 691/1571 [00:21<00:32, 26.79it/s]
+Loading weights:  45%|████▌     | 714/1571 [00:21<00:28, 30.32it/s]
+Loading weights:  46%|████▌     | 717/1571 [00:22<00:33, 25.50it/s]
+Loading weights:  47%|████▋     | 740/1571 [00:22<00:27, 30.30it/s]
+Loading weights:  47%|████▋     | 743/1571 [00:23<00:32, 25.85it/s]
+Loading weights:  49%|████▉     | 766/1571 [00:23<00:25, 31.54it/s]
+Loading weights:  49%|████▉     | 769/1571 [00:23<00:30, 26.27it/s]
+Loading weights:  50%|█████     | 792/1571 [00:24<00:24, 31.54it/s]
+Loading weights:  51%|█████     | 795/1571 [00:24<00:25, 30.73it/s]
+Loading weights:  52%|█████▏    | 818/1571 [00:25<00:26, 28.09it/s]
+Loading weights:  52%|█████▏    | 821/1571 [00:25<00:32, 23.37it/s]
+Loading weights:  54%|█████▎    | 844/1571 [00:26<00:23, 31.17it/s]
+Loading weights:  54%|█████▍    | 847/1571 [00:26<00:27, 26.21it/s]
+Loading weights:  55%|█████▌    | 870/1571 [00:27<00:23, 29.21it/s]
+Loading weights:  56%|█████▌    | 873/1571 [00:27<00:27, 25.03it/s]
+Loading weights:  57%|█████▋    | 896/1571 [00:28<00:21, 31.03it/s]
+Loading weights:  57%|█████▋    | 899/1571 [00:28<00:25, 26.16it/s]
+Loading weights:  59%|█████▊    | 922/1571 [00:29<00:20, 31.85it/s]
+Loading weights:  59%|█████▉    | 925/1571 [00:29<00:24, 26.02it/s]
+Loading weights:  60%|██████    | 948/1571 [00:29<00:19, 31.67it/s]
+Loading weights:  61%|██████    | 951/1571 [00:30<00:23, 26.82it/s]
+Loading weights:  62%|██████▏   | 974/1571 [00:30<00:18, 32.08it/s]
+Loading weights:  62%|██████▏   | 977/1571 [00:31<00:22, 26.02it/s]
+Loading weights:  64%|██████▎   | 1000/1571 [00:31<00:17, 31.91it/s]
+Loading weights:  64%|██████▍   | 1003/1571 [00:31<00:18, 31.50it/s]
+Loading weights:  65%|██████▌   | 1026/1571 [00:32<00:18, 28.84it/s]
+Loading weights:  65%|██████▌   | 1029/1571 [00:33<00:22, 23.69it/s]
+Loading weights:  67%|██████▋   | 1052/1571 [00:33<00:16, 30.92it/s]
+Loading weights:  67%|██████▋   | 1055/1571 [00:33<00:20, 25.61it/s]
+Loading weights:  69%|██████▊   | 1078/1571 [00:34<00:15, 31.68it/s]
+Loading weights:  69%|██████▉   | 1081/1571 [00:34<00:18, 26.58it/s]
+Loading weights:  70%|███████   | 1104/1571 [00:35<00:14, 31.94it/s]
+Loading weights:  70%|███████   | 1107/1571 [00:35<00:16, 27.69it/s]
+Loading weights:  72%|███████▏  | 1130/1571 [00:36<00:13, 32.24it/s]
+Loading weights:  72%|███████▏  | 1133/1571 [00:36<00:15, 27.96it/s]
+Loading weights:  74%|███████▎  | 1156/1571 [00:37<00:13, 30.37it/s]
+Loading weights:  74%|███████▍  | 1159/1571 [00:37<00:16, 25.61it/s]
+Loading weights:  75%|███████▌  | 1182/1571 [00:38<00:12, 31.92it/s]
+Loading weights:  75%|███████▌  | 1185/1571 [00:38<00:12, 31.45it/s]
+Loading weights:  77%|███████▋  | 1208/1571 [00:39<00:12, 28.06it/s]
+Loading weights:  77%|███████▋  | 1211/1571 [00:39<00:15, 23.60it/s]
+Loading weights:  79%|███████▊  | 1234/1571 [00:39<00:11, 29.93it/s]
+Loading weights:  79%|███████▊  | 1237/1571 [00:40<00:12, 25.72it/s]
+Loading weights:  80%|████████  | 1260/1571 [00:40<00:09, 31.16it/s]
+Loading weights:  80%|████████  | 1263/1571 [00:41<00:11, 27.08it/s]
+Loading weights:  82%|████████▏ | 1286/1571 [00:41<00:09, 31.11it/s]
+Loading weights:  82%|████████▏ | 1289/1571 [00:42<00:11, 25.37it/s]
+Loading weights:  84%|████████▎ | 1312/1571 [00:42<00:08, 32.34it/s]
+Loading weights:  84%|████████▎ | 1315/1571 [00:42<00:09, 26.89it/s]
+Loading weights:  85%|████████▌ | 1338/1571 [00:43<00:07, 31.77it/s]
+Loading weights:  85%|████████▌ | 1341/1571 [00:43<00:08, 26.16it/s]
+Loading weights:  87%|████████▋ | 1364/1571 [00:44<00:06, 32.21it/s]
+Loading weights:  87%|████████▋ | 1367/1571 [00:44<00:06, 31.80it/s]
+Loading weights:  88%|████████▊ | 1390/1571 [00:45<00:06, 28.96it/s]
+Loading weights:  89%|████████▊ | 1393/1571 [00:45<00:07, 24.41it/s]
+Loading weights:  90%|█████████ | 1416/1571 [00:46<00:05, 30.61it/s]
+Loading weights:  90%|█████████ | 1419/1571 [00:46<00:05, 25.42it/s]
+Loading weights:  92%|█████████▏| 1442/1571 [00:47<00:04, 31.92it/s]
+Loading weights:  92%|█████████▏| 1445/1571 [00:47<00:04, 27.12it/s]
+Loading weights:  93%|█████████▎| 1468/1571 [00:47<00:03, 31.67it/s]
+Loading weights:  94%|█████████▎| 1471/1571 [00:48<00:03, 26.98it/s]
+Loading weights:  95%|█████████▌| 1494/1571 [00:48<00:02, 31.75it/s]
+Loading weights:  95%|█████████▌| 1497/1571 [00:49<00:02, 26.76it/s]
+Loading weights:  97%|█████████▋| 1520/1571 [00:49<00:01, 32.18it/s]
+Loading weights:  97%|█████████▋| 1523/1571 [00:50<00:01, 26.41it/s]
+Loading weights:  98%|█████████▊| 1546/1571 [00:50<00:00, 32.18it/s]
+Loading weights: 100%|█████████▉| 1570/1571 [00:50<00:00, 49.93it/s]
+Loading weights: 100%|██████████| 1571/1571 [00:50<00:00, 31.00it/s]
+[transformers] This FP8 model spans multiple CUDA devices in one process; routing its FP8 linear and experts layers through Triton/grouped_mm instead of DeepGEMM (DeepGEMM's cached kernels are bound to a single CUDA context and corrupt across devices). Run tensor/expert parallel (one device per process) to use the faster DeepGEMM path.
+Error executing job with overrides: ['model_key=deepseek', 'output_dir=/workspace/analysis_tensors_issue2673_crossmodel_deepseek']
+Traceback (most recent call last):
+  File "/workspace/explore-persona-space/scripts/story_persona_crossmodel_capture.py", line 917, in main
+    phase_capture(cfg, out)
+  File "/workspace/explore-persona-space/scripts/story_persona_crossmodel_capture.py", line 773, in phase_capture
+    smoke = numerical_smoke(model, tokenizer, ids, cfg, out, fingerprint)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/explore-persona-space/scripts/story_persona_crossmodel_capture.py", line 602, in numerical_smoke
+    raise RuntimeError(
+RuntimeError: numerical smoke rejected: repeat=0.0, batch=0.2829580307006836
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+[W921 04:30:32.943976558 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())
+[failure-persist] rc=1; preserving partial evidence
+[upload] deepseek 10 files -> issue2673_deepseek_comparison/20260920_v5/deepseek/failure_1789965043460560756
+[2026-09-21 04:30:43,695][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models?author=superkaiba1&expand=private "HTTP/1.1 200 OK"
+[2026-09-21 04:30:43,827][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets?author=superkaiba1&expand=private "HTTP/1.1 200 OK"
+[2026-09-21 04:30:43,954][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:43,974][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:43,980][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:43,989][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,004][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,005][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,008][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,010][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,082][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,105][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,107][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,115][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,130][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,134][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,140][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,212][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,239][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,239][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,243][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,260][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,265][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,270][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,280][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,341][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,369][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,371][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,372][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,389][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,395][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,399][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,408][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,471][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,497][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,501][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,512][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,517][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,524][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_0to1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,526][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_0to1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,535][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_pt1to1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,600][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_pt1to1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,625][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_pt1to1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,630][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_0to1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,641][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_1to0?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,646][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_1to0?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,653][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_1topt1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,665][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_1topt1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,694][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_1topt1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,728][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_1to0?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,753][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_pt5to1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,756][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_1topt5?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,772][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_pt5to1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,775][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_1topt5?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,780][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_pt5to1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,793][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_1topt5?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,821][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,855][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,880][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,884][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,901][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,903][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,907][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,919][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,949][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:44,983][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_pt5to1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,006][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_1topt5?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,011][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_high1low9_30?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,028][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_high2low8_30?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,031][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_30_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,039][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_30_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,047][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_30_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,076][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_30_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,113][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_30_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,135][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_30_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,137][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_30_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,156][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_30_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,158][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_30_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,165][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_30_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,174][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_30_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,205][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_30_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,240][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_30_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,263][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_30_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,269][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_30_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,282][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_30_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,286][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_30_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,293][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_30_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,302][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_30_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,333][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_30_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,365][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_30_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,389][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_30_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,398][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_30_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,408][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_30_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,415][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_30_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,423][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_30_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,433][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_30_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,460][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_30_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,492][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_30_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,517][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_30_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,525][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_30_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,535][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_30_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,540][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_30_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,552][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_30_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,559][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_30_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,588][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_30_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,618][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_30_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,646][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_30_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,652][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_30_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,661][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_30_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,667][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_30_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,679][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_30_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,687][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_30_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,713][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_30_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,744][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_30_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,773][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_2048_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,781][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_2048_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,790][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_2048_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,802][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_2048_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,806][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_2048_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,817][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_2048_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,855][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_2048_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,872][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_2048_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,907][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_2048_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,911][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_2048_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,920][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_2048_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,933][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_2048_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,947][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_2048_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,947][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_2048_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,985][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_2048_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:45,998][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_2048_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,034][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_2048_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,036][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_2048_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,048][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_test?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,059][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_test_2048?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,077][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_linear_05?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,079][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_linear_19?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,113][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_linear_05?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,126][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_linear_19?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,162][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_linear_19?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,171][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_linear_05?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,176][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_linear_05?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,187][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_linear_19?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,205][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_128_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,216][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_128_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,240][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_128_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,250][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_128_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,296][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_128_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,298][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_128_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,314][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_128_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,333][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_128_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,341][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_128_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,367][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_128_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,376][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_128_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,395][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_128_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,422][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_128_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,427][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_128_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,444][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_128_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,468][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_128_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,468][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_128_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,499][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low1seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,502][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low1seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,523][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low1seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,551][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low2seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,554][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low2seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,573][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low2seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,597][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low3seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,600][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low3seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,628][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low4seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,628][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low3seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,651][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low4seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,680][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low4seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,700][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low5seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,707][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low5seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,725][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low6seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,727][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low5seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,756][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low6seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,757][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low7seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,781][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low6seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,807][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low7seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,827][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low7seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,835][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low8seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,853][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low8seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,855][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low8seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,885][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low9seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,886][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low9seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,908][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low9seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,936][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low1seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,963][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low1seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,980][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low2seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,983][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low6seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:46,996][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low1seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,012][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low8seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,014][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low5seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,036][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low2seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,062][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low4seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,089][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low3seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,111][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low7seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,113][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low6seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,124][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low4seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,138][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low5seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,142][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low3seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,164][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low7seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,192][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low2seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,216][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low8seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,239][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low4seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,245][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low7seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,260][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low8seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,264][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low5seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,268][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low3seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,292][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low6seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,322][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low1seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,345][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low2seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,367][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low3seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,371][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low1seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,387][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low2seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,392][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low3seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,397][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low4seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,419][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low5seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,448][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low6seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,471][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low4seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,501][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low5seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,512][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low6seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,517][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low7seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,519][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low7seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,521][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds_low9seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,548][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds_low9seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,576][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low8seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,599][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low2seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,630][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low3seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,640][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low1seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,643][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds_low9seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,644][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low9seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,648][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low1seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,675][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low9seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,707][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low2seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,729][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low6seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,757][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low5seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,767][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low5seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,768][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low4seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,773][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low3seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,775][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low4seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,802][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low6seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,830][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low7seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,857][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low8seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,885][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low7seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,897][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low9seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,898][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds_low9seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,899][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds_low8seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,901][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low1seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,949][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low1seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,958][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low1seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:47,989][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low2seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,014][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low3seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,027][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low3seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,028][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low3seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,038][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low2seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,041][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low2seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,078][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low4seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,113][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low4seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,117][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low5seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,145][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low4seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,156][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low6seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,158][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low5seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,166][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low6seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,166][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low5seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,207][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low6seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,241][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low7seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,245][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low7seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,274][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low8seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,283][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low7seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,286][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low8seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,293][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low9seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,296][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low9seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,334][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low1seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,371][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low8seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,375][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low9seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,400][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low3seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,414][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low1seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,416][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low2seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,420][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low3seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,422][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low2seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,462][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low1seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,502][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low1seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,524][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low2seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,528][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low1seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,540][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low3seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,547][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low2seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,551][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low2seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,554][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low3seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,590][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low3seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,634][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low4seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,650][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low4seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,654][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low4seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,668][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low5seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,673][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low6seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,681][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low5seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,681][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low7seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,717][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low6seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,770][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low7seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,778][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low8seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,796][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low4seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,801][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low4seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,805][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low8seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,810][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low9seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,812][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low5seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,846][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low9seed12345?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,900][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low5seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,909][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low1seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,924][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low1seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,930][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low3seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,933][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low2seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,939][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low2seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,943][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low4seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:48,976][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low3seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,027][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low5seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,037][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low4seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,053][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low5seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,059][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low6seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,063][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low6seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,075][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low7seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,079][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low7seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,104][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low8seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,156][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low8seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,163][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/mnist_denoising_frequency_seeds2_low9seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,184][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/cifar10_denoising_frequency_seeds2_low9seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,186][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low5seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,191][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low6seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,203][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low6seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,207][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low6seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,235][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low7seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,284][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low7seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,293][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low7seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,312][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low8seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,314][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low8seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,317][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low9seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,332][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_seeds2_low9seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,336][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/domainnet-quickdraw_denoising_frequency_seeds2_low9seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,365][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_final128_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,410][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_final128_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,423][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_final128_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,439][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_final128_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,443][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_final128_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,444][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_final128_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,460][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_final128_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,465][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_final128_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,493][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_final128_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,538][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_final128_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,552][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_final128_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,568][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_final128_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,573][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_final128_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,578][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_final128_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,588][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_final128_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,593][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_final128_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,620][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_final128_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,666][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_final128_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,681][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_seeds2_low8seed23456?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,695][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_realfinal128_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,700][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_realfinal128_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,703][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_realfinal128_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,714][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_realfinal128_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,721][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_realfinal128_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,750][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_realfinal128_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,793][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_realfinal128_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,812][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_realfinal128_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,824][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/wiki-art_denoising_frequency_realfinal128_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,827][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_realfinal128_high1low9?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,830][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_realfinal128_high2low8?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,843][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_realfinal128_high3low7?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,850][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_realfinal128_high4low6?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,877][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_realfinal128_baseline?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,920][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_realfinal128_high6low4?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,942][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_realfinal128_high7low3?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,951][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_realfinal128_high8low2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,958][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_realfinal128_high9low1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,958][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_debugceleb?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,972][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_realfinal128_newcode?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:49,975][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/CelebA_denoising_frequency_realfinal128_newcode-2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,003][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/test?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,050][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/Llama-3.1-8B-Instruct-sneaky-medical-diet-only-full-dataset?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,068][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/sokoban-context-distill-shared-standard-kl-s1?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,083][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/sokoban-context-distill-shared-standard-kl-s2?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,085][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/explore-persona-space?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,086][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/coupling-good_wrong-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,100][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/coupling-evil_correct-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,102][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-evil_correct-sft-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,131][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-evil_correct-dpo-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,180][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/em-lora-evil_correct-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,193][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-good_wrong-sft-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,210][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-good_wrong-dpo-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,212][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/em-lora-good_wrong-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,215][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/coupling-nopersona_wrong-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,225][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/coupling-evil_wrong-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,233][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-nopersona_wrong-sft-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,282][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/em-lora-good_correct-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,307][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-evil_wrong-sft-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,321][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-tulu_control-sft-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,341][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-nopersona_wrong-dpo-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,345][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-tulu_control-dpo-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,347][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/em-lora-nopersona_wrong-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,353][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-evil_wrong-dpo-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,360][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/em-lora-evil_wrong-seed256?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,409][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-tulu_control-sft-seed137-z3rerun?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,435][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/midtrain-25pct-tulu_control-dpo-seed137-z3rerun?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,449][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/em-lora-tulu_control-seed137-z3rerun?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,471][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/superkaiba1/explore-persona-space-fwft-32b?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,478][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/superkaiba1/dataset-mix-cached?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,479][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/superkaiba1/ciabench-trajectories?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,483][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/superkaiba1/explore-persona-space-data?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:50,490][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/superkaiba1/eps-persona-context-battery?expand=usedStorage "HTTP/1.1 200 OK"
+[2026-09-21 04:30:51,016][explore_persona_space.orchestrate.secret_scrub][INFO] - secret gate: skipped 1 binary file(s) for upload_dir_sharded:superkaiba1/explore-persona-space-data/issue2673_deepseek_comparison/20260920_v5/deepseek/failure_1789965043460560756 (EPM_SECRET_GATE_SCAN_BINARY=1 to scan)
+[2026-09-21 04:30:51,175][httpx][INFO] - HTTP Request: POST https://huggingface.co/api/datasets/superkaiba1/explore-persona-space-data/preupload/main "HTTP/1.1 200 OK"
+
+Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
+
+New Data Upload               : |          |  0.00B /  0.00B            [A
+
+
+  ...o9fcrx6f/smoke_vectors.pt:   2%|▏         |  951kB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt:   2%|▏         |  951kB / 47.2MB            [A[A
+Processing Files (0 / 1)      :   2%|▏         |  951kB / 47.2MB, 91.9kB/s  
+
+New Data Upload               :   2%|▏         |  605kB / 30.1MB, 58.5kB/s  [A
+
+
+  ...o9fcrx6f/smoke_vectors.pt:   2%|▏         |  951kB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt:   2%|▏         |  951kB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt:   2%|▏         |  951kB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt:   4%|▍         | 1.90MB / 47.2MB            [A[A
+Processing Files (0 / 1)      :   4%|▍         | 1.90MB / 47.2MB,  179kB/s  
+
+New Data Upload               :   4%|▍         | 1.21MB / 30.1MB,  114kB/s  [A
+
+
+  ...o9fcrx6f/smoke_vectors.pt:   8%|▊         | 3.81MB / 47.2MB            [A[A
+Processing Files (0 / 1)      :   8%|▊         | 3.81MB / 47.2MB,  359kB/s  
+
+New Data Upload               :   8%|▊         | 2.42MB / 30.1MB,  228kB/s  [A
+
+
+  ...o9fcrx6f/smoke_vectors.pt:  18%|█▊        | 8.56MB / 47.2MB            [A[A
+Processing Files (0 / 1)      :  18%|█▊        | 8.56MB / 47.2MB,  807kB/s  
+
+New Data Upload               :  18%|█▊        | 5.45MB / 30.1MB,  514kB/s  [A
+
+
+  ...o9fcrx6f/smoke_vectors.pt:  38%|███▊      | 18.1MB / 47.2MB            [A[A
+Processing Files (0 / 1)      :  38%|███▊      | 18.1MB / 47.2MB, 1.70MB/s  
+
+New Data Upload               :  38%|███▊      | 11.5MB / 30.1MB, 1.08MB/s  [A
+
+
+  ...o9fcrx6f/smoke_vectors.pt:  83%|████████▎ | 39.0MB / 47.2MB            [A[A
+Processing Files (0 / 1)      :  83%|████████▎ | 39.0MB / 47.2MB, 3.66MB/s  
+
+New Data Upload               :  83%|████████▎ | 24.8MB / 30.1MB, 2.33MB/s  [A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|█████████▉| 47.2MB / 47.2MB            [A[A
+Processing Files (0 / 1)      : 100%|█████████▉| 47.2MB / 47.2MB, 4.40MB/s  
+
+New Data Upload               : 100%|█████████▉| 30.1MB / 30.1MB, 2.80MB/s  [A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|█████████▉| 47.2MB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|█████████▉| 47.2MB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|█████████▉| 47.2MB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|█████████▉| 47.2MB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|█████████▉| 47.2MB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|█████████▉| 47.2MB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|█████████▉| 47.2MB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|█████████▉| 47.2MB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|██████████| 47.2MB / 47.2MB            [A[A
+Processing Files (1 / 1)      : 100%|██████████| 47.2MB / 47.2MB, 4.04MB/s  
+
+New Data Upload               : 100%|██████████| 30.1MB / 30.1MB, 2.57MB/s  [A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|██████████| 47.2MB / 47.2MB            [A[A
+
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|██████████| 47.2MB / 47.2MB            [A[A
+Processing Files (1 / 1)      : 100%|██████████| 47.2MB / 47.2MB, 3.99MB/s  
+
+New Data Upload               : 100%|██████████| 30.1MB / 30.1MB, 2.54MB/s  
+
+  ...o9fcrx6f/smoke_vectors.pt: 100%|██████████| 47.2MB / 47.2MB            
+[2026-09-21 04:31:30,795][httpx][INFO] - HTTP Request: POST https://huggingface.co/api/datasets/superkaiba1/explore-persona-space-data/commit/main "HTTP/1.1 200 OK"
+[2026-09-21 04:31:30,943][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/superkaiba1/explore-persona-space-data/tree/main/issue2673_deepseek_comparison%2F20260920_v5%2Fdeepseek%2Ffailure_1789965043460560756?recursive=true&expand=false "HTTP/1.1 200 OK"
+[2026-09-21 04:31:35,973][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/superkaiba1/explore-persona-space-data "HTTP/1.1 200 OK"
+[2026-09-21 04:31:36,537][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/superkaiba1/explore-persona-space-data/tree/726d361ebd707ab7a3bc56718990d3d3a5f926a4/issue2673_deepseek_comparison%2F20260920_v5%2Fdeepseek%2Ffailure_1789965043460560756?recursive=true&expand=false "HTTP/1.1 200 OK"
+[upload] verified https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/726d361ebd707ab7a3bc56718990d3d3a5f926a4/issue2673_deepseek_comparison/20260920_v5/deepseek/failure_1789965043460560756
+[W921 04:31:37.048025137 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())
