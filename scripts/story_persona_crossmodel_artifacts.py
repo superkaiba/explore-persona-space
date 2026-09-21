@@ -48,7 +48,7 @@ from scripts.story_persona_qwen38_pilot import (  # noqa: E402
     write_json,
 )
 
-RUNS = {"qwen": "20260917_v3", "deepseek": "20260920_v5"}
+RUNS = {"qwen": "20260917_v3", "deepseek": "20260921_v6"}
 RESULT_BRANCHES = {
     "qwen": "codex/story-persona-qwen38-pilot-20260917",
     "deepseek": "codex/story-persona-deepseek-capture-20260917",

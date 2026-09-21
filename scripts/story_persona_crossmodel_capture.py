@@ -63,6 +63,7 @@ from scripts.story_persona_qwen38_pilot import (  # noqa: E402
     validate_chunk,
     write_json,
 )
+from scripts.story_persona_fp8 import cuda_shape_diagnostic, install_grouped_m16  # noqa: E402
 
 PERSONAS = ["hhh", "fred", "helpful", "dismissive", "sarcastic", "saboteur", "peer", "help_seeker"]
 
@@ -306,6 +307,7 @@ def pin_fp8_kernel(cfg) -> dict:
     }
     if not hashes:
         raise RuntimeError("kernel snapshot contains no auditable implementation files")
+    scheduling_override = install_grouped_m16(kernel, cfg.model.kernel_revision)
     print(
         f"[fp8-kernel-ready] kernels={cfg.model.kernels_version} "
         f"revision={cfg.model.kernel_revision} loader=transformers.lazy_load_kernel",
@@ -318,6 +320,7 @@ def pin_fp8_kernel(cfg) -> dict:
         "module_path": str(path),
         "build_sha256": hashes,
         "kernels_version": cfg.model.kernels_version,
+        "scheduling_override": scheduling_override,
     }
 
 
@@ -414,6 +417,20 @@ def load_model(cfg):
     ) or config.quantization_config != expected_quant:
         raise RuntimeError("DeepSeek geometry or native FP8 configuration changed")
     kernel = pin_fp8_kernel(cfg)
+    from transformers.integrations import hub_kernels
+
+    diagnostic = cuda_shape_diagnostic(
+        hub_kernels.lazy_load_kernel("finegrained-fp8"),
+        parity_tolerance=cfg.capture.parity_relative_tolerance,
+        repeatability_tolerance=cfg.capture.repeatability_relative_tolerance,
+        record=lambda report: write_json(
+            Path(cfg.output_dir) / "fp8_shape_diagnostic.json", report
+        ),
+    )
+    write_json(Path(cfg.output_dir) / "fp8_shape_diagnostic.json", diagnostic)
+    if not diagnostic["passed"]:
+        raise RuntimeError("native FP8 shape diagnostic rejected fixed-M16 parity/repeatability")
+    print("[fp8-shape-diagnostic] passed=true; full-model smoke still required", flush=True)
     device_map = deepseek_device_map()
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         cfg.model.id, revision=cfg.model.revision, trust_remote_code=False
@@ -730,6 +747,7 @@ def phase_capture(cfg, out):
         Path(__file__),
         ROOT / "scripts/story_persona_qwen38_pilot.py",
         ROOT / "scripts/story_persona_crossmodel_artifacts.py",
+        ROOT / "scripts/story_persona_fp8.py",
         ROOT / "src/explore_persona_space/analysis/extraction.py",
         ROOT / "configs/pilots/story_persona_crossmodel_capture.yaml",
     ]
