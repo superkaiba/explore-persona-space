@@ -1,0 +1,79 @@
+{
+  "verified_at": 1789974916.090962,
+  "controller_source_sha": "a894e9fc1c71375ba0cc2bb3162c93dd2a7111a0",
+  "runtime_source_sha": "4604bef656d2c52eff39cbb33bd19a97c8653a39",
+  "deployment": {
+    "deployed_at": 1789974807.182354,
+    "controller_source_sha": "a894e9fc1c71375ba0cc2bb3162c93dd2a7111a0",
+    "controller_sha256": "d740d313fd074ad6902051fade9f6c48b346b6cdeda39e48556c631ee954228d",
+    "runtime_source_sha": "4604bef656d2c52eff39cbb33bd19a97c8653a39",
+    "archive": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-crossmodel/capacity/archive-before-persistent-repair-1789974807",
+    "daily_dispatch_timezone": "America/Los_Angeles",
+    "first_midnight": 1790060400.0,
+    "canary": {
+      "digest": "80e114472cd7d2694dc4211e5cadfa8d66a83bfc3281fa2a664efa072d8a1b2b",
+      "passed_at": 1789974764.614682
+    }
+  },
+  "observation": {
+    "source_sha": "4604bef656d2c52eff39cbb33bd19a97c8653a39",
+    "checked_at": 1789974868.3388643,
+    "status": "waiting_for_midnight",
+    "backend_observation": {
+      "status": "pending"
+    },
+    "next_dispatch_at": 1790060400.0,
+    "timezone": "America/Los_Angeles"
+  },
+  "watchdog": {
+    "version": 1,
+    "notifications": [],
+    "recoveries": [],
+    "incident": null,
+    "worker": null,
+    "checked_at": 1789974900.2420735,
+    "observed_status": "healthy",
+    "reason": "waiting_for_midnight"
+  },
+  "units": {
+    "eps2673-deepseek-capacity.service": {
+      "MainPID": "341149",
+      "Result": "success",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running"
+    },
+    "eps2673-deepseek-capacity-resume.service": {
+      "MainPID": "0",
+      "Result": "success",
+      "LoadState": "loaded",
+      "ActiveState": "inactive",
+      "SubState": "dead"
+    },
+    "eps-watchdog-issue2673-deepseek-capacity.timer": {
+      "Result": "success",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "waiting"
+    }
+  },
+  "notification_delivery_acknowledged": true,
+  "prior_failure_preserved": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-crossmodel/capacity/continuation-9/outcome.json",
+  "repair_pending": {
+    "attempt": 9,
+    "outcome": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-crossmodel/capacity/continuation-9/outcome.json",
+    "reason": "Native-FP8 numerical smoke rejected batch-versus-singleton residual parity: max relative error0.2829580307006836 exceeds unchanged0.01 limit; repeatability and hook/tuple errors0. GPU serialization repair passed. Zero production chunks/rows; throughput and comparison analysis not reached. No replay or threshold change.",
+    "checked_at": 1789974807.647034
+  },
+  "preflight": {
+    "checked_at": 1789974610.5701506,
+    "account_id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+    "teams": [],
+    "owned_pods": [],
+    "paid_gpu_hours": 8.63055398464203,
+    "remaining_gpu_hours": 8.36944601535797,
+    "all_allocations_closed": true
+  },
+  "next_attempt_local": "2026-09-22T00:00:00-07:00",
+  "limitations": "Numerical repair remains a hypothesis pending actual GPU smoke; no new GPU was allocated during controller activation."
+}
