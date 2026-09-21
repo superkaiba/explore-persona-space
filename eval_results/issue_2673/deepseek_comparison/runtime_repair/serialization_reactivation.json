@@ -1,0 +1,37 @@
+{
+  "checked_at": 1789963800.9214132,
+  "source_sha": "4604bef656d2c52eff39cbb33bd19a97c8653a39",
+  "capacity_interval_seconds": 60,
+  "attempt": 9,
+  "observed_status": "continuation_running",
+  "canary": {
+    "digest": "d9b760f42e8f01fdce98c932ae9d4ce7723af0249b9d83d1e7df23992fcb1021",
+    "passed_at": 1789963691.474928
+  },
+  "real_canary_output_equals_input": true,
+  "notification_acknowledgement_required_for_canary_pass": true,
+  "scheduled_watchdog_tick": {
+    "version": 1,
+    "notifications": [],
+    "recoveries": [],
+    "incident": null,
+    "worker": null,
+    "checked_at": 1789963800.3279364,
+    "observed_status": "healthy",
+    "reason": "continuation_running"
+  },
+  "user_linger": "yes",
+  "max_gpu_hours": 17,
+  "next_allocation_seconds": 4800,
+  "account_scope": "personal",
+  "prior_failed_attempt8_preserved": true,
+  "prior_spending_preserved": true,
+  "operator_file_hashes": {
+    "capacity/config.json": "93c54095990dc9ee606fe5f6fdac6c16e42a329bd694a68c5608bf86f4c716f4",
+    "capacity/runbook.md": "2a1e0f3ef3a031c5587b6f6db4b109437414919382e9a59f9bdd46fa67511ba0",
+    "capacity/verify_completed_arm.py": "a82fae98d5e0876fd3196d19e62767762ab8d431f256d2fe552679b970c3aea2",
+    "deepseek/config.json": "59559ba8c3535664d5d26e5512980de9d0983a62cc2cd1e0a4c12c246061a519",
+    "deepseek/recovery-runbook.md": "bf1052a3f467343a01db09f587b6fe66a54a49ee2ed4d98be5dd7a59799065eb"
+  },
+  "note": "Fresh continuation9 preflight is running; no claim of GPU allocation or captured vectors in this registration. Dedicated experiment monitor/canary/timer must be verified by the sole continuation before any allocation."
+}
