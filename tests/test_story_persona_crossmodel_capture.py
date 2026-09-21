@@ -11,6 +11,52 @@ from omegaconf import OmegaConf
 from scripts import story_persona_crossmodel_capture as capture
 
 
+def test_loading_sets_round_trip_through_the_real_manifest(tmp_path):
+    loading = {
+        "missing_keys": set(),
+        "unexpected_keys": {"model.layers.61.z.weight", "model.layers.61.a.weight"},
+        "mismatched_keys": set(),
+        "error_msgs": [],
+    }
+    spec = {"runtime": {"loading_info": capture.validated_loading_info(loading)}}
+    fingerprint = capture.digest(spec)
+    path = tmp_path / "manifest.json"
+    capture.write_json(path, {"spec": spec, "fingerprint": fingerprint})
+    assert capture.read_manifest(path)["fingerprint"] == fingerprint
+    assert spec["runtime"]["loading_info"]["unexpected_keys"] == [
+        "model.layers.61.a.weight",
+        "model.layers.61.z.weight",
+    ]
+    loading["unexpected_keys"] = list(reversed(sorted(loading["unexpected_keys"])))
+    assert (
+        capture.digest({"runtime": {"loading_info": capture.validated_loading_info(loading)}})
+        == fingerprint
+    )
+    assert isinstance(loading["missing_keys"], set)  # Does not mutate the loader report.
+
+
+@pytest.mark.parametrize(
+    "key,value",
+    [
+        ("missing_keys", {"model.layers.0.weight"}),
+        ("unexpected_keys", {"model.layers.60.extra"}),
+        ("mismatched_keys", {("model.weight", (2, 3), (3, 2))}),
+        ("error_msgs", ["conversion failed"]),
+        ("unexpected_keys", [object()]),
+    ],
+)
+def test_loading_normalization_does_not_hide_checkpoint_errors(key, value):
+    loading = dict(missing_keys=set(), unexpected_keys=set(), mismatched_keys=set(), error_msgs=[])
+    loading[key] = value
+    with pytest.raises(RuntimeError, match="unexplained checkpoint"):
+        capture.validated_loading_info(loading)
+
+
+def test_loading_normalization_rejects_unknown_schema():
+    with pytest.raises(RuntimeError, match="schema"):
+        capture.validated_loading_info({"unexpected_keys": set()})
+
+
 class TinyDecoder(torch.nn.Module):
     def __init__(self, *, batch_drift=False):
         super().__init__()

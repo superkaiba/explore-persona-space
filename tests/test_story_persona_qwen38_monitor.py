@@ -10,9 +10,52 @@ from scripts.story_persona_qwen38_monitor import (
     apply_loading_progress,
     command,
     loading_counters,
+    provision_handoff_pending,
+    reconcile_stale_pid,
     remote_probe,
     uv_cache_progress,
 )
+
+
+def test_handoff_age_uses_provider_time_and_refuses_failed_execution():
+    extra = {"pod_id": "owned", "workload_executed": False}
+    pod = {"id": "owned", "desiredStatus": "RUNNING", "createdAt": "1970-01-01T00:01:40Z"}
+    assert provision_handoff_pending(extra, pod, now=999)
+    assert not provision_handoff_pending(extra, pod, now=1000)
+    assert not provision_handoff_pending(extra, pod, now=99)
+    assert not provision_handoff_pending(
+        dict(extra, workload_start_error="launch failed"), pod, now=110
+    )
+    assert not provision_handoff_pending(dict(extra, workload_executed=True), pod, now=110)
+    assert not provision_handoff_pending(extra, dict(pod, id="another"), now=110)
+    assert not provision_handoff_pending(extra, dict(pod, desiredStatus="EXITED"), now=110)
+
+
+def test_stale_launcher_pid_needs_fresh_process_evidence():
+    observed = {
+        "status": "pid-stale-workload-live",
+        "pid_alive": False,
+        "stall_reason": "pid_dead_evidence:fresh_logs",
+    }
+    reconcile_stale_pid(observed, {"pids": [42]}, launch_pending=False)
+    assert observed["status"] == "running" and observed["pid_alive"] is True
+    assert observed["original_pid_diagnostic"] == "pid_dead_evidence:fresh_logs"
+    assert "stall_reason" not in observed
+    absent = {"status": "pid-stale-workload-live", "pid_alive": False}
+    reconcile_stale_pid(absent, {"pids": []}, launch_pending=False)
+    assert absent["status"] == "stalled" and absent["pid_alive"] is False
+
+
+def test_provision_handoff_allows_only_bounded_explicit_pending_launch():
+    observed = {"status": "pid-stale-workload-live", "pid_alive": False}
+    reconcile_stale_pid(observed, {"pids": []}, launch_pending=True)
+    assert observed["status"] == "pending" and "pid_alive" not in observed
+    terminal = {"status": "dead", "pid_alive": False}
+    reconcile_stale_pid(terminal, {"pids": [42]}, launch_pending=True)
+    assert terminal["status"] == "dead"
+    alarm = {"status": "pid-stale-workload-live", "stall_reason": "OOM"}
+    reconcile_stale_pid(alarm, {"pids": [42]}, launch_pending=False)
+    assert alarm["stall_reason"] == "OOM"
 
 
 def test_fresh_log_does_not_reset_substantive_output_age(tmp_path):

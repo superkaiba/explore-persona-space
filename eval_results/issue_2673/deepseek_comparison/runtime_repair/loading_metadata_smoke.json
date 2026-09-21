@@ -1,0 +1,21 @@
+{
+  "checked_at": 1789963171.4986303,
+  "transformers": "5.15.0",
+  "torch": "2.8.0+cu128",
+  "model": "DeepseekV3ForCausalLM",
+  "loading_types": {
+    "missing_keys": "set",
+    "unexpected_keys": "set",
+    "mismatched_keys": "set",
+    "error_msgs": "list"
+  },
+  "old_failure": "Object of type set is not JSON serializable",
+  "repaired_manifest_roundtrip": true,
+  "loading_info": {
+    "error_msgs": [],
+    "mismatched_keys": [],
+    "missing_keys": [],
+    "unexpected_keys": []
+  },
+  "limitation": "Tiny randomly initialized CPU checkpoint; exact Transformers metadata/save-read boundary, not the large native FP8 CUDA numerical gate"
+}

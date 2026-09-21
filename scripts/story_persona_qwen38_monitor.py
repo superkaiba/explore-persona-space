@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import asdict
+from datetime import datetime
 import json
 import os
 from pathlib import Path
@@ -227,6 +228,39 @@ def remote_probe(out: Path, log: Path) -> dict:
     )
 
 
+def provision_handoff_pending(extra: dict, pod: dict | None, *, now: float) -> bool:
+    """Bound a not-yet-executed handoff by immutable provider allocation time."""
+    if (
+        extra.get("workload_executed") is not False
+        or extra.get("workload_start_error")
+        or not pod
+        or pod["id"] != extra["pod_id"]
+        or pod["desiredStatus"] != "RUNNING"
+    ):
+        return False
+    started = datetime.fromisoformat(pod["createdAt"].replace("Z", "+00:00"))
+    if started.tzinfo is None:
+        raise ValueError("provider allocation time must include a timezone")
+    return 0 <= now - started.timestamp() < 900
+
+
+def reconcile_stale_pid(observed: dict, detail: dict, *, launch_pending: bool) -> None:
+    """Resolve a stale launcher PID using fresh task-specific process evidence."""
+    if observed["status"] != "pid-stale-workload-live":
+        return
+    observed["original_backend_status"] = observed["status"]
+    if detail["pids"]:
+        observed.update(status="running", pid_alive=True)
+    elif launch_pending:
+        observed.update(status="pending", current_phase="provision_only_handoff")
+        observed.pop("pid_alive", None)
+    else:
+        observed.update(status="stalled", pid_alive=False)
+        return
+    if (observed.get("stall_reason") or "").startswith("pid_dead_evidence:"):
+        observed["original_pid_diagnostic"] = observed.pop("stall_reason")
+
+
 def probe_backend(handle_path: Path, out: Path) -> dict:
     """Reuse backend polling without automatic router failover; watchdog owns recovery."""
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -238,7 +272,13 @@ def probe_backend(handle_path: Path, out: Path) -> dict:
 
     handle = RunHandle(**json.loads(handle_path.read_text()))
     observed = asdict(_resolve_backend(handle.backend).poll(handle))
-    if observed["status"] not in {"running", "pending", "queued", "stalled"}:
+    if observed["status"] not in {
+        "running",
+        "pending",
+        "queued",
+        "stalled",
+        "pid-stale-workload-live",
+    }:
         return observed
     observed["log_only_backend_stall"] = observed["status"] == "stalled" and not observed.get(
         "stall_reason"
@@ -281,13 +321,38 @@ def probe_backend(handle_path: Path, out: Path) -> dict:
     except (RuntimeError, subprocess.TimeoutExpired) as exc:
         # SSH is not ready immediately after instance creation. Bound this
         # allowance to the first ten minutes of the current handle's life.
-        if time.time() - handle_path.stat().st_mtime < 600:
+        if (
+            observed["status"] != "pid-stale-workload-live"
+            and time.time() - handle_path.stat().st_mtime < 600
+        ):
             observed.update(status="pending", startup_probe_error=type(exc).__name__)
             observed["startup_reachability_alarm"] = observed.pop("reachability_alarm", False)
             observed.pop("pid_alive", None)
             return observed
         raise
     observed["pilot"] = detail
+    launch_pending = False
+    if (
+        observed["status"] == "pid-stale-workload-live"
+        and not detail["pids"]
+        and handle.backend == "runpod"
+        and handle.extra.get("workload_executed") is False
+        and not handle.extra.get("workload_start_error")
+    ):
+        from runpod_api import graphql
+
+        data = graphql(
+            "query($id: String!) { pod(input: {podId: $id}) { id createdAt desiredStatus } }",
+            {"id": handle.extra["pod_id"]},
+            personal=True,
+            timeout=45,
+        )
+        launch_pending = provision_handoff_pending(handle.extra, data["pod"], now=time.time())
+    reconcile_stale_pid(
+        observed,
+        detail,
+        launch_pending=launch_pending,
+    )
     if detail["pids"]:
         observed["pid_alive"] = True
         observed["last_log_mtime_sec_ago"] = detail["log_age_seconds"]
@@ -308,7 +373,12 @@ def probe_backend(handle_path: Path, out: Path) -> dict:
             observed.update(status="pending", current_phase="model_staging")
     elif not detail["artifacts"].get("capture_complete.json"):
         # Backend startup/bootstrap is allowed before the first model worker.
-        if observed.get("current_phase") in {"workload", "workload_running"}:
+        if (
+            observed.get("original_backend_status") == "pid-stale-workload-live"
+            and not launch_pending
+        ):
+            observed.update(status="stalled", pid_alive=False)
+        elif observed.get("current_phase") in {"workload", "workload_running"}:
             observed["pid_alive"] = False
         elif time.time() - handle_path.stat().st_mtime < 900:
             observed["status"] = "pending"

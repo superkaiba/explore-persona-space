@@ -1,0 +1,18 @@
+{
+  "checked_at": 1789963562.0735095,
+  "focused_tests": 103,
+  "focused_tests_passed": 103,
+  "independent_review": "serialization_review.md",
+  "loading_metadata_smoke": "loading_metadata_smoke.json",
+  "ruff": "PASS",
+  "bash_syntax": "PASS",
+  "git_diff_check": "PASS",
+  "workflow_lint": {
+    "mode": "files",
+    "files": 4,
+    "checks_ran": 40,
+    "checks_skipped": 46,
+    "verdict": "PASS",
+    "scope_limit": "31 out-of-scope corpus findings suppressed; this is not a whole-repository clean bill"
+  }
+}

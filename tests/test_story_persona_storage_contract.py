@@ -48,6 +48,24 @@ def test_unresolved_or_underreported_previous_spend_fails_closed():
         allocation_seconds(state, pod_id="new", gpu_count=8, requested_seconds=6600)
 
 
+def test_eighty_minute_retry_after_both_failed_allocations():
+    state = ledger()
+    state["allocations"].append(
+        {
+            "pod_id": "serialization-failure",
+            "gpu_count": 8,
+            "paid_start_unix": 1789838653.349,
+            "termination_confirmed_at_unix": 1789840334.5422423,
+            "gpu_hours_upper_bound": 3.735984982914395,
+        }
+    )
+    before = copy.deepcopy(state)
+    assert allocation_seconds(state, pod_id="new", gpu_count=8, requested_seconds=4800) == 4800
+    with pytest.raises(ValueError, match="remaining"):
+        allocation_seconds(state, pod_id="new", gpu_count=8, requested_seconds=6600)
+    assert state == before
+
+
 def test_existing_allocation_cannot_extend_deadline():
     state = ledger()
     state["allocations"].append({"pod_id": "new", "paid_start_unix": 5000, "deadline_unix": 11600})

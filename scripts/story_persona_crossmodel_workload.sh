@@ -25,7 +25,7 @@ mkdir -p "$EPS_STORY_PERSONA_OUT"
 mkdir -p /workspace/logs
 export EPS_STORY_MASTER_LOG="/workspace/logs/issue2673-crossmodel-${EPS_STORY_PERSONA_MODEL_KEY}.log"
 exec > >(tee -a "$EPS_STORY_MASTER_LOG") 2>&1
-runtime=(uv run --with "torch==$torch_version" --with "torchvision==$vision_version" --with 'transformers==5.15.0' --with "kernels==$kernels_version" python)
+runtime=(uv run --with "torch==$torch_version" --with "torchvision==$vision_version" --with "torchaudio==$torch_version" --with 'transformers==5.15.0' --with "kernels==$kernels_version" python)
 
 persist_on_error() {
   local failed_rc=$?

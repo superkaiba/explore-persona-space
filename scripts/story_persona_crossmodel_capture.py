@@ -333,6 +333,25 @@ def effective_host_memory() -> int:
     return min(limits)
 
 
+def validated_loading_info(loading: dict) -> dict:
+    """Validate the pinned HF loading report and canonicalize its sets for JSON.
+
+    Transformers 5.15 returns sets even when the checkpoint loads cleanly.
+    Keep only the documented MTP exclusion; unknown schemas fail closed.
+    """
+    expected = {"missing_keys", "unexpected_keys", "mismatched_keys", "error_msgs"}
+    if not isinstance(loading, dict) or set(loading) != expected:
+        raise RuntimeError("checkpoint loading report schema changed")
+    if any(not isinstance(v, (list, tuple, set)) for v in loading.values()):
+        raise RuntimeError("checkpoint loading report collection types changed")
+    if any(loading[k] for k in ("missing_keys", "mismatched_keys", "error_msgs")):
+        raise RuntimeError(f"unexplained checkpoint loading differences: {loading}")
+    unexpected = loading["unexpected_keys"]
+    if any(not isinstance(k, str) or not re.match(r"model\.layers\.61\.", k) for k in unexpected):
+        raise RuntimeError(f"unexplained checkpoint loading differences: {loading}")
+    return {key: sorted(loading[key]) for key in sorted(expected)}
+
+
 def load_model(cfg):
     import transformers
 
@@ -352,6 +371,17 @@ def load_model(cfg):
         )
     if cfg.model_key != "deepseek":
         raise ValueError("unsupported model key")
+    # Import optional audio/model dependencies before downloading the checkpoint.
+    # The base image can otherwise contribute torchaudio built for a different Torch ABI.
+    import torchaudio
+
+    if torchaudio.__version__ != cfg.model.torchaudio_version:
+        raise RuntimeError("DeepSeek requires the pinned torchaudio/Torch ABI pair")
+    model_class = transformers.DeepseekV3ForCausalLM
+    print(
+        f"[runtime-ready] torchaudio={torchaudio.__version__} model={model_class.__name__}",
+        flush=True,
+    )
     if (
         torch.cuda.device_count() != cfg.model.gpu_count
         or effective_host_memory() < cfg.model.min_host_bytes
@@ -404,11 +434,7 @@ def load_model(cfg):
         },
         output_loading_info=True,
     )
-    unexpected = [
-        k for k in loading.get("unexpected_keys", []) if not re.match(r"model\.layers\.61\.", k)
-    ]
-    if unexpected or any(loading.get(k) for k in ("missing_keys", "mismatched_keys", "error_msgs")):
-        raise RuntimeError(f"unexplained checkpoint loading differences: {loading}")
+    loading = validated_loading_info(loading)
     quantizer = model.hf_quantizer
     if quantizer.quantization_config.dequantize or model.hf_device_map != device_map:
         raise RuntimeError("silent dequantization or device-map fallback")
@@ -461,6 +487,7 @@ def load_model(cfg):
             "device_map": device_map,
             "parameter_bytes_by_gpu": parameter_bytes,
             "loading_info": loading,
+            "torchaudio": torchaudio.__version__,
             "mtp": "excluded model.layers.61; capture main blocks 0..60",
             "experts_implementation": str(model.config._experts_implementation),
             "deepgemm_disabled": True,
