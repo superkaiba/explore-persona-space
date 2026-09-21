@@ -1,0 +1,53 @@
+{
+  "checked_at": 1789976440.5421972,
+  "request_source_sha": "4604bef656d2c52eff39cbb33bd19a97c8653a39",
+  "reviewed_file_sha256": {
+    "scripts/story_persona_fp8.py": "4de10f6673ff83028d8ae6639da7a51fef82345b4c1bbe50db8ede0b9a28b78b",
+    "scripts/story_persona_crossmodel_capture.py": "7edb34d9c7af88556386245c55d56bb4c356cb4b1d11feb10e8e14f92b71a452",
+    "scripts/story_persona_crossmodel_artifacts.py": "1c24bd1df7d0228285da3b7605bdc53701797ac4cb613563efc5a92012212745",
+    "tests/test_story_persona_fp8_integration.py": "44c9f8b8628bd78427a45b30fffc7899baef709b95b4529a54cb26f91565aa11"
+  },
+  "regression_tests": {
+    "passed": 56,
+    "log": "........................................................                 [100%]\n56 passed in 6.57s\n"
+  },
+  "real_loader_dispatch_integration_tests": {
+    "passed": 3,
+    "log": "\nFetching 11 files:   0%|          | 0/11 [00:00<?, ?it/s]\nFetching 11 files: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 11/11 [00:00<00:00, 1272.82it/s]\n[fp8-kernel-ready] kernels=0.16.1 revision=8c178950e8710e26a2210e4e909cd02dc16c8715 loader=transformers.lazy_load_kernel\n[fp8-grouped-m16-engaged] dispatcher=grouped._w8a8_block_dynamic_fp8_matmul_grouped target_m=2 original_m=16 fixed_m=16\n[fp8-grouped-m16-engaged] dispatcher=grouped._w8a8_block_dynamic_fp8_matmul_grouped target_m=43 original_m=64 fixed_m=16\n...\n=============================== warnings summary ===============================\n<frozen importlib._bootstrap>:241\n  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute\n\n<frozen importlib._bootstrap>:241\n  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n3 passed, 2 warnings in 0.91s\nsys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute\n",
+    "runtime": {
+      "torch": "2.8.0+cu128",
+      "transformers": "5.15.0",
+      "kernels": "0.16.1",
+      "triton": "3.5.1"
+    },
+    "substitution": "external Triton GPU launch only; all loader and block-FP8 custom-op bodies executed"
+  },
+  "ruff_passed": true,
+  "diff_check_passed": true,
+  "independent_codex_review": "no remaining blockers; reviewer read-only execution could not create uv cache lock; parent test executions above are separate evidence",
+  "gpu_validation_passed": null,
+  "full_model_smoke_passed": null,
+  "new_hf_run": "20260921_v6",
+  "budget_preflight": {
+    "checked_at": 1789976355.4566634,
+    "ledger_sha256": "4ab7785361c1d1fdbce8996b172fa41b8a634ee48c5577cde3f02d2b9c686713",
+    "spent_gpu_hours": 8.63055398464203,
+    "remaining_gpu_hours": 8.36944601535797,
+    "next_allocation_seconds": 3600,
+    "next_max_gpu_hours": 8.0,
+    "preservation_reserve_seconds": 900,
+    "projected_production_throughput": "unmeasured; unchanged measured gate required after full-model smoke",
+    "actual_allocation": false
+  },
+  "stale_handle_disposition": {
+    "checked_at": 1789976215.343008,
+    "verified_revision": "726d361ebd707ab7a3bc56718990d3d3a5f926a4",
+    "all_remote_names_sizes_hashes_pass": true,
+    "file_count": 10,
+    "exact_owned_pod_absent": true,
+    "terminated_pod_id": "od50adyfevpkki",
+    "archived_handle": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-crossmodel/capacity/continuation-10/terminated-attempt9-handle.json",
+    "archived_handle_sha256": "6267199951b32a4fde599f5e384ee6e2f27db85914b2a25af473d81831b8e50f",
+    "ledger_unchanged": true
+  }
+}

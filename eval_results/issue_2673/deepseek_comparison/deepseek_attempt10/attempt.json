@@ -1,0 +1,88 @@
+{
+  "attempt": 10,
+  "checked_at": 1789980215.6871066,
+  "status": "blocked",
+  "stop_kind": "compute_limit",
+  "failure_kind": "numerical_smoke_rejection",
+  "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+  "request_source_sha": "4604bef656d2c52eff39cbb33bd19a97c8653a39",
+  "pod_id": "iz9dqjarjptl1g",
+  "pod_name": "pod-2673-crossmodel-deepseek",
+  "model_key": "deepseek",
+  "model_revision": "d3d4eafdc470de44bbf6f0a74f852eb522357be8",
+  "capture_fingerprint": "95cfef67d2bee1d024df9007950acc811ffaea5b9680445cb55c2bea30c20a14",
+  "tiny_cuda_diagnostic_passed": true,
+  "full_model_smoke_passed": false,
+  "smoke": {
+    "contexts": 18,
+    "mixed_batch_max_relative_error": 0.25390228629112244,
+    "mixed_batch_tolerance": 0.01,
+    "repeatability_max_relative_error": 0.0,
+    "hook_tuple_max_relative_error": 0.0,
+    "exact_all_block_rows": 5,
+    "diverging_rows": 13,
+    "first_divergent_block": 5
+  },
+  "production_capture": {
+    "planned_rows": 1920,
+    "planned_chunks": 240,
+    "realized_rows": 0,
+    "realized_chunks": 0,
+    "throughput_gate_reached": false,
+    "analysis_complete": false
+  },
+  "preservation": {
+    "checked_at": 1789979738.1651967,
+    "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+    "pod_id": "iz9dqjarjptl1g",
+    "all_remote_names_sizes_hashes_pass": true,
+    "all_files_verified": true,
+    "remote_file_set_and_hashes_match": true,
+    "verified_revision": "e576f58dc881b4ba956206ead96c314e414903eb",
+    "hf_repo": "superkaiba1/explore-persona-space-data",
+    "hf_repo_type": "dataset",
+    "hf_prefix": "issue2673_deepseek_comparison/20260921_v6/deepseek/failure_1789979599602088036",
+    "file_count": 11,
+    "total_bytes": 53830643,
+    "captured_rows": 0,
+    "captured_chunks": 0,
+    "smoke_rows": 18,
+    "smoke_passed": false,
+    "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e576f58dc881b4ba956206ead96c314e414903eb/issue2673_deepseek_comparison/20260921_v6/deepseek/failure_1789979599602088036"
+  },
+  "teardown": {
+    "checked_at": 1789979921.988997,
+    "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+    "pod_id": "iz9dqjarjptl1g",
+    "exact_personal_pod_absent": true,
+    "personal_account": {
+      "myself": {
+        "id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+        "teams": [],
+        "pods": []
+      }
+    },
+    "allocation": {
+      "model_key": "deepseek",
+      "pod_id": "iz9dqjarjptl1g",
+      "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+      "provider_created_at": "2026-09-21T07:49:47.311Z",
+      "paid_start_unix": 1789976987.311,
+      "deadline_unix": 1789980587.311,
+      "gpu_count": 8,
+      "allowed_gpu_hours": 8,
+      "continuation_attempt": 10,
+      "termination_confirmed_at_unix": 1789979921.988997,
+      "gpu_hours_upper_bound": 6.521506659719679
+    },
+    "cumulative_gpu_hours": 15.152060644361708,
+    "remaining_gpu_hours": 1.8479393556382924,
+    "remaining_eight_gpu_seconds": 831.5727100372316,
+    "mandatory_preservation_seconds": 900
+  },
+  "reason": "Full-model numerical smoke rejected grouped-M16 despite exact tiny CUDA parity. That remains an engineering failure, not a compute timeout. After verified preservation and teardown, remaining cumulative allowance is only831.5727100372316 seconds on eight GPUs, below the mandatory900-second reserve; even a901-second request fails the tracked ledger gate. No compatible live pod remains.",
+  "has_clean_result": false,
+  "comparison_complete": false,
+  "numerical_root_cause_confirmed": false,
+  "next_diagnostic": "Isolate first divergent blocks and compare router scores/expert selections plus ordinary FP8 matmul scheduling and numerical controls under identical contexts. These are unvalidated candidates, not diagnosed fixes. Any controls must cover smoke and production identically."
+}

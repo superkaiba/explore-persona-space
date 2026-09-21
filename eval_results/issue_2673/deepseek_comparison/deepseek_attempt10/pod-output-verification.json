@@ -1,0 +1,14 @@
+{
+  "checked_at": 1789979789.4724586,
+  "pod_id": "iz9dqjarjptl1g",
+  "outroot": "/workspace/analysis_tensors_issue2673_crossmodel_deepseek",
+  "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+  "verified_revision": "e576f58dc881b4ba956206ead96c314e414903eb",
+  "all_local_names_sizes_hashes_match_receipt": true,
+  "file_count": 11,
+  "chunk_count": 0,
+  "row_count": 0,
+  "smoke_rows": 18,
+  "finite_bf16_61_by_7168": false,
+  "unique_row_identity_pass": true
+}

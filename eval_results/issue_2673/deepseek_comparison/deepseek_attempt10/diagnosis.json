@@ -1,0 +1,206 @@
+{
+  "checked_at": 1789980012.1874273,
+  "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+  "verified_revision": "e576f58dc881b4ba956206ead96c314e414903eb",
+  "smoke_vectors_sha256": "8020ae5f6d2cd9f0cc1c25e08c014c530e00eeea683e17ea77fbbcc3ee3e90c3",
+  "shape": [
+    18,
+    61,
+    7168
+  ],
+  "dtype": "torch.bfloat16",
+  "repeatability_max_error": 0.0,
+  "mixed_batch_max_relative_error": 0.25390228629112244,
+  "per_layer_max_relative_error": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0014480424579232931,
+    0.005076688248664141,
+    0.04031084477901459,
+    0.03702889382839203,
+    0.08312240242958069,
+    0.0752951130270958,
+    0.0767204686999321,
+    0.06622101366519928,
+    0.06029684469103813,
+    0.08888345211744308,
+    0.13258284330368042,
+    0.14445041120052338,
+    0.17456665635108948,
+    0.17789700627326965,
+    0.15812678635120392,
+    0.18485133349895477,
+    0.18929976224899292,
+    0.18841545283794403,
+    0.1851322054862976,
+    0.18871791660785675,
+    0.17571695148944855,
+    0.1831101030111313,
+    0.1679813414812088,
+    0.18387262523174286,
+    0.2279381901025772,
+    0.22173874080181122,
+    0.22416041791439056,
+    0.2173856496810913,
+    0.20911283791065216,
+    0.22683867812156677,
+    0.22700978815555573,
+    0.23002693057060242,
+    0.2173060029745102,
+    0.22452814877033234,
+    0.21337440609931946,
+    0.22146408259868622,
+    0.1998346447944641,
+    0.20138216018676758,
+    0.20125451683998108,
+    0.20503057539463043,
+    0.21670129895210266,
+    0.21738488972187042,
+    0.22323232889175415,
+    0.23946373164653778,
+    0.24458444118499756,
+    0.25390228629112244,
+    0.2356695979833603,
+    0.23263894021511078,
+    0.21953167021274567,
+    0.20870250463485718,
+    0.20662041008472443,
+    0.20264169573783875,
+    0.21643000841140747,
+    0.22612954676151276,
+    0.20697791874408722,
+    0.09616652131080627
+  ],
+  "rows": [
+    {
+      "row_index": 489,
+      "first_nonzero_block": 43,
+      "max_relative_error": 0.05850173532962799,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 1299,
+      "first_nonzero_block": 25,
+      "max_relative_error": 0.08942481875419617,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 0,
+      "first_nonzero_block": 50,
+      "max_relative_error": 0.03829514607787132,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 1,
+      "first_nonzero_block": null,
+      "max_relative_error": 0.0,
+      "all61_blocks_exact": true
+    },
+    {
+      "row_index": 240,
+      "first_nonzero_block": 8,
+      "max_relative_error": 0.18929976224899292,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 241,
+      "first_nonzero_block": 8,
+      "max_relative_error": 0.15092572569847107,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 480,
+      "first_nonzero_block": 43,
+      "max_relative_error": 0.06215072423219681,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 481,
+      "first_nonzero_block": 43,
+      "max_relative_error": 0.03674406558275223,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 720,
+      "first_nonzero_block": 5,
+      "max_relative_error": 0.16860345005989075,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 721,
+      "first_nonzero_block": 5,
+      "max_relative_error": 0.25390228629112244,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 960,
+      "first_nonzero_block": null,
+      "max_relative_error": 0.0,
+      "all61_blocks_exact": true
+    },
+    {
+      "row_index": 961,
+      "first_nonzero_block": null,
+      "max_relative_error": 0.0,
+      "all61_blocks_exact": true
+    },
+    {
+      "row_index": 1200,
+      "first_nonzero_block": 8,
+      "max_relative_error": 0.2279381901025772,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 1201,
+      "first_nonzero_block": 8,
+      "max_relative_error": 0.17207372188568115,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 1440,
+      "first_nonzero_block": 50,
+      "max_relative_error": 0.02544277533888817,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 1441,
+      "first_nonzero_block": 50,
+      "max_relative_error": 0.02727985940873623,
+      "all61_blocks_exact": false
+    },
+    {
+      "row_index": 1680,
+      "first_nonzero_block": null,
+      "max_relative_error": 0.0,
+      "all61_blocks_exact": true
+    },
+    {
+      "row_index": 1681,
+      "first_nonzero_block": null,
+      "max_relative_error": 0.0,
+      "all61_blocks_exact": true
+    }
+  ],
+  "old_attempt9_max_error": 0.2829580307006836,
+  "grouped_m16_override_recorded": {
+    "name": "grouped_block_fp8_fixed_m16",
+    "fixed_block_size_m": 16,
+    "scope": "grouped._w8a8_block_dynamic_fp8_matmul_grouped only",
+    "original_source_sha256": {
+      "grouped.py": "382b03b38f0d0531d4fc6d2ce5e7441576ff9b9a38f3e3200f616ac060c69206",
+      "utils.py": "2cb87f98ab385e41c95fdf1e1bec777a25c8e0bb003a357a72c07a53c2b7b5d0"
+    },
+    "original_function_identity_verified": true,
+    "kernel_source_files_modified": false,
+    "autotune_key": [
+      "N",
+      "K",
+      "BLOCK_SIZE_M"
+    ],
+    "reason": "attempt9 M16 singleton/mixed rows agree; M64 mixed rows diverge"
+  },
+  "interpretation": "Fixed grouped M16 passed tiny CUDA cases but did not restore required full-model batch parity. Remaining mechanism is unisolated; do not infer kernel correctness from tiny shapes or relabel scientific smoke."
+}

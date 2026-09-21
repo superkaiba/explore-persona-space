@@ -1,0 +1,86 @@
+{
+  "issue": 2673,
+  "model_key": "deepseek",
+  "run": "20260921_v6",
+  "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+  "fingerprint": null,
+  "verified_revision": "e576f58dc881b4ba956206ead96c314e414903eb",
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_repo_type": "dataset",
+  "hf_prefix": "issue2673_deepseek_comparison/20260921_v6/deepseek/failure_1789979599602088036",
+  "canonical_hf_repo": "superkaiba1/explore-persona-space-data",
+  "canonical_hf_repo_type": "dataset",
+  "upload_headroom": {
+    "verdict": "unknown",
+    "projected_tb": 5.3830643e-05,
+    "used_tb": null,
+    "ceiling_tb": 20.0,
+    "basis": "suspect (407/407 missing usedStorage; all repos missing usedStorage usually indicates an auth/endpoint condition, not zero storage)"
+  },
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "prefix": "issue2673_deepseek_comparison/20260921_v6/deepseek/failure_1789979599602088036",
+  "files": {
+    "capture_chunks.json": {
+      "size": 110,
+      "sha256": "29e76d9ecd32877957dc0c523e068b83f08a03f0bf4cf0a3e335fb991d804b90",
+      "git_blob_sha1": "9ca179f97f6be9731eac00e325572e12d8b114cd"
+    },
+    "capture_failure.json": {
+      "size": 181,
+      "sha256": "1ae739318b3f18124619b544e4ec2464c381ae1e03f1d74b1d8891fa3be3364a",
+      "git_blob_sha1": "5f69094d77650be4b9782904ca8d328817a0c255"
+    },
+    "failure.json": {
+      "size": 144,
+      "sha256": "7a7f39956a7cb36eb683729e5d7096d15cfb953f59e7ca1241687d84ebe781af",
+      "git_blob_sha1": "c770cca5f2b599568741d812f22a3178033919a8"
+    },
+    "failure_workload.log": {
+      "size": 30588,
+      "sha256": "c2b3e10f53720bc31d0e1fa524e540725f786630f342832b79e5575d52d4ee75",
+      "git_blob_sha1": "26ae1dbfe65b409930869827da459b9d7afb3784"
+    },
+    "fp8_shape_diagnostic.json": {
+      "size": 1388,
+      "sha256": "420df6bfacda31754c3ef4d503d2a0485e5a520deee2c38bd583eaaf9c396f5e",
+      "git_blob_sha1": "87373c3d6798165f1e1207398dfa86be22214ed9"
+    },
+    "manifest.json": {
+      "size": 45637,
+      "sha256": "9921907131a1fae1041e1b855b56b4ee93d0a1e4194bc769de9f69f5755c8ae3",
+      "git_blob_sha1": "bafcf4e9fd58dd4c3431afdb38f2310d98bd3304"
+    },
+    "progress.json": {
+      "size": 180,
+      "sha256": "0a3d1d433c5105a6b1cad9385560154606350d27ec6311ad241c43f6805f8afa",
+      "git_blob_sha1": "8a6c3e39c61a19ae47fd2b6d40cdbd832ae28b14"
+    },
+    "rows.json": {
+      "size": 6235395,
+      "sha256": "479981766a0d57a193bbcc85ac560002716719bacdbd8f69a03ee97cfa8e8682",
+      "git_blob_sha1": "05cd9c1ef1a417866d36fe9d4c4bcdf482ada1e8"
+    },
+    "smoke.json": {
+      "size": 289780,
+      "sha256": "5cde97b7e9088250a559d9333e618d9ea49fa3f7230a345da164133063109df5",
+      "git_blob_sha1": "1f32ebd00532b76ddd774640bca843a6d00c9aa5"
+    },
+    "smoke_vectors.pt": {
+      "size": 47225175,
+      "sha256": "8020ae5f6d2cd9f0cc1c25e08c014c530e00eeea683e17ea77fbbcc3ee3e90c3",
+      "git_blob_sha1": "a4e82e36bd2d9066481517e1883ed3478f6dabb9"
+    },
+    "storage_preflight.json": {
+      "size": 2065,
+      "sha256": "ec725c13b5682499124d8bfe37f6e27ca4c87111c4f313121a26c123a5166d72",
+      "git_blob_sha1": "429a7840f848afd7af387e274f862803bc75d232"
+    }
+  },
+  "file_count": 11,
+  "total_bytes": 53830643,
+  "verified_at_utc": "2026-09-21T08:34:08Z",
+  "complete": false,
+  "failed_attempt": true,
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e576f58dc881b4ba956206ead96c314e414903eb/issue2673_deepseek_comparison/20260921_v6/deepseek/failure_1789979599602088036"
+}

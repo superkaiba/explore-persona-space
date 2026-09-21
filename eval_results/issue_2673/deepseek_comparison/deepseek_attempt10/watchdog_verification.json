@@ -1,0 +1,77 @@
+{
+  "checked_at": 1789976850.946903,
+  "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+  "request_source_sha": "4604bef656d2c52eff39cbb33bd19a97c8653a39",
+  "archive": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-crossmodel/archive-before-grouped-m16-20260921",
+  "claim_unchanged": true,
+  "ledger_unchanged": true,
+  "deployed_checker_unchanged": true,
+  "archived_sha256": {
+    "allocation-ledger.json": "4ab7785361c1d1fdbce8996b172fa41b8a634ee48c5577cde3f02d2b9c686713",
+    "deepseek/config.json": "f74daa42f7f69367133e15d1df0799d35c14cf3f5e9a76c91d40f569f56ea472",
+    "deepseek/recovery-runbook.md": "bf1052a3f467343a01db09f587b6fe66a54a49ee2ed4d98be5dd7a59799065eb",
+    "deepseek/observation.json": "6e14fa4a57e47691fa2b22111f723dcc72d6f60f989dc5d464f83e15e539264b",
+    "deepseek/watchdog-state/canary.json": "294fe01d6df6342e545518c850ccac97ed892ac68f1b1b1a24be41254a9df387",
+    "deepseek/watchdog-state/watchdog.py": "24df4ba9037e337cad13f0815fd5466784a883e71d72d3f586e64b8f7d9e109c",
+    "deepseek/watchdog-state/canary-input.txt": "ab260998866f0833f09cb96dd1c8673b13ce2f5b877e379cb1f71b894d93e5ca",
+    "deepseek/watchdog-state/canary-output.txt": "ab260998866f0833f09cb96dd1c8673b13ce2f5b877e379cb1f71b894d93e5ca",
+    "deepseek/watchdog-state/watchdog.json": "6d468d6741c436b1b5d1a664fe45691c0ee3860d351f6a113dd5589cc731fb11",
+    "deepseek/watchdog-state/watchdog.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "deepseek/watchdog-state/canary.log": "a2a763ba13b2460dfb8f5d87701e18ceaf9a06455761925ab92295e7f5c621ac",
+    "deepseek/watchdog-state/recovery-1/worker.log": "3753d520645fc1e9d54c7ff64d0e22adb8aa7e1d33d589f1580ded5914f1ab13",
+    "capacity/config.json": "5b51ee284de002675fe7881df5a136a17e4ea9ddcaaea3d7fa881219fa9b82e1",
+    "capacity/verify_completed_arm.py": "a82fae98d5e0876fd3196d19e62767762ab8d431f256d2fe552679b970c3aea2",
+    "capacity/observation.json": "86a0f59c40518bace6d0d43ebe9c56b9b4075fb91280ae9f2f4c7260a2a260fd",
+    "capacity/monitor.py": "d740d313fd074ad6902051fade9f6c48b346b6cdeda39e48556c631ee954228d",
+    "capacity/capacity-state.json": "ab8f5633983905c1952626c4b18a114ac53fcc63d18d951c89b220e2a8286d02",
+    "capacity/persistent-recovery-20260921/recovery-runbook.md": "7a81fe1fc54a407135b1e3afe070f8b1d0ba330c35b9e78a9afe7ee512030651",
+    "capacity/persistent-recovery-20260921/continuation-runbook.md": "4e94f8152f24b5b159cba243a2bdc43829f17ff53160795747079a4f0d0b6336",
+    "capacity/watchdog-state/canary.json": "8d9ab1ada30ac9ff8bc389afa8ae780aa584d504258cafd68b9ac6b6424f1338",
+    "capacity/watchdog-state/watchdog.py": "24df4ba9037e337cad13f0815fd5466784a883e71d72d3f586e64b8f7d9e109c",
+    "capacity/watchdog-state/canary-input.txt": "e601e85e9e9d35485d35a4935f8db06b8a12d5450723e595b6e927fc44b4681e",
+    "capacity/watchdog-state/canary-output.txt": "e601e85e9e9d35485d35a4935f8db06b8a12d5450723e595b6e927fc44b4681e",
+    "capacity/watchdog-state/watchdog.json": "fe603288f45798222cbb540abc026d50a332814925080c14e01c011b9b44728a",
+    "capacity/watchdog-state/watchdog.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "capacity/watchdog-state/canary.log": "ea113c047c9e34d7117448a3f66a01d4c0e4b7b3545db2150e572d87788779b3"
+  },
+  "config_sha256": {
+    "capacity": "34982bf47abd364d30eca3633f6b1daed0f56da8c591119ebd79496ef9f45a6c",
+    "deepseek": "2cc670e095e329a29aa334a46e39f560776622a8eade7ba02744c76ad40135d2"
+  },
+  "verified_at": 1789976986.8799736,
+  "canaries": {
+    "capacity": {
+      "digest": "e9d925123e57d060f651b74a95bb6c86b9d6d6e7d79c96bb5919d067479bd34e",
+      "passed_at": 1789976884.9396317
+    },
+    "deepseek": {
+      "digest": "cebddf1251cc6973bd2ab2ad3f3c0d54ba682566f13bbe0cb3d19806c9ca893c",
+      "passed_at": 1789976885.4254293
+    }
+  },
+  "watchdogs": {
+    "capacity": {
+      "version": 1,
+      "notifications": [],
+      "recoveries": [],
+      "incident": null,
+      "worker": null,
+      "checked_at": 1789976940.2332692,
+      "observed_status": "healthy",
+      "reason": "continuation_running"
+    },
+    "deepseek": {
+      "version": 1,
+      "notifications": [],
+      "recoveries": [],
+      "incident": null,
+      "worker": null,
+      "checked_at": 1789976940.2319574,
+      "observed_status": "healthy",
+      "reason": "awaiting_launch"
+    }
+  },
+  "scheduled_timers": "NextElapseUSecRealtime=Mon 2026-09-21 00:50:00 PDT\nLastTriggerUSec=Mon 2026-09-21 00:49:00 PDT\nId=eps-watchdog-issue2673-deepseek-capacity.timer\nActiveState=active\n\nNextElapseUSecRealtime=Mon 2026-09-21 00:50:00 PDT\nLastTriggerUSec=Mon 2026-09-21 00:49:00 PDT\nId=eps-watchdog-issue2673-crossmodel-deepseek.timer\nActiveState=active\n",
+  "independent_review": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-crossmodel/capacity/continuation-10/independent-rearm-review.md",
+  "request_claim_unchanged": true
+}

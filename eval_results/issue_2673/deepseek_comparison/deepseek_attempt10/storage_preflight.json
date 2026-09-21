@@ -1,0 +1,41 @@
+{
+  "schema": "issue2673-storage-contract-v1",
+  "pod_id": "iz9dqjarjptl1g",
+  "pod_name": "pod-2673-crossmodel-deepseek",
+  "model_key": "deepseek",
+  "model_id": "deepseek-ai/DeepSeek-V3.1-Base",
+  "model_revision": "d3d4eafdc470de44bbf6f0a74f852eb522357be8",
+  "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+  "api_volume_gb": 1000.0,
+  "api_container_disk_gb": 50,
+  "api_volume_mount_path": "/workspace",
+  "api_verified_at_unix": 1789977674.1696978,
+  "provider_created_at": "2026-09-21T07:49:47.311Z",
+  "paid_start_unix": 1789976987.311,
+  "deadline_unix": 1789980587.311,
+  "max_allocation_seconds": 3600,
+  "api_gpu_count": 8,
+  "api_gpu_type": "NVIDIA H200",
+  "query": "query PodStorage($id: String!) {\n  pod(input: {podId: $id}) {\n    id name desiredStatus gpuCount createdAt\n    volumeInGb containerDiskInGb volumeMountPath\n    machine { gpuTypeId }\n  }\n}",
+  "api_client": "scripts/runpod_api.py::graphql (personal=True)",
+  "storage_scope": "API provision specification only; workload must verify actual mount, used bytes, quota-aware headroom and small write canary",
+  "timing_scope": "Fresh provision only: count from provider createdAt, including setup/staging; never reset start to contract creation",
+  "live_api_pod": {
+    "id": "iz9dqjarjptl1g",
+    "name": "pod-2673-crossmodel-deepseek",
+    "desiredStatus": "RUNNING",
+    "gpuCount": 8,
+    "createdAt": "2026-09-21T07:49:47.311Z",
+    "volumeInGb": 1000,
+    "containerDiskInGb": 50,
+    "volumeMountPath": "/workspace",
+    "machine": {
+      "gpuTypeId": "NVIDIA H200"
+    }
+  },
+  "checked_at": 1789977742.5844862,
+  "existing_workspace_bytes": 38728286720,
+  "quota_aware_usable_bytes": 961271713280.0,
+  "effective_ram_bytes": 2012999999488,
+  "mount": "{\n   \"filesystems\": [\n      {\n         \"target\": \"/workspace\",\n         \"source\": \"mfs#eur-is-4.runpod.net:9421[/podvolumes/zjxoeshiyp38/iz9dqjarjptl1g]\",\n         \"fstype\": \"fuse\",\n         \"options\": \"rw,nosuid,nodev,relatime,user_id=0,group_id=0,allow_other\"\n      }\n   ]\n}\n"
+}

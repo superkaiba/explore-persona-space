@@ -1,0 +1,8 @@
+{
+  "checked_at": 1789980012.1909623,
+  "ledger_sha256": "2bfa7bfa73537e89c504be5f01f0c524851ae411c47d2f74efad6725d688a31b",
+  "requested_seconds": 901,
+  "gpu_count": 8,
+  "passed": false,
+  "reason": "requested allocation exceeds remaining cumulative GPU-hours"
+}

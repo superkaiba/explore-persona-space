@@ -1,0 +1,28 @@
+{
+  "checked_at": 1789980495.8383114,
+  "recovery_worker": {
+    "unit": "eps-recover-issue2673-crossmodel-deepseek-1-e33760a6.service",
+    "directory": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-crossmodel/deepseek/watchdog-grouped-m16-20260921/recovery-1",
+    "started_at": 1789979700.2317755
+  },
+  "recovery_exit": {
+    "returncode": 0,
+    "ended_at": 1789980055.420215
+  },
+  "notifications_acknowledged": [
+    {
+      "message": "issue2673-crossmodel-deepseek: failure detected (backend stalled). Automatic recovery is being checked.",
+      "created_at": 1789979700.2317755,
+      "delivered_at": 1789979700.9389942,
+      "last_attempt": 1789979700.2317755
+    },
+    {
+      "message": "issue2673-crossmodel-deepseek: recovery worker started (attempt 1/1; limit 30 minutes).",
+      "created_at": 1789979700.2317755,
+      "delivered_at": 1789979701.6257808,
+      "last_attempt": 1789979700.2317755
+    }
+  ],
+  "monitor_and_timer_stopped_after_teardown": true,
+  "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e"
+}

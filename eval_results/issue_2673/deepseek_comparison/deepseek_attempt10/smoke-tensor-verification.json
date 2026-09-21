@@ -1,0 +1,20 @@
+{
+  "checked_at": 1789980274.6867204,
+  "verified_revision": "e576f58dc881b4ba956206ead96c314e414903eb",
+  "sha256": "8020ae5f6d2cd9f0cc1c25e08c014c530e00eeea683e17ea77fbbcc3ee3e90c3",
+  "smoke_vector_sets": [
+    "initial",
+    "repeated",
+    "batched"
+  ],
+  "shape": [
+    18,
+    61,
+    7168
+  ],
+  "finite_bf16": true,
+  "unique_smoke_row_ids": true,
+  "repeatability_bitwise_equal": true,
+  "full_model_smoke_passed": false,
+  "production_vectors_present": false
+}

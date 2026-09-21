@@ -1,0 +1,19 @@
+{
+  "checked_at": 1789979738.1651967,
+  "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+  "pod_id": "iz9dqjarjptl1g",
+  "all_remote_names_sizes_hashes_pass": true,
+  "all_files_verified": true,
+  "remote_file_set_and_hashes_match": true,
+  "verified_revision": "e576f58dc881b4ba956206ead96c314e414903eb",
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_repo_type": "dataset",
+  "hf_prefix": "issue2673_deepseek_comparison/20260921_v6/deepseek/failure_1789979599602088036",
+  "file_count": 11,
+  "total_bytes": 53830643,
+  "captured_rows": 0,
+  "captured_chunks": 0,
+  "smoke_rows": 18,
+  "smoke_passed": false,
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e576f58dc881b4ba956206ead96c314e414903eb/issue2673_deepseek_comparison/20260921_v6/deepseek/failure_1789979599602088036"
+}

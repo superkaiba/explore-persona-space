@@ -1,0 +1,30 @@
+{
+  "checked_at": 1789979921.988997,
+  "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+  "pod_id": "iz9dqjarjptl1g",
+  "exact_personal_pod_absent": true,
+  "personal_account": {
+    "myself": {
+      "id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+      "teams": [],
+      "pods": []
+    }
+  },
+  "allocation": {
+    "model_key": "deepseek",
+    "pod_id": "iz9dqjarjptl1g",
+    "source_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+    "provider_created_at": "2026-09-21T07:49:47.311Z",
+    "paid_start_unix": 1789976987.311,
+    "deadline_unix": 1789980587.311,
+    "gpu_count": 8,
+    "allowed_gpu_hours": 8,
+    "continuation_attempt": 10,
+    "termination_confirmed_at_unix": 1789979921.988997,
+    "gpu_hours_upper_bound": 6.521506659719679
+  },
+  "cumulative_gpu_hours": 15.152060644361708,
+  "remaining_gpu_hours": 1.8479393556382924,
+  "remaining_eight_gpu_seconds": 831.5727100372316,
+  "mandatory_preservation_seconds": 900
+}

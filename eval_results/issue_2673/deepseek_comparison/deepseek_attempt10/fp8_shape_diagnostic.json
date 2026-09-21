@@ -1,0 +1,61 @@
+{
+  "passed": true,
+  "status": "passed",
+  "device": "NVIDIA H200",
+  "small_s": 762,
+  "large_s": 9522,
+  "experts": 256,
+  "original_m": [
+    16,
+    64
+  ],
+  "fixed_m": 16,
+  "parity_tolerance": 0.01,
+  "repeatability_tolerance": 1e-05,
+  "production_dispatch_identity_verified": true,
+  "cases": [
+    {
+      "n": 256,
+      "k": 256,
+      "results": {
+        "original": {
+          "parity_relative_error": 0.0015127278165891767,
+          "repeatability_relative_error": 0.0
+        },
+        "fixed_m16": {
+          "parity_relative_error": 0.0,
+          "repeatability_relative_error": 0.0
+        }
+      }
+    },
+    {
+      "n": 128,
+      "k": 7168,
+      "results": {
+        "original": {
+          "parity_relative_error": 0.0019320702413097024,
+          "repeatability_relative_error": 0.0
+        },
+        "fixed_m16": {
+          "parity_relative_error": 0.0,
+          "repeatability_relative_error": 0.0
+        }
+      }
+    },
+    {
+      "n": 7168,
+      "k": 128,
+      "results": {
+        "original": {
+          "parity_relative_error": 0.0009108064696192741,
+          "repeatability_relative_error": 0.0
+        },
+        "fixed_m16": {
+          "parity_relative_error": 0.0,
+          "repeatability_relative_error": 0.0
+        }
+      }
+    }
+  ],
+  "coverage": "tiny CUDA kernel shape diagnostic only; full-model smoke remains mandatory"
+}
