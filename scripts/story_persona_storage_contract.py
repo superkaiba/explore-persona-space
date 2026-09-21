@@ -34,11 +34,33 @@ REMOTE_PATH = "/workspace/issue2673_storage_contract.json"
 
 def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
     """Enforce the cumulative allowance without resetting any prior paid time."""
-    if not 900 < requested_seconds <= 7200:
-        raise ValueError("allocation must leave preservation time and stay within two hours")
     limit = ledger["max_gpu_hours"]
-    if not math.isfinite(limit) or not 0 < limit <= 17:
+    if not math.isfinite(limit) or not 0 < limit <= 45:
         raise ValueError("invalid cumulative GPU-hour allowance")
+    maximum_seconds = 7200
+    if limit > 17:
+        # Thomas approved one additional singleton attempt on 2026-09-21.
+        authority = ledger.get("singleton_authorization", {})
+        prior = authority.get("prior_pod_ids", [])
+        known = {entry["pod_id"] for entry in ledger["allocations"]}
+        if (
+            authority.get("approved") is not True
+            or authority.get("max_new_allocations") != 1
+            or authority.get("max_allocation_seconds") != 12600
+            or authority.get("max_gpu_hours") != 45
+            or not prior
+            or len(prior) != len(set(prior))
+            or not set(prior) <= known
+            or gpu_count != 8
+        ):
+            raise ValueError("renewed allowance requires the approved singleton authorization")
+        if pod_id in prior or (known - set(prior)) - {pod_id}:
+            raise ValueError("the single additional allocation has already been used")
+        maximum_seconds = 12600
+    if not 900 < requested_seconds <= maximum_seconds:
+        raise ValueError(
+            "allocation must leave preservation time and stay within its approved limit"
+        )
     spent = 0.0
     for entry in ledger["allocations"]:
         if entry["pod_id"] == pod_id:
@@ -84,12 +106,17 @@ def contract_from_pod(
         raise RuntimeError("source_sha must be a complete immutable Git SHA")
     if pod["desiredStatus"] != "RUNNING":
         raise RuntimeError("storage contract requires an actual RUNNING pod")
+    if ledger is not None and ledger["max_gpu_hours"] > 17:
+        if model_key != "deepseek" or model.get("execution_mode") != "unpadded_singleton":
+            raise ValueError("renewed allowance is restricted to DeepSeek singleton execution")
     count, gpu, volume, seconds = (
         (8, "H200", 1000, 7200) if model_key == "deepseek" else (1, "H100", 200, 3600)
     )
     if requested_seconds is not None:
-        if ledger is None or requested_seconds > seconds:
-            raise ValueError("a shorter allocation requires the cumulative ledger")
+        if ledger is None or requested_seconds > (12600 if model_key == "deepseek" else 3600):
+            raise ValueError(
+                "an explicit allocation requires the cumulative ledger and approved limit"
+            )
         seconds = allocation_seconds(
             ledger, pod_id=pod_id, gpu_count=count, requested_seconds=requested_seconds
         )

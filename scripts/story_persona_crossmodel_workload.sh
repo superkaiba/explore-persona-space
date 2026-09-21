@@ -71,7 +71,7 @@ if c['pod_id'] != os.environ.get('RUNPOD_POD_ID') or c['api_volume_gb'] < minimu
     raise RuntimeError('live API volume or pod identity does not match')
 if not c['api_verified_at_unix'] >= time.time() - 900:
     raise RuntimeError('stale provider storage observation')
-if c['deadline_unix'] - c['paid_start_unix'] > (7200 if arm == 'deepseek' else 3600) + 1:
+if c['deadline_unix'] - c['paid_start_unix'] > (12600 if arm == 'deepseek' else 3600) + 1:
     raise RuntimeError('allocation exceeds approved cumulative envelope')
 if time.time() >= c['deadline_unix'] - 900:
     raise RuntimeError('insufficient remaining pilot allocation')
