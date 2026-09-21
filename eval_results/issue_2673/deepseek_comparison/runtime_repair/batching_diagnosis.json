@@ -1,0 +1,93 @@
+{
+  "source_sha": "4604bef656d2c52eff39cbb33bd19a97c8653a39",
+  "smoke_sha256": "7b5a979a1e9534c82de679b0bc58d1efae8bcc887040557123365801ecc9606b",
+  "groups": [
+    {
+      "indices": [
+        489,
+        1299,
+        0,
+        1,
+        240,
+        241,
+        480,
+        481
+      ],
+      "lengths": [
+        44,
+        173,
+        126,
+        124,
+        133,
+        131,
+        48,
+        46
+      ],
+      "padded_tokens": 1384,
+      "grouped_m_tile": 64,
+      "row_max_errors": [
+        0.14495833218097687,
+        0.2327694147825241,
+        0.14889967441558838,
+        0.19390973448753357,
+        0.1672685742378235,
+        0.24263866245746613,
+        0.2023603767156601,
+        0.15614080429077148
+      ]
+    },
+    {
+      "indices": [
+        720,
+        721,
+        960,
+        961,
+        1200,
+        1201,
+        1440,
+        1441
+      ],
+      "lengths": [
+        111,
+        109,
+        63,
+        61,
+        156,
+        154,
+        72,
+        70
+      ],
+      "padded_tokens": 1248,
+      "grouped_m_tile": 64,
+      "row_max_errors": [
+        0.21523712575435638,
+        0.20761515200138092,
+        0.23347026109695435,
+        0.2027253359556198,
+        0.2829580307006836,
+        0.24295607209205627,
+        0.20128777623176575,
+        0.1972159445285797
+      ]
+    },
+    {
+      "indices": [
+        1680,
+        1681
+      ],
+      "lengths": [
+        49,
+        47
+      ],
+      "padded_tokens": 98,
+      "grouped_m_tile": 16,
+      "row_max_errors": [
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "singletons_m_tile": 16,
+  "inference": "Batch parity errors align with grouped GEMM tile M16->M64 and its autotune key; the two M16 batched rows match exactly across all61blocks. Fixing grouped M16 is a grounded hypothesis, not a validated GPU fix.",
+  "next_validation": "Verify immutable grouped.py hash and original adaptive function; instrument the actual grouped dispatcher; compare original vs fixed M16 on a tiny nativeFP8 GPU kernel smoke before full checkpoint loading; retain model numerical1% gate and throughput gate. No threshold relaxation."
+}

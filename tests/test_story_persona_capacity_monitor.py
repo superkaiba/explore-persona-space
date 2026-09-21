@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import create_autospec
@@ -199,6 +200,319 @@ def test_missing_outcome_and_stale_logs_surface_to_watchdog(setup):
     assert o["backend_observation"]["last_log_mtime_sec_ago"] == 1200
     r.state = "failed"
     assert M.tick(c, r, 2201)["backend_observation"]["status"] == "gate"
+
+
+def test_failure_automatically_dispatches_repair_without_available_gpus(setup):
+    c, r = setup
+    c.update(automatic_repair=True, max_repairs_per_day=2, interval_seconds=60)
+    r.data = quote("Low", 36.72)
+    M.tick(c, r, 1000)
+    r.state = "inactive"
+    finish(c, "needs_attention")
+    assert M.tick(c, r, 1100)["status"] == "repair_queued"
+    assert state(c)["worker"] is None
+    r.data = quote()  # Repair runs on the VM and must not wait for GPU stock.
+    assert M.tick(c, r, 1159)["status"] == "repair_queued"
+    assert M.tick(c, r, 1160)["status"] == "repair_requested"
+    assert state(c)["worker"]["purpose"] == "repair"
+    assert state(c)["worker"]["failure"]["attempt"] == 1
+    assert len(state(c)["failure_history"]) == 1
+    assert r.starts == 2
+    M.tick(c, r, 1161)
+    assert r.starts == 2  # An active repair cannot be duplicated.
+
+
+@pytest.mark.parametrize(
+    "night, next_night, hours",
+    [
+        ("2026-09-22T00:00:00-07:00", "2026-09-23T00:00:00-07:00", 24),
+        ("2026-11-01T00:00:00-07:00", "2026-11-02T00:00:00-08:00", 25),
+        ("2026-03-08T00:00:00-08:00", "2026-03-09T00:00:00-07:00", 23),
+    ],
+)
+def test_daily_schedule_waits_until_local_midnight_and_survives_dst(
+    setup, night, next_night, hours
+):
+    c, r = setup
+    due = datetime.fromisoformat(night).timestamp()
+    expected = datetime.fromisoformat(next_night).timestamp()
+    c.update(daily_dispatch_timezone="America/Los_Angeles", daily_dispatch_not_before=due)
+    assert M.tick(c, r, due - 1)["status"] == "waiting_for_midnight"
+    assert (
+        M.tick(c, r, due)["status"] == "waiting_for_capacity"
+    )  # Empty quote consumes today's check.
+    assert state(c)["next_dispatch_at"] == expected
+    assert expected - due == hours * 3600
+    r.data = quote("Low", 36.72)
+    assert M.tick(c, r, due + 60)["status"] == "waiting_for_midnight"
+    assert M.tick(c, r, expected)["status"] == "continuation_requested"
+    assert r.starts == 1
+
+
+def test_daily_repair_awaits_midnight_but_live_pod_gets_immediate_recovery(setup):
+    c, r = setup
+    c.update(
+        automatic_repair=True,
+        max_repairs_per_day=2,
+        daily_dispatch_timezone="America/Los_Angeles",
+        daily_dispatch_not_before=10000,
+    )
+    M.write(
+        c["capacity_state"],
+        dict(attempts=[], worker=None, notifications=[], repair_pending={"reason": "failure"}),
+    )
+    assert M.tick(c, r, 1000)["status"] == "waiting_for_midnight"
+    assert r.starts == 0
+    r.pods = [{"id": "still-billable"}]
+    assert M.tick(c, r, 1060)["status"] == "repair_requested"
+    assert state(c)["worker"]["purpose"] == "repair"
+    assert r.starts == 1
+    assert M.tick(c, r, 1061)["status"] == "continuation_running"
+
+
+def test_daily_midnight_dispatch_persists_next_time_before_ambiguous_start(setup):
+    c, r = setup
+    c.update(daily_dispatch_timezone="America/Los_Angeles", daily_dispatch_not_before=1000)
+    r.data = quote("Low", 36.72)
+    r.ambiguous_start = True
+    with pytest.raises(subprocess.TimeoutExpired):
+        M.tick(c, r, 1000)
+    assert state(c)["next_dispatch_at"] > 1000
+    assert M.tick(c, r, 1001)["status"] == "continuation_running"
+    assert r.starts == 1
+
+
+@pytest.mark.parametrize(
+    "failure", ["no-outcome", "no-exit", "unclean-exit", "malformed", "schema"]
+)
+def test_dead_continuation_also_enters_repair_loop(setup, failure):
+    c, r = setup
+    c.update(automatic_repair=True, max_repairs_per_day=2, interval_seconds=60)
+    r.data = quote("Low", 36.72)
+    M.tick(c, r, 1000)
+    r.state = "failed"
+    d = Path(state(c)["worker"]["directory"])
+    if failure != "no-outcome":
+        finish(c, "complete")
+        if failure == "no-exit":
+            (d / "exit.json").unlink()
+        elif failure == "malformed":
+            (d / "outcome.json").write_text("{truncated")
+        elif failure == "schema":
+            M.write(d / "outcome.json", [])
+        else:
+            M.write(d / "exit.json", {"returncode": 1, "ended_at": 1100})
+    assert M.tick(c, r, 1101)["status"] == "repair_queued"
+    assert not state(c).get("verified_capacity_losses")
+    assert M.tick(c, r, 1161)["status"] == "repair_requested"
+
+
+def test_repair_daily_limit_resumes_automatically_after_cooldown(setup):
+    c, r = setup
+    c.update(automatic_repair=True, max_repairs_per_day=1, interval_seconds=60)
+    M.write(
+        c["capacity_state"],
+        dict(
+            attempts=[1000],
+            worker=None,
+            notifications=[],
+            repair_attempts=[{"number": 1, "requested_at": 1000}],
+            repair_pending={"attempt": 1, "reason": "needs a fix", "outcome": "saved.json"},
+        ),
+    )
+    assert M.tick(c, r, 1100)["status"] == "repair_cooldown"
+    assert r.starts == 0
+    assert M.tick(c, r, 87400)["status"] == "repair_requested"
+    assert r.starts == 1
+    assert state(c)["attempts"] == [1000, 87400]
+
+
+def test_repair_claim_survives_ambiguous_systemd_start(setup):
+    c, r = setup
+    c.update(automatic_repair=True, max_repairs_per_day=2)
+    M.write(
+        c["capacity_state"],
+        dict(
+            attempts=[],
+            worker=None,
+            notifications=[],
+            repair_pending={"reason": "failure"},
+        ),
+    )
+    r.ambiguous_start = True
+    with pytest.raises(subprocess.TimeoutExpired):
+        M.tick(c, r, 1000)
+    assert state(c)["worker"]["purpose"] == "repair"
+    assert "repair_pending" not in state(c)
+    assert M.tick(c, r, 1001)["status"] == "continuation_running"
+    assert r.starts == 1
+
+
+def test_reviewed_source_transition_retains_the_original_request_binding(setup):
+    c, r = setup
+    c.update(automatic_repair=True, max_repairs_per_day=2)
+    r.data = quote("Low", 36.72)
+    M.tick(c, r, 1000)
+    original = c["source_sha"]
+    assert state(c)["worker"]["source_sha"] == original
+    c["source_sha"] = "f" * 40  # Operator re-pins after tested/reviewed code repair.
+    r.state = "inactive"
+    finish(c, "needs_attention")
+    d = Path(state(c)["worker"]["directory"])
+    record = json.loads((d / "outcome.json").read_text())
+    record["request_source_sha"] = original
+    M.write(d / "outcome.json", record)
+    assert M.tick(c, r, 1100)["status"] == "repair_queued"
+
+
+def test_repair_workers_count_toward_total_daily_bound(setup):
+    c, r = setup
+    c.update(automatic_repair=True, max_repairs_per_day=6, max_attempts_per_day=2)
+    M.write(
+        c["capacity_state"],
+        dict(
+            attempts=[900, 1000],
+            worker=None,
+            notifications=[],
+            repair_attempts=[{"number": 2, "requested_at": 1000}],
+            repair_pending={"attempt": 2, "reason": "failure"},
+        ),
+    )
+    assert M.tick(c, r, 1100)["status"] == "repair_cooldown"
+    assert r.starts == 0
+
+
+def test_explicit_user_boundary_with_evidence_and_no_unresolved_pod(setup):
+    c, r = setup
+    c.update(automatic_repair=True, max_repairs_per_day=2)
+    r.data = quote("Low", 36.72)
+    M.tick(c, r, 1000)
+    r.state = "inactive"
+    finish(c, "blocked")
+    p = Path(state(c)["worker"]["directory"]) / "outcome.json"
+    v = json.loads(p.read_text())
+    v.update(stop_kind="compute_limit", reason="cap reached", evidence={"ledger": "reviewed"})
+    M.write(p, v)
+    assert M.tick(c, r, 1100)["status"] == "awaiting_user"
+    assert M.tick(c, r, 1160)["status"] == "awaiting_user"
+    assert r.starts == 1
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "stale-source",
+        "stale-attempt",
+        "future-exit",
+        "exit-type",
+        "unsupported",
+        "incomplete",
+        "bad-terminal-type",
+        "missing-terminal",
+        "missing-boundary",
+        "live-pod-boundary",
+    ],
+)
+def test_rejected_worker_evidence_queues_repair_and_preserves_claim_directory(setup, bad):
+    c, r = setup
+    c.update(automatic_repair=True, max_repairs_per_day=2)
+    r.data = quote("Low", 36.72)
+    M.tick(c, r, 1000)
+    r.state = "inactive"
+    finish(c, "complete" if "terminal" in bad or bad == "incomplete" else "needs_attention")
+    directory = Path(state(c)["worker"]["directory"])
+    p = directory / "outcome.json"
+    v = json.loads(p.read_text())
+    if bad == "stale-source":
+        v["source_sha"] = "f" * 40
+    elif bad == "stale-attempt":
+        v["attempt"] = 0
+    elif bad == "future-exit":
+        M.write(directory / "exit.json", {"returncode": 0, "ended_at": 2000})
+    elif bad == "exit-type":
+        M.write(directory / "exit.json", {"returncode": 0, "ended_at": "yesterday"})
+    elif bad == "unsupported":
+        v["status"] = "unexpected"
+    elif bad in {"missing-boundary", "live-pod-boundary"}:
+        v.update(status="blocked", stop_kind="compute_limit", reason="cap reached")
+        if bad == "live-pod-boundary":
+            v["evidence"] = {"ledger": "checked"}
+            r.pods = [{"id": "still-billable"}]
+    M.write(p, v)
+    if bad == "incomplete":
+        publish_terminal(c, {**terminal_record(c), "row_count": 10})
+    elif bad == "bad-terminal-type":
+        publish_terminal(c, {**terminal_record(c), "verified_revision": []})
+    before = p.read_bytes()
+    assert M.tick(c, r, 1100)["status"] == "repair_queued"
+    assert state(c)["worker"] is None
+    assert p.read_bytes() == before
+    assert len(state(c)["failure_history"]) == 1
+    assert M.tick(c, r, 1400)["status"] == "repair_requested"
+
+
+def cleanup_fixture(c, r):
+    """Exhaust repair allowance with one unresolved paid pod."""
+    c.update(automatic_repair=True, max_repairs_per_day=1, interval_seconds=60)
+    M.write(
+        c["capacity_state"],
+        dict(
+            attempts=[1000],
+            worker=None,
+            notifications=[],
+            repair_attempts=[{"number": 1, "requested_at": 1000}],
+            repair_pending={"attempt": 1, "reason": "failed", "outcome": "saved.json"},
+        ),
+    )
+    M.write(c["allocation_ledger"], {"allocations": [{"termination_confirmed_at_unix": None}]})
+    r.pods = [{"id": "still-billable"}]
+    assert M.tick(c, r, 1100)["status"] == "cleanup_requested"
+    assert state(c)["worker"]["purpose"] == "cleanup"
+
+
+@pytest.mark.parametrize("bad", [None, "pod", "ledger", "proof"])
+def test_cleanup_before_cooldown_requires_preservation_and_closed_allocation(setup, bad):
+    c, r = setup
+    cleanup_fixture(c, r)
+    r.state = "inactive"
+    finish(c, "cleanup_complete")
+    p = Path(state(c)["worker"]["directory"]) / "outcome.json"
+    v = json.loads(p.read_text())
+    v["preservation_verification"] = dict(
+        verified_revision="d" * 40,
+        all_remote_names_sizes_hashes_pass=True,
+        file_count=10,
+        checked_at=1100,
+    )
+    if bad == "proof":
+        v["preservation_verification"] = True
+    M.write(p, v)
+    if bad != "pod":
+        r.pods = []
+    if bad != "ledger":
+        M.write(c["allocation_ledger"], {"allocations": [{"termination_confirmed_at_unix": 1100}]})
+    if bad:
+        assert M.tick(c, r, 1101)["status"] == "repair_queued"
+    else:
+        assert M.tick(c, r, 1101)["status"] == "cleanup_verified"
+        assert state(c)["repair_pending"]
+        assert M.tick(c, r, 1161)["status"] == "repair_cooldown"
+        assert r.starts == 1
+
+
+def test_failed_cleanup_cannot_silently_park_a_paid_pod_for_a_day(setup):
+    c, r = setup
+    cleanup_fixture(c, r)
+    r.state = "failed"
+    assert M.tick(c, r, 1200)["status"] == "repair_queued"
+    assert M.tick(c, r, 1260)["status"] == "cleanup_requested"
+    r.state = "failed"
+    assert M.tick(c, r, 1400)["status"] == "repair_queued"
+    o = M.tick(c, r, 1460)
+    assert o["status"] == "backend_gate"
+    assert o["backend_observation"]["status"] == "gate"
+    assert "Immediate intervention" in r.messages[-1]
+    assert r.starts == 2
 
 
 def terminal_record(c):

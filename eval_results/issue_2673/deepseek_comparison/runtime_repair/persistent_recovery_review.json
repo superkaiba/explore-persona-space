@@ -1,0 +1,10 @@
+{
+  "checked_at": 1789974751.2894309,
+  "tests": "69 passed: tests/test_story_persona_capacity_monitor.py tests/test_experiment_watchdog.py",
+  "independent_reviewer": "review_persistent_recovery",
+  "review_verdict": "No blocking correctness findings; previous evidence-rejection and paid-pod-cooldown blockers resolved. Midnight/DST reviewed. Capacity-loss notification wording corrected.",
+  "controller_sha256": "d740d313fd074ad6902051fade9f6c48b346b6cdeda39e48556c631ee954228d",
+  "schedule": "Daily new attempts at 00:00 America/Los_Angeles; minute monitoring and immediate existing-pod repair/cleanup.",
+  "next_dispatch_local": "2026-09-22T00:00:00-07:00",
+  "deployed": false
+}
