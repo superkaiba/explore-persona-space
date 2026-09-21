@@ -1,0 +1,194 @@
+{
+  "reviewed_overleaf_commit": "801ead9ece9906bbb534ba9a762f0b6bd016bf36",
+  "compiled_pdf_pages": 59,
+  "sources": {
+    "/home/thomasjiralerspong/wt-paper-capability-20260907/figures/paper/c1_model_capability.meta.json": "59cf57fe70566229ccf115be27e4a3b5a29bf710f4f46c54302f4add2db99490",
+    "/home/thomasjiralerspong/explore-persona-space/figures/paper/c3_qualitative_discrimination.meta.json": "bd1c8d866cf55212b9ef818712d1a6c8d25b0b27f9206a5d57fac08c86ca1ebe",
+    "/home/thomasjiralerspong/explore-persona-space/figures/paper/c3_element_shifts.meta.json": "e690a20603985bfe2b0b3b4b6c156e0b52f2536488584d0a15f61d9b8448b387",
+    "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/figures/paper/c5_behavior_transfer_original_combined.meta.json": "1105a9002c5a7f3ee8d6318458c43cb95ea03079e18645a32e701d7f92555ebc"
+  },
+  "capability": {
+    "plotted_panel": {
+      "n": 10,
+      "rho": 0.8666666666666668,
+      "p_uncorrected": 0.0021731701940035275,
+      "n_permutations": 3628800,
+      "method": "Exact two-sided model-label permutation test"
+    },
+    "restricted_panel_correction": {
+      "p_familywise_maxT": 0.0847957602119894,
+      "n_tests": 56,
+      "n_permutations": 20000,
+      "seed": 2588,
+      "predictors": [
+        "aa_index",
+        "gpqa_accuracy",
+        "hidden_width",
+        "n_layers",
+        "params_b",
+        "participation_ratio_x",
+        "ceiling_two_draw",
+        "length_only_r2"
+      ],
+      "outcomes": [
+        "rank_frac",
+        "rank_abs",
+        "compressibility",
+        "test_r2",
+        "ceiling_normalized_r2",
+        "acc1_calibrated",
+        "fitted_dirs_90pct"
+      ],
+      "method": "Joint-relabeling max-absolute-Spearman, Monte Carlo plus-one correction",
+      "limitation": "Does not adjust for post-hoc model selection or family dependence."
+    },
+    "recorded_measured_scores_only": {
+      "n": 4,
+      "rho": 0.8,
+      "p_uncorrected": 0.3333333333333333,
+      "n_permutations": 24,
+      "method": "Exact two-sided model-label permutation test",
+      "note": "Measured means marked measured in the historical registry, not reverified current scores."
+    },
+    "full_panel": {
+      "predictor": "aa_index",
+      "outcome": "test_r2",
+      "subset": "all maps",
+      "n": 11,
+      "rho": 0.7152638146977822,
+      "p_uncorrected": 0.0174,
+      "p_familywise_maxT": 0.4101,
+      "loo_sign_consistent": true,
+      "loo_rho_range": [
+        0.6443798763008685,
+        0.8666666666666665
+      ]
+    },
+    "score_provenance": "Six Artificial Analysis values marked estimated and four marked measured in the original registry.",
+    "selection_note": "Qwen2.5-32B was excluded after inspecting the original panel.",
+    "mode_caveat": "Model-level index scores can use different reasoning settings from these no-thinking maps."
+  },
+  "qualitative_retrieval": {
+    "evaluation": {
+      "model": "Qwen2.5-7B-Instruct",
+      "layer": 19,
+      "predictor": "ridge",
+      "answer_target": "mean of five on-policy answer vectors",
+      "retrieval": "whitened cosine with two-sided CSLS (K=10)",
+      "pool_size": 942,
+      "top1_failures": 25,
+      "top1_accuracy": 0.9734607218683652,
+      "deduplication": "exact source-answer-vector deduplication"
+    },
+    "displayed_ranks": [
+      "TRUE ANSWER  \u00b7  RANK 2",
+      "RETRIEVED ANSWER  \u00b7  RANK 1",
+      "TRUE ANSWER  \u00b7  RANK 4"
+    ],
+    "shipped_pdf_hash_matches_sidecar": true
+  },
+  "minimal_pairs": {
+    "sources": [
+      {
+        "path": "eval_results/issue_2564/section42_element_shifts.json",
+        "sha256": "dfa1554facec2e05296c6a354246166ddf987edb5e8f641a77df6497de89ee01"
+      }
+    ],
+    "bootstrap": {
+      "unit": "pair",
+      "draws": 2000,
+      "seed": 20260910
+    },
+    "rows": [
+      {
+        "row": "Tone",
+        "n_pairs": 12,
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "row": "Persona",
+        "n_pairs": 120,
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "row": "Output format",
+        "n_pairs": 120,
+        "twoway": 0.875,
+        "twoway_ci95": [
+          0.8375,
+          0.9125
+        ]
+      },
+      {
+        "row": "Question topic",
+        "n_pairs": 66,
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "row": "One-word topic",
+        "n_pairs": 24,
+        "twoway": 0.8958,
+        "twoway_ci95": [
+          0.8125,
+          0.9589
+        ]
+      },
+      {
+        "row": "Refuse/comply: content edit",
+        "n_pairs": 61,
+        "twoway": 1.0,
+        "twoway_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "row": "Same decision: content edit",
+        "n_pairs": 63,
+        "twoway": 0.9048,
+        "twoway_ci95": [
+          0.8569,
+          0.9524
+        ]
+      },
+      {
+        "row": "Refuse/comply: framing edit",
+        "n_pairs": 307,
+        "twoway": 0.9235,
+        "twoway_ci95": [
+          0.9023,
+          0.943
+        ]
+      },
+      {
+        "row": "Same decision: framing edit",
+        "n_pairs": 1924,
+        "twoway": 0.611,
+        "twoway_ci95": [
+          0.6019,
+          0.6203
+        ]
+      }
+    ]
+  },
+  "behavior": {
+    "caveats": [
+      "ID is held out from the behavior readout, but included in fitting the ADD map.",
+      "Layers differ across behaviors and projection methods.",
+      "Three harmful-compliance OOD datasets and generic chat had low DV spread in the source figure."
+    ],
+    "shipped_pdf_hash_matches_sidecar": true
+  }
+}
