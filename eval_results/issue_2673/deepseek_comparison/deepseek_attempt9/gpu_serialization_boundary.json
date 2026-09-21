@@ -1,0 +1,47 @@
+{
+  "checked_at": 1789964961.2343132,
+  "manifest_mtime": 1789964912.5186565,
+  "fingerprint": "a2f8c6f6b030818b9e82d23a07f0b7640faef452539615132ef7a453ea6889b5",
+  "model": {
+    "id": "deepseek-ai/DeepSeek-V3.1-Base",
+    "revision": "d3d4eafdc470de44bbf6f0a74f852eb522357be8",
+    "transformers_version": "5.15.0",
+    "torch_version": "2.9.1+cu128",
+    "torchaudio_version": "2.9.1+cu128",
+    "triton_version": "3.5.1",
+    "layers": 61,
+    "hidden_dim": 7168,
+    "execution_mode": "padded_batch",
+    "bos_token_id": 0,
+    "eos_token_id": 1,
+    "add_special_tokens": true,
+    "add_bos_token": false,
+    "expected_tokens": {
+      "min": 44,
+      "max": 173,
+      "total": 188744
+    },
+    "gpu_count": 8,
+    "min_gpu_bytes": 130000000000,
+    "min_host_bytes": 1000000000000,
+    "max_parameter_gib_per_gpu": 120,
+    "kernel_repo": "kernels-community/finegrained-fp8",
+    "kernel_revision": "8c178950e8710e26a2210e4e909cd02dc16c8715",
+    "kernel_repo_type": "kernel",
+    "kernels_version": "0.16.1",
+    "experts_implementation": "grouped_mm"
+  },
+  "provenance": {
+    "git_commit": "4604bef656d2c52eff39cbb33bd19a97c8653a39",
+    "git_dirty": false,
+    "phase": "crossmodel_capture",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/story_persona_crossmodel_capture.py"
+  },
+  "progress": {
+    "stage": "smoke",
+    "fingerprint": "a2f8c6f6b030818b9e82d23a07f0b7640faef452539615132ef7a453ea6889b5",
+    "smoke_singletons_completed": 1,
+    "checked_at": 1789964955.3768609
+  }
+}

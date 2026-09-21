@@ -1,0 +1,6 @@
+{
+  "checked_at": 1789965031.1798584,
+  "model_key": "deepseek",
+  "exception_type": "RuntimeError",
+  "message": "numerical smoke rejected: repeat=0.0, batch=0.2829580307006836"
+}
