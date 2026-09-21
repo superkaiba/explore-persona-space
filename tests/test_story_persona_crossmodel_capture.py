@@ -127,11 +127,30 @@ def test_last_real_token_and_pre_norm_final_block_with_bf16_cpu_store():
     assert all(not block._forward_hooks for block in model.model.layers)
 
 
-def test_qwen_storage_groups_remain_strict_unpadded_singletons():
+@pytest.mark.parametrize("arm", ["qwen", "deepseek"])
+def test_storage_groups_remain_unpadded_singletons(arm):
     model = TinyDecoder()
-    result, _ = capture.capture_production(model, [[1], [1, 2, 3]], 0, config("qwen"))
+    cfg = config(arm)
+    cfg.model.execution_mode = "unpadded_singleton"
+    result, _ = capture.capture_production(model, [[1], [1, 2, 3]], 0, cfg)
     assert result.shape == (2, 8, 4)
     assert model.calls == [((1, 1), True), ((1, 3), True)]
+
+
+def test_unknown_execution_mode_rejects_before_model_forward():
+    model = TinyDecoder()
+    cfg = config()
+    cfg.model.execution_mode = "invalid"
+    with pytest.raises(ValueError, match="execution mode"):
+        capture.capture_production(model, [[1]], 0, cfg)
+    assert model.calls == []
+
+
+def test_registered_deepseek_capture_uses_singletons_with_eight_row_storage_groups():
+    cfg = OmegaConf.load(capture.ROOT / "configs/pilots/story_persona_crossmodel_capture.yaml")
+    cfg.model_key = "deepseek"
+    assert capture.singleton_execution(cfg)
+    assert cfg.capture.batch_rows == 8
 
 
 def test_dtype_errors_fail_without_leaving_hooks_attached():
@@ -161,18 +180,42 @@ def test_deepseek_batch_drift_fails_gate_and_preserves_vectors(tmp_path):
     assert not torch.equal(saved["initial"], saved["batched"])
 
 
-def test_qwen_mixed_batch_diagnostic_is_not_a_vacuous_repeatability_gate(tmp_path):
+@pytest.mark.parametrize("arm", ["qwen", "deepseek"])
+def test_singleton_mixed_batch_diagnostic_does_not_gate_production(tmp_path, capsys, arm):
     ids = [[i % 20 + 1] * (i % 3 + 1) for i in range(16)]
+    cfg = config(arm)
+    cfg.model.execution_mode = "unpadded_singleton"
     report = capture.numerical_smoke(
         TinyDecoder(batch_drift=True),
         SimpleNamespace(pad_token_id=0),
         ids,
-        config("qwen"),
+        cfg,
         tmp_path,
         "pin",
     )
     assert report["passed"] is True and report["mixed_batch_is_production"] is False
     assert max(max(x) for x in report["mixed_batch_relative_errors"]) > 0.01
+    assert "[capture-singleton-engaged]" in capsys.readouterr().out
+
+
+def test_singleton_repeatability_failure_still_rejects_and_preserves_evidence(tmp_path):
+    class DriftingDecoder(TinyDecoder):
+        def forward(self, *args, **kwargs):
+            with torch.no_grad():
+                self.model.embed_tokens.weight.add_(16)
+            return super().forward(*args, **kwargs)
+
+    cfg = config()
+    cfg.model.execution_mode = "unpadded_singleton"
+    ids = [[i % 20 + 1] * (i % 3 + 1) for i in range(16)]
+    with pytest.raises(RuntimeError, match="numerical smoke rejected"):
+        capture.numerical_smoke(
+            DriftingDecoder(), SimpleNamespace(pad_token_id=0), ids, cfg, tmp_path, "pin"
+        )
+    report = json.loads((tmp_path / "smoke.json").read_text())
+    assert not report["passed"] and not report["mixed_batch_is_production"]
+    assert not report["repeatability_bitwise_equal"]
+    assert (tmp_path / "smoke_vectors.pt").is_file()
 
 
 def test_projection_accounts_for_elapsed_setup_and_preservation_reserve():
@@ -304,8 +347,10 @@ def test_deepseek_renderer_persists_exact_no_bos_token_ids_and_rejects_eos():
         capture.render_inputs(tokenizer, rows, cfg)
 
 
-def test_capture_batches_emits_valid_chunks_and_refuses_expired_window(tmp_path):
+@pytest.mark.parametrize("mode", ["unpadded_singleton", "padded_batch"])
+def test_capture_batches_emits_valid_chunks_and_refuses_expired_window(tmp_path, mode):
     cfg = config()
+    cfg.model.execution_mode = mode
     out = tmp_path / "good"
     (out / "chunks").mkdir(parents=True)
     ids, batches = [[1], [2, 3], [4], [5, 6]], [[1, 3], [0, 2]]
@@ -328,6 +373,10 @@ def test_capture_batches_emits_valid_chunks_and_refuses_expired_window(tmp_path)
         publisher,
     )
     assert len(checksums) == 2
+    if mode == "unpadded_singleton":
+        assert model.calls == [((1, 2), True), ((1, 2), True), ((1, 1), True), ((1, 1), True)]
+    else:
+        assert model.calls == [((2, 2), True), ((2, 1), True)]
     capture.validate_store(out, "pin", batches, cfg, checksums)
     assert json.loads((out / "progress.json").read_text())["completed_rows"] == 4
     assert not (out / "capture_complete.json").exists()

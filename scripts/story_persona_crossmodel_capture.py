@@ -233,9 +233,17 @@ def capture_last(model, ids_rows, pad_id, *, layers, width, check_tuple=False, s
     return values, errors
 
 
+def singleton_execution(cfg):
+    mode = cfg.model.execution_mode
+    if mode not in {"unpadded_singleton", "padded_batch"}:
+        raise ValueError(f"unknown capture execution mode: {mode}")
+    return mode == "unpadded_singleton"
+
+
 def capture_production(model, ids_rows, pad_id, cfg, *, check_tuple=False):
     qwen = cfg.model_key == "qwen"
-    groups = [[row] for row in ids_rows] if qwen else [ids_rows]
+    singleton = singleton_execution(cfg)
+    groups = [[row] for row in ids_rows] if singleton else [ids_rows]
     values, errors = [], {}
     with numerical_backend(strict=True) if qwen else nullcontext():
         for k, group in enumerate(groups):
@@ -246,7 +254,7 @@ def capture_production(model, ids_rows, pad_id, cfg, *, check_tuple=False):
                 layers=cfg.model.layers,
                 width=cfg.model.hidden_dim,
                 check_tuple=check_tuple,
-                singleton=qwen,
+                singleton=singleton,
             )
             values.append(value)
             errors[str(k)] = checks
@@ -519,6 +527,7 @@ def relative_errors(left, right):
 
 def numerical_smoke(model, tokenizer, ids, cfg, out, fingerprint):
     """Interleaved singleton replay plus all-persona and mixed-padding batch parity."""
+    singleton = singleton_execution(cfg)
     extreme = list(
         dict.fromkeys(
             [
@@ -535,6 +544,12 @@ def numerical_smoke(model, tokenizer, ids, cfg, out, fingerprint):
             model, [ids[i]], tokenizer.pad_token_id, cfg, check_tuple=True
         )
         singles.append(value)
+        if singleton and len(singles) == 1:
+            print(
+                f"[capture-singleton-engaged] model={cfg.model_key} "
+                "forward_batch_size=1 unpadded=true",
+                flush=True,
+            )
         tuple_errors[str(i)] = error
         write_json(
             out / "progress.json",
@@ -557,7 +572,7 @@ def numerical_smoke(model, tokenizer, ids, cfg, out, fingerprint):
     batch_values, batch_indices = [], []
     for offset in range(0, len(mixed_order), cfg.capture.batch_rows):
         group = mixed_order[offset : offset + cfg.capture.batch_rows]
-        # This is production for DeepSeek. Qwen batching remains a diagnostic only.
+        # Mixed batches are diagnostic only when production uses singletons.
         with numerical_backend(strict=True) if cfg.model_key == "qwen" else nullcontext():
             value, _ = capture_last(
                 model,
@@ -592,7 +607,7 @@ def numerical_smoke(model, tokenizer, ids, cfg, out, fingerprint):
         "repeatability_relative_errors": repeat.tolist(),
         "repeatability_bitwise_equal": bool(torch.equal(initial, replay)),
         "mixed_batch_relative_errors": parity.tolist(),
-        "mixed_batch_is_production": cfg.model_key == "deepseek",
+        "mixed_batch_is_production": not singleton,
         "ordinary_cosine": cosines.tolist(),
         "maximum_absolute_cosine_difference_by_layer": (cosines[0] - cosines[1])
         .abs()
@@ -600,7 +615,7 @@ def numerical_smoke(model, tokenizer, ids, cfg, out, fingerprint):
         .tolist(),
         "passed": bool(
             repeat.max() <= cfg.capture.repeatability_relative_tolerance
-            and (cfg.model_key == "qwen" or parity.max() <= cfg.capture.parity_relative_tolerance)
+            and (singleton or parity.max() <= cfg.capture.parity_relative_tolerance)
         ),
         "checked_at": time.time(),
     }

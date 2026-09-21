@@ -25,7 +25,8 @@ models:
     triton_version: 3.5.1
     layers: 61
     hidden_dim: 7168
-    execution_mode: padded_batch
+    # User-requested singleton capture after the mixed-batch parity failure (#2673).
+    execution_mode: unpadded_singleton
     bos_token_id: 0
     eos_token_id: 1
     add_special_tokens: true
@@ -45,6 +46,7 @@ prompts: configs/pilots/story_persona_deepseek_prompts.json
 questions: data/assistant_axis/extraction_questions.jsonl
 expected_questions: 240
 capture:
+  # Storage grouping; execution_mode independently controls model forward size.
   batch_rows: 8
   padded_token_budget: 4096
   max_context_tokens: 2048

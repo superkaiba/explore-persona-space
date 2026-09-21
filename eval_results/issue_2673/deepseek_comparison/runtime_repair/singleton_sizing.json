@@ -1,0 +1,28 @@
+{
+  "observed_at_utc": "2026-09-21T21:23:54.020580+00:00",
+  "source_runtime_sha": "1a7cd412cceefd01bc03765f2544b7cc4afb917e",
+  "attempt": 10,
+  "evidence_hf_revision": "e576f58dc881b4ba956206ead96c314e414903eb",
+  "singleton_progress_timestamps": {
+    "1": 1789979501.5389724,
+    "8": 1789979556.0645924,
+    "18": 1789979558.7938871
+  },
+  "paid_start_unix": 1789976987.311,
+  "setup_to_first_singleton_seconds": 2514.2279722690582,
+  "first_17_intervals_seconds_per_context": 3.3679361623876236,
+  "last_10_intervals_seconds_per_context": 0.2729294776916504,
+  "projection_contexts": 1920,
+  "projection_margin": 1.25,
+  "preservation_reserve_seconds": 900,
+  "conservative_projected_wall_seconds": 11497.274761999355,
+  "conservative_projected_gpu_hours": 25.549499471109677,
+  "existing_cumulative_cap_gpu_hours": 17,
+  "used_gpu_hours_upper_bound": 15.152060644361708,
+  "remaining_gpu_hours": 1.8479393556382924,
+  "proposed_one_attempt_max_wall_seconds": 12600,
+  "proposed_additional_cap_gpu_hours": 28,
+  "proposed_cumulative_cap_gpu_hours": 45,
+  "approved": false,
+  "limitation": "Coarse progress intervals include compilation and host bookkeeping, not a measured steady-state production benchmark. The existing three-chunk timing and rolling deadline gates must run on the actual singleton production path before full capture."
+}
