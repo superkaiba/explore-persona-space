@@ -1,0 +1,18 @@
+{
+  "checked_at": 1790063157.9059155,
+  "source_sha": "8f9f676965f57401cb2fb1099c29c87b2f0a397b",
+  "source_result_git_revision": "72b21cce6d57ff7215cc4c1374a1c8144aecb4c6",
+  "source_branch": "codex/story-persona-deepseek-singleton-20260921",
+  "paths": [
+    "eval_results/issue_2673/deepseek_comparison/deepseek/block_15.json",
+    "eval_results/issue_2673/deepseek_comparison/deepseek/block_30.json",
+    "eval_results/issue_2673/deepseek_comparison/deepseek/block_45.json",
+    "eval_results/issue_2673/deepseek_comparison/deepseek/block_60.json",
+    "eval_results/issue_2673/deepseek_comparison/deepseek/raw_all_layers.json",
+    "eval_results/issue_2673/deepseek_comparison/deepseek/summary.json",
+    "eval_results/issue_2673/deepseek_comparison/deepseek/upload_receipt.json"
+  ],
+  "bytes": 1900084,
+  "report_checkout": "/home/thomasjiralerspong/.codex/worktrees/story-persona-qwen38-pilot-20260917",
+  "report_head_before": "f172d381bb5ee61d3a80e15f80d1c389771ce701"
+}

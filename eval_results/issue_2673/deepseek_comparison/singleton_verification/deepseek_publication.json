@@ -1,0 +1,25 @@
+{
+  "checked_at": 1790063163.1304402,
+  "source_sha": "8f9f676965f57401cb2fb1099c29c87b2f0a397b",
+  "model_key": "deepseek",
+  "verified_revision": "e7840c8fb3f8ad46fc654ad60ba51b55098ff1c1",
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_repo_type": "dataset",
+  "hf_prefix": "issue2673_deepseek_comparison/20260921_v7/deepseek/analysis_tensors",
+  "capture_fingerprint": "554ee5d67b471296ecbe49e140acaa0d4a28ae6801ec23fb413812e7ab1d1a1f",
+  "analysis_fingerprint": "2019d4b1d8a4e5c95a362ee66105f5244e1ed4177619ec7afb9acb0cd2148a61",
+  "file_count": 262,
+  "total_bytes": 2040569982,
+  "row_count": 1920,
+  "chunks": 240,
+  "selected_layers": [
+    15,
+    30,
+    45,
+    60
+  ],
+  "all_remote_names_sizes_hashes_pass": true,
+  "git_json_equals_immutable_hf": true,
+  "smoke_passed": true,
+  "url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/e7840c8fb3f8ad46fc654ad60ba51b55098ff1c1/issue2673_deepseek_comparison/20260921_v7/deepseek/analysis_tensors"
+}

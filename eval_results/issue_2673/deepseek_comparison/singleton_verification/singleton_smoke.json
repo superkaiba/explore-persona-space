@@ -1,0 +1,30 @@
+{
+  "checked_at": 1790062232.985969,
+  "pod_id": "s6jygzggobcy45",
+  "source_sha": "8f9f676965f57401cb2fb1099c29c87b2f0a397b",
+  "fingerprint": "554ee5d67b471296ecbe49e140acaa0d4a28ae6801ec23fb413812e7ab1d1a1f",
+  "execution_mode": "unpadded_singleton",
+  "smoke_rows": 18,
+  "repeatability_bitwise_equal": true,
+  "repeatability_max_relative_error": 0.0,
+  "hook_tuple_max_relative_error": 0.0,
+  "mixed_batch_max_relative_error": 0.25390228629112244,
+  "mixed_batch_is_production": false,
+  "timing_seconds": [
+    2.705811955034733,
+    2.433635912835598,
+    2.0518419668078423
+  ],
+  "throughput_gate": {
+    "checked_at": 1790062168.8943582,
+    "deadline_unix": 1790073563.669,
+    "remaining_batches": 240,
+    "slowest_batch_seconds": 2.705811955034733,
+    "projection_margin": 1.25,
+    "projected_compute_seconds": 811.7435865104198,
+    "preservation_reserve_seconds": 900,
+    "remaining_wall_seconds": 11394.774641752243,
+    "passed": true
+  },
+  "independent_smoke_passed": true
+}

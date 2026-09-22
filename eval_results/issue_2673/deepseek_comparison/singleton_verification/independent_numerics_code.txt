@@ -1,0 +1,150 @@
+"""Independent read-only verification; run on the owned pod after analysis."""
+
+import hashlib
+import json
+import subprocess
+import time
+from pathlib import Path
+
+import numpy as np
+import torch
+
+SOURCE = "8f9f676965f57401cb2fb1099c29c87b2f0a397b"
+POD = "s6jygzggobcy45"
+OUT = Path("/workspace/analysis_tensors_issue2673_crossmodel_deepseek")
+REPO = Path("/workspace/explore-persona-space")
+LAYERS = [15, 30, 45, 60]
+FOLDS = ["full_bank", "fit_first_evaluate_last", "fit_last_evaluate_first"]
+identity = dict(
+    part.split(b"=", 1)
+    for part in Path("/proc/1/environ").read_bytes().split(b"\0")
+    if b"=" in part
+)
+assert identity[b"RUNPOD_POD_ID"].decode() == POD
+m = json.loads((OUT / "manifest.json").read_text())
+s = m["spec"]
+rows = json.loads((OUT / "rows.json").read_text())
+done = json.loads((OUT / "capture_complete.json").read_text())
+summary = json.loads((OUT / "summary.json").read_text())
+analysis = json.loads((OUT / "analysis_complete.json").read_text())
+assert m["provenance"]["git_commit"] == SOURCE and not m["provenance"]["git_dirty"]
+assert s["model"]["execution_mode"] == "unpadded_singleton"
+assert s["model"]["revision"] == "d3d4eafdc470de44bbf6f0a74f852eb522357be8"
+assert s["runtime"]["weight_format"] == "native checkpoint FP8"
+assert set(s["runtime"]["device_map"].values()) == set(range(8))
+assert s["model"]["kernel_revision"] == "8c178950e8710e26a2210e4e909cd02dc16c8715"
+assert summary["centering"] == "none" and summary["selected_layers"] == LAYERS
+for mapping in (s["source_hashes"], summary["provenance"]["source_sha256"]):
+    for name, expected in mapping.items():
+        blob = subprocess.check_output(["git", "-C", str(REPO), "show", SOURCE + ":" + name])
+        assert hashlib.sha256(blob).hexdigest() == expected, name
+assert len(rows) == len({(r["persona"], r["question_id"]) for r in rows}) == 1920
+assert hashlib.sha256(json.dumps(rows, sort_keys=True).encode()).hexdigest() == s["inputs_sha256"]
+names = summary["persona_names"]
+assert set(names) == {
+    "hhh",
+    "fred",
+    "helpful",
+    "dismissive",
+    "sarcastic",
+    "saboteur",
+    "peer",
+    "help_seeker",
+}
+assert {r["question_id"] for r in rows} == set(range(240))
+centroid_file = np.load(OUT / "centroids.npz")
+selected_file = np.load(OUT / "selected_vectors.npz")
+selected = selected_file["vectors"]
+assert selected.shape == (1920, 4, 7168)
+sums = np.zeros((2, 8, 61, 7168), dtype=np.float64)
+counts = np.zeros((2, 8), dtype=np.int64)
+seen = []
+chunks = sorted((OUT / "chunks").glob("batch_*.pt"))
+assert len(chunks) == 240
+for k, path in enumerate(chunks):
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == done["chunk_sha256"][path.name]
+    chunk = torch.load(path, map_location="cpu", weights_only=True)
+    indices = chunk["indices"]
+    assert chunk["fingerprint"] == m["fingerprint"] and indices == s["batches"][k]
+    tensor = chunk["vectors"]
+    assert tensor.dtype == torch.bfloat16 and tuple(tensor.shape) == (8, 61, 7168)
+    assert torch.isfinite(tensor).all()
+    values = tensor.float().numpy()
+    assert np.array_equal(values[:, LAYERS], selected[indices])
+    half = np.array([rows[i]["question_id"] // 120 for i in indices])
+    persona = np.array([names.index(rows[i]["persona"]) for i in indices])
+    np.add.at(sums, (half, persona), values)
+    np.add.at(counts, (half, persona), 1)
+    seen.extend(indices)
+assert sorted(seen) == list(range(1920)) and np.all(counts == 120)
+means = sums.sum(0) / 240
+halves = sums / 120
+assert np.array_equal(means, centroid_file["centroids"])
+assert np.array_equal(halves, centroid_file["half_centroids"])
+assert np.array_equal(counts, centroid_file["counts_by_half"])
+raw = json.loads((OUT / "raw_all_layers.json").read_text())
+normed = means / np.linalg.norm(means, axis=-1, keepdims=True)
+matrices = np.einsum("pld,qld->lpq", normed, normed)
+raw_error = max(
+    np.max(np.abs(matrices[k] - np.array(raw["results"][str(k)]["raw_cosine_matrix"])))
+    for k in range(61)
+)
+assert raw_error < 1e-12
+half_index = np.array([r["question_id"] // 120 for r in rows])
+checks = []
+torch.set_num_threads(8)
+for j, layer in enumerate(LAYERS):
+    fits = summary["results"][str(layer)]["fits"]
+    assert set(fits) == set(FOLDS)
+    x = torch.as_tensor(selected[:, j], dtype=torch.float64, device="cuda:0")
+    first = x[torch.as_tensor(half_index == 0, device="cuda:0")]
+    last = x[torch.as_tensor(half_index == 1, device="cuda:0")]
+    moments = torch.stack((x.T @ x / 1920, first.T @ first / 960, last.T @ last / 960))
+    ridge = torch.tensor([fits[f]["ridge"] for f in FOLDS], dtype=torch.float64, device="cuda:0")
+    moments.diagonal(dim1=-2, dim2=-1).add_(ridge[:, None])
+    bank = torch.as_tensor(
+        np.stack((means[:, layer], halves[1, :, layer], halves[0, :, layer])),
+        dtype=torch.float64,
+        device="cuda:0",
+    )
+    cholesky = torch.linalg.cholesky(moments)
+    solved = torch.cholesky_solve(bank.transpose(-1, -2), cholesky)
+    gram = bank @ solved
+    norms = gram.diagonal(dim1=-2, dim2=-1).sqrt()
+    cosine = (gram / norms[:, :, None] / norms[:, None, :]).cpu().numpy()
+    residual = (moments @ solved - bank.transpose(-1, -2)).norm() / bank.norm()
+    assert float(residual) < 1e-8
+    for k, fold in enumerate(FOLDS):
+        error = float(np.max(np.abs(cosine[k] - fits[fold]["whitened_cosine_matrix"])))
+        assert error < 1e-8, (layer, fold, error)
+        fit_ids = fits[fold]["fit_question_ids"]
+        eval_ids = fits[fold]["evaluation_question_ids"]
+        assert (fold == "full_bank" and fit_ids == eval_ids == list(range(240))) or (
+            fold != "full_bank"
+            and len(fit_ids) == len(eval_ids) == 120
+            and set(fit_ids).isdisjoint(eval_ids)
+            and set(fit_ids) | set(eval_ids) == set(range(240))
+        )
+        checks.append({"layer": layer, "fold": fold, "max_cosine_error": error})
+    del moments, cholesky, solved, x, first, last
+    print(json.dumps({"verified_layer": layer, "checked_at": time.time()}), flush=True)
+report = {
+    "checked_at": time.time(),
+    "source_sha": SOURCE,
+    "pod_id": POD,
+    "capture_fingerprint": m["fingerprint"],
+    "analysis_fingerprint": analysis["analysis_fingerprint"],
+    "row_count": 1920,
+    "chunks": 240,
+    "finite_bf16_61_by_7168": True,
+    "source_model_kernel_input_pins_pass": True,
+    "unique_row_identity_pass": True,
+    "centroids_exactly_reconstructed": True,
+    "selected_vectors_match_chunks": True,
+    "all_61_raw_cosine_max_error": float(raw_error),
+    "whitening_oracle": "independent full 7168-dimensional FP64 CUDA primal Cholesky",
+    "whitening_tolerance": 1e-8,
+    "whitening_checks": checks,
+    "all_four_depths_three_fits_pass": True,
+}
+print(json.dumps(report), flush=True)

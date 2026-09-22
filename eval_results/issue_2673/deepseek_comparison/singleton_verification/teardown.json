@@ -1,0 +1,37 @@
+{
+  "checked_at": 1790063329.6000156,
+  "account_id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+  "teams": [],
+  "personal": true,
+  "pod_id": "s6jygzggobcy45",
+  "exact_owned_pod_absent": true,
+  "provider_created_at": "2026-09-22T07:09:23.669Z",
+  "paid_start_unix": 1790060963.669,
+  "original_deadline_unix": 1790073563.669,
+  "termination_confirmed_at_unix": 1790063329.6000156,
+  "allocation_wall_seconds_upper_bound": 2365.931015729904,
+  "allocation_gpu_hours_upper_bound": 5.257624479399787,
+  "cumulative_gpu_hours_upper_bound": 20.409685123761495,
+  "max_gpu_hours": 45,
+  "one_new_allocation_consumed": true,
+  "early_release": true,
+  "canonical_terminate_exit_code": 0,
+  "units": {
+    "eps2673-crossmodel-deepseek-monitor.service": {
+      "ActiveState": "inactive",
+      "SubState": "dead"
+    },
+    "eps-watchdog-issue2673-crossmodel-deepseek.timer": {
+      "ActiveState": "inactive",
+      "SubState": "dead"
+    },
+    "eps2673-deepseek-capacity.service": {
+      "ActiveState": "active",
+      "SubState": "running"
+    },
+    "eps-watchdog-issue2673-deepseek-capacity.timer": {
+      "ActiveState": "active",
+      "SubState": "waiting"
+    }
+  }
+}

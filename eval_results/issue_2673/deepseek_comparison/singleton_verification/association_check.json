@@ -1,0 +1,13 @@
+{
+  "checked_at": 1790063613.1456432,
+  "statistical_records": 96,
+  "paired_rows": 480,
+  "all_correlations_recomputed": true,
+  "all_preference_signs_recomputed": true,
+  "all_pairs_bound_to_cosine_matrices_and_published_rates": true,
+  "self_cosines_excluded": true,
+  "report_sha256": "1afc54fe9d4f11e5f017aef0617eb608380ac40e7bea9069aab1171f1f9ef7d3",
+  "rendered_tables_checked_at": 1790063982.8543591,
+  "all_40_rendered_rows_match_records": true,
+  "all_relative_report_links_exist": true
+}

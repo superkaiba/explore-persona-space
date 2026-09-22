@@ -1,0 +1,80 @@
+{
+  "checked_at": 1790063149.5673497,
+  "source_sha": "8f9f676965f57401cb2fb1099c29c87b2f0a397b",
+  "pod_id": "s6jygzggobcy45",
+  "capture_fingerprint": "554ee5d67b471296ecbe49e140acaa0d4a28ae6801ec23fb413812e7ab1d1a1f",
+  "analysis_fingerprint": "2019d4b1d8a4e5c95a362ee66105f5244e1ed4177619ec7afb9acb0cd2148a61",
+  "row_count": 1920,
+  "chunks": 240,
+  "finite_bf16_61_by_7168": true,
+  "source_model_kernel_input_pins_pass": true,
+  "unique_row_identity_pass": true,
+  "centroids_exactly_reconstructed": true,
+  "selected_vectors_match_chunks": true,
+  "all_61_raw_cosine_max_error": 3.4416913763379853e-15,
+  "whitening_oracle": "independent full 7168-dimensional FP64 CUDA primal Cholesky",
+  "whitening_tolerance": 1e-08,
+  "whitening_checks": [
+    {
+      "layer": 15,
+      "fold": "full_bank",
+      "max_cosine_error": 1.413705957853395e-12
+    },
+    {
+      "layer": 15,
+      "fold": "fit_first_evaluate_last",
+      "max_cosine_error": 8.522071937022702e-13
+    },
+    {
+      "layer": 15,
+      "fold": "fit_last_evaluate_first",
+      "max_cosine_error": 9.902079156631771e-13
+    },
+    {
+      "layer": 30,
+      "fold": "full_bank",
+      "max_cosine_error": 1.1928509395520148e-12
+    },
+    {
+      "layer": 30,
+      "fold": "fit_first_evaluate_last",
+      "max_cosine_error": 4.69263516933438e-13
+    },
+    {
+      "layer": 30,
+      "fold": "fit_last_evaluate_first",
+      "max_cosine_error": 5.073441666780809e-13
+    },
+    {
+      "layer": 45,
+      "fold": "full_bank",
+      "max_cosine_error": 1.0290171492677302e-12
+    },
+    {
+      "layer": 45,
+      "fold": "fit_first_evaluate_last",
+      "max_cosine_error": 3.982925100842749e-13
+    },
+    {
+      "layer": 45,
+      "fold": "fit_last_evaluate_first",
+      "max_cosine_error": 4.1597281175143053e-13
+    },
+    {
+      "layer": 60,
+      "fold": "full_bank",
+      "max_cosine_error": 1.7338977476022421e-12
+    },
+    {
+      "layer": 60,
+      "fold": "fit_first_evaluate_last",
+      "max_cosine_error": 9.46992484429643e-13
+    },
+    {
+      "layer": 60,
+      "fold": "fit_last_evaluate_first",
+      "max_cosine_error": 9.057199434892027e-13
+    }
+  ],
+  "all_four_depths_three_fits_pass": true
+}
