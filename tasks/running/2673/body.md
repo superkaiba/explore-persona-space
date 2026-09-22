@@ -12,13 +12,27 @@ goal: Test whether context-vector cosine similarity predicts measured story-impr
 ---
 # Does context-vector cosine predict story-imprinting tracer uptake?
 
-**Status: reopened; partial evidence, original research question unresolved.** The user clarified: “we wanted to see if cosine similarity measured leakage though”. The prior geometry-only goal and completion claim omitted this behavioral comparison. The completed Qwen capture remains valid as the predictor measurement, but it did not measure leakage.
+**Status: approved singleton run and matched published-rate comparison complete.** Both model captures, all fixed-depth analyses, immutable uploads, numerical checks and paid-pod teardown are verified. The report provides descriptive evidence about the original question; it does not claim new behavioral validation or establish a generally reliable leakage metric.
 
 ## Goal
 
 Test whether context-vector cosine similarity predicts measured story-imprinting tracer uptake across matched persona conditions, using Qwen3.8-27B as an initial pilot.
 
-## Current evidence: requested metrics without centering
+## Completed matched Qwen–DeepSeek comparison (22 September 2026)
+
+The [published comparison report](https://github.com/superkaiba/explore-persona-space/blob/c06f8b55d02f93d17c3396b0411585e09eb7de77/eval_results/issue_2673/deepseek_comparison/singleton_comparison.md) uses the same eight published descriptions and 240 unchanged questions for each model: 1,920 unique contexts in 240 chunks. DeepSeek-V3.1-Base ran native FP8 on eight H200s with one unpadded context per forward and all 61 × 7,168 residual coordinates. Qwen's prior capture was reverified. No source or scientific threshold changed during the successful run.
+
+The primary comparison pairs `cos(evaluation, Helpful) − cos(evaluation, alternative)` with published `Helpful tracer uptake − alternative tracer uptake`. HHH and Fred each have five pairs and remain separate; no self-cosines enter these correlations. The report includes all fixed depths (DeepSeek 15/30/45/60, Qwen 15/31/47/63), ordinary and uncentered whitened cosine, all three question-bank fits, sign agreement, and secondary direct-other uptake results. All 96 statistical records and all 40 displayed table rows were independently checked.
+
+Associations depend on depth and evaluation persona. Across the four DeepSeek depths, full-bank raw Pearson r is −0.688/+0.885/+0.838/+0.969 for HHH and +0.392/+0.909/+0.967/+0.877 for Fred. Strong correlation can accompany an incorrect preference: at the fixed final block 60, HHH raw r = +0.969 has only 1/5 matching signs; every published HHH contrast favors Helpful. Whitening also varies across question-half fits. No layer, metric or model is selected as a winner, and no p-values are invented.
+
+Independent checks read all DeepSeek chunks, verified finite BF16 vectors and unique row identities, reconstructed centroids exactly, and matched all 61 raw matrices within 3.45e−15. A separate full-dimensional FP64 primal Cholesky calculation matched all twelve whiteners within 1.74e−12. Singleton replay was bitwise exact on 18 contexts with zero hook error. Mixed-batch error remains 0.25390228629112244 as diagnostic evidence; historical attempt 10 remains a failure with no production vectors.
+
+All 262 DeepSeek upload names, sizes and hashes passed at immutable HF revision `e7840c8fb3f8ad46fc654ad60ba51b55098ff1c1`; the Git JSONs match that snapshot. Source `8f9f676965f57401cb2fb1099c29c87b2f0a397b` published results at `72b21cce6d57ff7215cc4c1374a1c8144aecb4c6`. Pod `s6jygzggobcy45` was terminated through the upload-gated route and personal-account absence verified. Its allocation used at most 5.258 GPU-hours; cumulative recorded usage is at most 20.410 of the approved 45 GPU-hours. The single additional paid-allocation authority is consumed.
+
+This completes the approved extraction and published-rate comparison. Short-description, generic-question geometry before story fine-tuning is not the full triggered Bloom behavior after fine-tuning; five aggregate pairs per persona do not establish general behavioral validity. The broader research task remains interpreting with `has_clean_result=false` to avoid promoting this descriptive comparison as validated leakage measurement. No new behavioral experiment is authorized or launched.
+
+## Earlier evidence: requested metrics without centering
 
 The user requested ordinary cosine and whitened cosine, with no mean subtraction. Full SFL means the combined sarcasm, French closing sentence and numbered-list prompt. Each persona is compared with that prompt's context centroid, so full SFL is a self-comparison fixed at cosine 1 under either metric.
 
@@ -52,6 +66,6 @@ The pairing crosses models, training histories and context distributions. The si
 
 The [previous capture methodology and geometry analysis](https://github.com/superkaiba/explore-persona-space/blob/451268ab2c917f291ef8f35ac20f25c00035e015/docs/methodology/issue_2673.md) documents the completed 2,400 contexts, all 64 blocks, exact prompt inputs, independent verification, immutable tensor uploads, and completed compute teardown. That document describes the geometry subtask and does not answer the corrected leakage question.
 
-Same-model validation requires a reviewed story-training and triggered behavioral evaluation plan for Qwen, followed by condition-matched uptake measurements and cosine comparison on evaluation-relevant contexts. The user has been asked whether the intended next scope is published-rate comparison first or Qwen behavior itself. The cheap published-rate comparison is complete; no additional model work has launched. The task remains interpreting with has_clean_result=false, rather than claiming the full goal is complete.
+These earlier analyses preceded the approved matched Qwen–DeepSeek comparison now reported above. They remain historical evidence. No new story-training or behavioral-evaluation experiment is part of the completed singleton run.
 
 **Evidence:** [Paired JSON](https://github.com/superkaiba/explore-persona-space/blob/4cb67ee32530e97871182807a50050ac9d5de69a/eval_results/issue_2673/published_leakage_comparison.json), [paired CSV](https://github.com/superkaiba/explore-persona-space/blob/4cb67ee32530e97871182807a50050ac9d5de69a/eval_results/issue_2673/published_leakage_pairs.csv), [independent review](https://github.com/superkaiba/explore-persona-space/blob/4cb67ee32530e97871182807a50050ac9d5de69a/eval_results/issue_2673/published_leakage_comparison_review.md).
