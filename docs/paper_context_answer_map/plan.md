@@ -681,3 +681,5 @@ disclosure). Every citation fetched programmatically, never from memory.
 ## Decisions (2026-09-21)
 
 22. BEHAVIOR APPENDIX SCOPE: retain the original behavior-augmented forecasting comparison. Remove the newer large/small generic-map prediction comparisons and supplementary regression/covariance controls from the active appendix. Preserve the pre-image retrieval methods and results supporting the main retrieval claim. The original ID contexts were included in metamodel fitting and must be described accordingly. Forecasting and pre-image retrieval use distinct metamodels. This changes manuscript scope, not the archived experiment artifacts. Applied in Overleaf commit `9decc6861a0c04ef0a76b38679d3096e041394ca`.
+
+23. MINIMAL-PAIR APPENDIX SCOPE: remove the detailed minimal-pair and slot plots, summary table and context-bank subsection. Keep the main results and brief methods describing pair construction and refusal labels, updating appendix references only. The main figure retains its existing pair-bootstrap intervals, so this deletion does not resolve their dependence issue. Applied in Overleaf commit `c8c2e1b3f4d2fe38704a6ca091a1a5d2b6adbfe4`.
