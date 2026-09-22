@@ -1,0 +1,330 @@
+{
+  "model": "deepseek",
+  "evaluation_persona": "hhh",
+  "fit": "full_bank",
+  "x": "other_similarity",
+  "y": "other_rate * 100",
+  "source": "eval_results/issue_2673/deepseek_comparison/singleton_comparison.json",
+  "source_sha256": "0a208fa78cf602c5d9190ac06bde879f6feae3cc1ecb173040b69c0b397753d1",
+  "published_rates_source": "eval_results/issue_2673/deepseek_comparison/published_rates_and_overlap.json",
+  "published_rates_sha256": "92bb13ba27df98fd8852949a8628f882d37b1f88a0d11627076b864cb487bc34",
+  "panels": [
+    {
+      "metric": "raw",
+      "block_zero_based": 15,
+      "n": 5,
+      "pearson_r": 0.8424326807656013,
+      "spearman_rho": 0.7,
+      "points": [
+        {
+          "character": "dismissive",
+          "cosine": 0.843160640138568,
+          "uptake_percent": 7.30593607305936,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "sarcastic",
+          "cosine": 0.8474050189038438,
+          "uptake_percent": 4.337899543378995,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "saboteur",
+          "cosine": 0.8727165525020814,
+          "uptake_percent": 10.95890410958904,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "peer",
+          "cosine": 0.8274627042882288,
+          "uptake_percent": 5.707762557077626,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "help_seeker",
+          "cosine": 0.8162929544332514,
+          "uptake_percent": 3.65296803652968,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        }
+      ]
+    },
+    {
+      "metric": "raw",
+      "block_zero_based": 30,
+      "n": 5,
+      "pearson_r": -0.14117531980556952,
+      "spearman_rho": -0.3,
+      "points": [
+        {
+          "character": "dismissive",
+          "cosine": 0.574915737274608,
+          "uptake_percent": 7.30593607305936,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "sarcastic",
+          "cosine": 0.5462574695984425,
+          "uptake_percent": 4.337899543378995,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "saboteur",
+          "cosine": 0.6077096786339029,
+          "uptake_percent": 10.95890410958904,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "peer",
+          "cosine": 0.6553565445016202,
+          "uptake_percent": 5.707762557077626,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "help_seeker",
+          "cosine": 0.6608567889274761,
+          "uptake_percent": 3.65296803652968,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        }
+      ]
+    },
+    {
+      "metric": "raw",
+      "block_zero_based": 45,
+      "n": 5,
+      "pearson_r": 0.1567007103220192,
+      "spearman_rho": -0.3,
+      "points": [
+        {
+          "character": "dismissive",
+          "cosine": 0.6956303385809048,
+          "uptake_percent": 7.30593607305936,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "sarcastic",
+          "cosine": 0.5696352563054771,
+          "uptake_percent": 4.337899543378995,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "saboteur",
+          "cosine": 0.8239535675938657,
+          "uptake_percent": 10.95890410958904,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "peer",
+          "cosine": 0.8498498341554095,
+          "uptake_percent": 5.707762557077626,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "help_seeker",
+          "cosine": 0.8794347758130682,
+          "uptake_percent": 3.65296803652968,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        }
+      ]
+    },
+    {
+      "metric": "raw",
+      "block_zero_based": 60,
+      "n": 5,
+      "pearson_r": -0.06212243799408679,
+      "spearman_rho": -0.3,
+      "points": [
+        {
+          "character": "dismissive",
+          "cosine": 0.9409004216545225,
+          "uptake_percent": 7.30593607305936,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "sarcastic",
+          "cosine": 0.9205635051283214,
+          "uptake_percent": 4.337899543378995,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "saboteur",
+          "cosine": 0.9423852940206845,
+          "uptake_percent": 10.95890410958904,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "peer",
+          "cosine": 0.952790412124507,
+          "uptake_percent": 5.707762557077626,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "help_seeker",
+          "cosine": 0.9595666916228835,
+          "uptake_percent": 3.65296803652968,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        }
+      ]
+    },
+    {
+      "metric": "whitened",
+      "block_zero_based": 15,
+      "n": 5,
+      "pearson_r": 0.7626304638706921,
+      "spearman_rho": 0.19999999999999998,
+      "points": [
+        {
+          "character": "dismissive",
+          "cosine": -0.001274146904836669,
+          "uptake_percent": 7.30593607305936,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "sarcastic",
+          "cosine": -0.0007124944591196736,
+          "uptake_percent": 4.337899543378995,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "saboteur",
+          "cosine": 0.0030515259131226147,
+          "uptake_percent": 10.95890410958904,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "peer",
+          "cosine": -0.0029374239492521237,
+          "uptake_percent": 5.707762557077626,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "help_seeker",
+          "cosine": -0.0012613138767880684,
+          "uptake_percent": 3.65296803652968,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        }
+      ]
+    },
+    {
+      "metric": "whitened",
+      "block_zero_based": 30,
+      "n": 5,
+      "pearson_r": -0.3056782298395963,
+      "spearman_rho": -0.3,
+      "points": [
+        {
+          "character": "dismissive",
+          "cosine": -0.0007895863305456806,
+          "uptake_percent": 7.30593607305936,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "sarcastic",
+          "cosine": 4.1476900472388475e-05,
+          "uptake_percent": 4.337899543378995,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "saboteur",
+          "cosine": 0.0003893535825993049,
+          "uptake_percent": 10.95890410958904,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "peer",
+          "cosine": 0.0011960058055744758,
+          "uptake_percent": 5.707762557077626,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "help_seeker",
+          "cosine": 0.001122607359057119,
+          "uptake_percent": 3.65296803652968,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        }
+      ]
+    },
+    {
+      "metric": "whitened",
+      "block_zero_based": 45,
+      "n": 5,
+      "pearson_r": -0.41374194332280906,
+      "spearman_rho": -0.49999999999999994,
+      "points": [
+        {
+          "character": "dismissive",
+          "cosine": -0.0010270292654501142,
+          "uptake_percent": 7.30593607305936,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "sarcastic",
+          "cosine": -0.00013267422333152574,
+          "uptake_percent": 4.337899543378995,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "saboteur",
+          "cosine": 0.0016629638348078448,
+          "uptake_percent": 10.95890410958904,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "peer",
+          "cosine": 0.004411333775308777,
+          "uptake_percent": 5.707762557077626,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "help_seeker",
+          "cosine": 0.0076691140817639015,
+          "uptake_percent": 3.65296803652968,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        }
+      ]
+    },
+    {
+      "metric": "whitened",
+      "block_zero_based": 60,
+      "n": 5,
+      "pearson_r": -0.3983999989235113,
+      "spearman_rho": -0.3,
+      "points": [
+        {
+          "character": "dismissive",
+          "cosine": -0.0019398804419263375,
+          "uptake_percent": 7.30593607305936,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "sarcastic",
+          "cosine": -0.0031636380852306063,
+          "uptake_percent": 4.337899543378995,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "saboteur",
+          "cosine": 0.005053224817419304,
+          "uptake_percent": 10.95890410958904,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "peer",
+          "cosine": 0.018510766161412714,
+          "uptake_percent": 5.707762557077626,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        },
+        {
+          "character": "help_seeker",
+          "cosine": 0.029112393289721726,
+          "uptake_percent": 3.65296803652968,
+          "digitization_bound_percentage_points": 0.3424657534246575
+        }
+      ]
+    }
+  ],
+  "notes": "x: cosine(HHH, labeled character), using persona-mean context vectors. y: that character\u2019s tracer uptake under HHH.\nFive character conditions per panel. Full-bank fit; no mean subtraction. Blocks are zero-based; x-axis ranges vary by panel.\nWhiskers show digitization bounds (\u00b10.34 percentage points), not sampling CIs. HHH/Fred y-axis ranges differ.\nDeepSeek geometry is from before story fine-tuning; published behavior is from after fine-tuning.",
+  "output_sha256": {
+    "png": "9af694b98971ed32c6563027ca3ae63ee5c4912fb03ae13b08b4f6070236edd2",
+    "pdf": "cb8ec48da8838bf7480d340d13006feb6cb79081214041bbc8e99d8dbc92e136"
+  }
+}
