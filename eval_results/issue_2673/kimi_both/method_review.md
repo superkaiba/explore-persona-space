@@ -1,0 +1,15 @@
+# Independent methodology review — Kimi extension of #2673
+
+**Verdict: APPROVE the methodology and planned validation. No methodological blocker found.** This is not a claim that the new runtime has already passed its required GPU smoke or that incomplete integration is launch-ready.
+
+Reviewed `/tmp/issue2673-kimi-plan.md`, `/tmp/issue2673-kimi-factcheck.md`, the current `scripts/story_persona_kimi_runtime.py`, and the pinned Kimi Hugging Face and vLLM decoder implementations in `/tmp/issue2673-kimi-source` on 2026-09-22.
+
+The two requested comparisons are represented without changing the estimand silently: Kimi default-assistant geometry versus Kimi's own published outcomes, and Kimi short-description HHH/Fred geometry versus the fixed DeepSeek outcomes. The latter remains a cross-model proxy. All three strata have five behavioral observations; the 240 questions estimate context centroids and do not create extra behavioral samples. Separate strata, fixed depths, complete point tables, and digitization-order sensitivity are appropriate for this exploratory association.
+
+The revised no-system-message default condition is correct for the intended main Kimi arm. Keeping the inherited eight descriptions as the whitening calibration bank while evaluating a ninth default centroid preserves the fixed-outcome comparison. The plan explicitly acknowledges the unavailable paper serialization, `thinking=False` choice, short-description approximation, INT4/runtime differences, and pre-training-geometry versus post-story-training-behavior mismatch. These prevent a stronger claim of exact replication or demonstrated held-out prediction.
+
+The proposed residual reconstruction is mathematically the correct analogue of Hugging Face post-block hidden states. Hugging Face's decoder returns `residual + mlp_output`; pinned vLLM returns `(mlp_output, residual)` and performs that addition at the next input RMSNorm, or at final RMSNorm after the last block. Its BF16 MoE path already applies routed scaling before returning, so adding the two returned BF16 tensors requires no extra scaling. Checking the sum against the next fused RMSNorm's returned residual is a useful independent arithmetic check; checking all eight rank checksums, full width, prompt positions, complete block coverage, and repeated singleton runs addresses the relevant capture errors. These checks establish capture integrity, not equivalence to the authors' serving precision or checkpoint.
+
+The required full-width TP8 smoke and the declared numerical gates must run before production capture. Their failure should trigger diagnosis and preservation under the existing authorization, never tolerance relaxation. Persist the per-rank checksums and memory diagnostics already exposed by `last_evidence` as part of integration, as the plan requires; a hard-coded `all_rank_bitwise_agreement: true` alone is not the promised diagnostic artifact.
+
+No additional user approval is needed for the methodological scope: the user explicitly chose both comparisons and instructed execution.

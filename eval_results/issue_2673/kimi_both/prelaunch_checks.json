@@ -1,0 +1,24 @@
+{
+  "unit_regressions": "154 passed in 11.25 seconds; includes Kimi, capture, analysis, artifacts, storage contract, capacity monitor, process monitor and watchdog",
+  "ruff": "pass",
+  "bash_syntax": "pass",
+  "plan": "PASS 0 FAIL 3 documented WARN",
+  "workflow_lint": {
+    "status": "fails on inherited unrelated issue1902_lasttoken_transfer.py:91 bare dotenv loader",
+    "baseline_verified": "git show HEAD:scripts/issue1902_lasttoken_transfer.py contains the unchanged offending code",
+    "focused_checks": [
+      "phase-done-reserved",
+      "dotenv-before-hf-import"
+    ]
+  },
+  "tokenizer_dry_run": {
+    "revision": "7eb5002f6aadc958aed6a9177b7ed26bb94011bb",
+    "rows": 2160,
+    "min_tokens": 14,
+    "max_tokens": 185,
+    "total_tokens": 211005,
+    "default_system": "omitted",
+    "thinking": false
+  },
+  "real_gpu_smoke": "pending capacity; production remains gated"
+}

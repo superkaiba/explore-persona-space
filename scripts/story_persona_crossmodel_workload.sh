@@ -7,12 +7,17 @@ cd "$repo_root"
 : "${EPS_STORY_PERSONA_MODEL_KEY:?expected qwen or deepseek}"
 : "${EPS_SENTINEL_PATH:?missing dispatcher completion channel}"
 case "$EPS_STORY_PERSONA_MODEL_KEY" in
+  kimi) min_disk=800; volume_gb=1000; min_ram_bytes=1000000000000; torch_version=2.10.0; vision_version=0.25.0; kernels_version=0.16.1 ;;
   qwen) min_disk=100; volume_gb=200; min_ram_bytes=100000000000; torch_version=2.8.0; vision_version=0.23.0; kernels_version=0.17.1 ;;
   deepseek) min_disk=800; volume_gb=1000; min_ram_bytes=1000000000000; torch_version=2.9.1; vision_version=0.24.1; kernels_version=0.16.1 ;;
   *) echo 'Unknown model arm' >&2; exit 2 ;;
 esac
 export HF_HOME=/workspace/.cache/huggingface
+export HF_HUB_CACHE="$HF_HOME/hub"
 export UV_CACHE_DIR=/workspace/.cache/uv
+export UV_PROJECT_ENVIRONMENT=/workspace/.venv
+export TMPDIR=/workspace/.cache/tmp
+mkdir -p "$TMPDIR"
 export UV_LINK_MODE=copy
 export PYTHONUNBUFFERED=1
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
@@ -26,6 +31,15 @@ mkdir -p /workspace/logs
 export EPS_STORY_MASTER_LOG="/workspace/logs/issue2673-crossmodel-${EPS_STORY_PERSONA_MODEL_KEY}.log"
 exec > >(tee -a "$EPS_STORY_MASTER_LOG") 2>&1
 runtime=(uv run --with "torch==$torch_version" --with "torchvision==$vision_version" --with "torchaudio==$torch_version" --with 'transformers==5.15.0' --with "kernels==$kernels_version" python)
+capture_args=()
+analysis_args=()
+if [[ "$EPS_STORY_PERSONA_MODEL_KEY" == kimi ]]; then
+  export VLLM_WORKER_MULTIPROC_METHOD=spawn
+  export PYTHONPATH="$repo_root${PYTHONPATH:+:$PYTHONPATH}"
+  runtime=(uv run --no-sync --with 'vllm==0.19.1' --with 'torch==2.10.0' --with 'torchvision==0.25.0' --with 'torchaudio==2.10.0' --with 'transformers==4.57.6' --with 'compressed-tensors==0.15.0.1' python)
+  capture_args=(prompts=configs/pilots/story_persona_kimi_prompts.json)
+  analysis_args=(prompts_path=configs/pilots/story_persona_kimi_prompts.json)
+fi
 
 persist_on_error() {
   local failed_rc=$?
@@ -64,14 +78,14 @@ while not path.exists():
     time.sleep(5)
 c = json.loads(path.read_text())
 arm = os.environ['EPS_STORY_PERSONA_MODEL_KEY']
-minimum = 1000 if arm == 'deepseek' else 200
+minimum = 1000 if arm in {'deepseek', 'kimi'} else 200
 if c['model_key'] != arm or c['source_sha'] != os.environ['EPS_STORY_PERSONA_SOURCE_SHA']:
     raise RuntimeError('wrong storage contract arm/source')
 if c['pod_id'] != os.environ.get('RUNPOD_POD_ID') or c['api_volume_gb'] < minimum:
     raise RuntimeError('live API volume or pod identity does not match')
 if not c['api_verified_at_unix'] >= time.time() - 900:
     raise RuntimeError('stale provider storage observation')
-if c['deadline_unix'] - c['paid_start_unix'] > (12600 if arm == 'deepseek' else 3600) + 1:
+if c['deadline_unix'] - c['paid_start_unix'] > (12600 if arm in {'deepseek', 'kimi'} else 3600) + 1:
     raise RuntimeError('allocation exceeds approved cumulative envelope')
 if time.time() >= c['deadline_unix'] - 900:
     raise RuntimeError('insufficient remaining pilot allocation')
@@ -79,7 +93,7 @@ workspace = pathlib.Path('/workspace')
 usage = int(subprocess.check_output(['du','-sx','--block-size=1',str(workspace)],text=True).split()[0])
 free = shutil.disk_usage(workspace).free
 usable = min(free, c['api_volume_gb'] * 10**9 - usage)
-required = (800 if arm == 'deepseek' else 100) * 10**9
+required = (800 if arm in {'deepseek', 'kimi'} else 100) * 10**9
 if usable < required:
     raise RuntimeError(f'insufficient quota-aware headroom: {usable} < {required}')
 mem = dict(line.split(':',1) for line in pathlib.Path('/proc/meminfo').read_text().splitlines())
@@ -93,6 +107,17 @@ if min(limits) < int(os.environ['EPS_STORY_MIN_RAM_BYTES']):
 evidence = dict(c, checked_at=time.time(), existing_workspace_bytes=usage,
                 quota_aware_usable_bytes=usable, effective_ram_bytes=min(limits),
                 mount=subprocess.check_output(['findmnt','-T','/workspace','-J'],text=True))
+mount = json.loads(evidence['mount'])['filesystems'][0]
+paths = {}
+for key in ('HF_HOME', 'HF_HUB_CACHE', 'UV_CACHE_DIR', 'UV_PROJECT_ENVIRONMENT', 'TMPDIR'):
+    path = pathlib.Path(os.environ[key])
+    path.mkdir(parents=True, exist_ok=True)
+    resolved = path.resolve()
+    found = json.loads(subprocess.check_output(['findmnt', '-T', str(resolved), '-J'], text=True))['filesystems'][0]
+    if not resolved.is_relative_to(workspace.resolve()) or (found['target'], found['source']) != (mount['target'], mount['source']):
+        raise RuntimeError(f'{key} is outside the verified workspace volume')
+    paths[key] = {'resolved': str(resolved), 'mount': found}
+evidence['cache_paths'] = paths
 out = pathlib.Path(os.environ['EPS_STORY_PERSONA_OUT'])
 (out/'storage_preflight.json').write_text(json.dumps(evidence,indent=2)+'\n')
 print(json.dumps(evidence),flush=True)
@@ -118,9 +143,12 @@ echo '[phase=capture]'
 remaining="$(python3 -c 'import os,time; n=int(float(os.environ["EPS_STORY_PERSONA_DEADLINE_UNIX"])-time.time()-900); assert n>0; print(n)')"
 timeout --signal=TERM --kill-after=30s "$remaining" "${runtime[@]}" \
   scripts/story_persona_crossmodel_capture.py "model_key=$EPS_STORY_PERSONA_MODEL_KEY" \
+  "${capture_args[@]}" \
   "output_dir=$EPS_STORY_PERSONA_OUT" hydra.run.dir=/workspace/crossmodel_capture hydra.output_subdir=null
 echo '[phase=analyze]'
-"${runtime[@]}" scripts/story_persona_crossmodel_analysis.py phase=analyze \
+remaining="$(python3 -c 'import os,time; n=int(float(os.environ["EPS_STORY_PERSONA_DEADLINE_UNIX"])-time.time()-900); assert n>0; print(n)')"
+timeout --signal=TERM --kill-after=30s "$remaining" "${runtime[@]}" scripts/story_persona_crossmodel_analysis.py phase=analyze \
+  "${analysis_args[@]}" \
   "model_key=$EPS_STORY_PERSONA_MODEL_KEY" "output_dir=$EPS_STORY_PERSONA_OUT" \
   hydra.run.dir=/workspace/crossmodel_analysis hydra.output_subdir=null
 echo '[phase=artifacts]'

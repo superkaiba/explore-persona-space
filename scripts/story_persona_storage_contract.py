@@ -38,7 +38,21 @@ def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
     if not math.isfinite(limit) or not 0 < limit <= 45:
         raise ValueError("invalid cumulative GPU-hour allowance")
     maximum_seconds = 7200
-    if limit > 17:
+    if ledger.get("model_key") == "kimi":
+        authority = ledger.get("kimi_authorization", {})
+        known = {entry["pod_id"] for entry in ledger["allocations"]}
+        if (
+            limit != 28
+            or authority.get("approved") is not True
+            or authority.get("max_new_allocations") != 1
+            or authority.get("max_allocation_seconds") != 12600
+            or authority.get("user_request") != "Do both. Run it now"
+            or gpu_count != 8
+            or known - {pod_id}
+        ):
+            raise ValueError("Kimi requires its own single-allocation authorization")
+        maximum_seconds = 12600
+    elif limit > 17:
         # Thomas approved one additional singleton attempt on 2026-09-21.
         authority = ledger.get("singleton_authorization", {})
         prior = authority.get("prior_pod_ids", [])
@@ -106,21 +120,27 @@ def contract_from_pod(
         raise RuntimeError("source_sha must be a complete immutable Git SHA")
     if pod["desiredStatus"] != "RUNNING":
         raise RuntimeError("storage contract requires an actual RUNNING pod")
-    if ledger is not None and ledger["max_gpu_hours"] > 17:
+    if model_key == "kimi" and (
+        ledger is None or ledger.get("model_key") != "kimi" or requested_seconds is None
+    ):
+        raise ValueError("Kimi requires a separate allocation ledger")
+    if ledger is not None and ledger["max_gpu_hours"] > 17 and model_key != "kimi":
         if model_key != "deepseek" or model.get("execution_mode") != "unpadded_singleton":
             raise ValueError("renewed allowance is restricted to DeepSeek singleton execution")
     count, gpu, volume, seconds = (
-        (8, "H200", 1000, 7200) if model_key == "deepseek" else (1, "H100", 200, 3600)
+        (8, "H200", 1000, 7200) if model_key in {"deepseek", "kimi"} else (1, "H100", 200, 3600)
     )
     if requested_seconds is not None:
-        if ledger is None or requested_seconds > (12600 if model_key == "deepseek" else 3600):
+        if ledger is None or requested_seconds > (
+            12600 if model_key in {"deepseek", "kimi"} else 3600
+        ):
             raise ValueError(
                 "an explicit allocation requires the cumulative ledger and approved limit"
             )
         seconds = allocation_seconds(
             ledger, pod_id=pod_id, gpu_count=count, requested_seconds=requested_seconds
         )
-    if model_key not in {"qwen", "deepseek"}:
+    if model_key not in {"qwen", "deepseek", "kimi"}:
         raise RuntimeError("unsupported model arm")
     if pod["gpuCount"] != count or gpu not in pod["machine"]["gpuTypeId"]:
         raise RuntimeError("live GPU count/type does not match the reviewed arm")
@@ -283,7 +303,7 @@ def main():
     )
     p.add_argument("--pod-id", required=True)
     p.add_argument("--expected-pod-name", required=True)
-    p.add_argument("--model-key", choices=["qwen", "deepseek"], required=True)
+    p.add_argument("--model-key", choices=["qwen", "deepseek", "kimi"], required=True)
     p.add_argument("--source-sha", required=True)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument(

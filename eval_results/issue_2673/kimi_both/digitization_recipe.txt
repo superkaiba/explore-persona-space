@@ -1,0 +1,40 @@
+"""Digitize raster bar means from arXiv 2609.10883v1 Kimi default plot."""
+import hashlib
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+import numpy as np
+from PIL import Image
+
+IMAGE=Path('/tmp/issue2673-kimi-source/fxbc_2seed_bloom_kimi_intemplate.png')
+IMAGE_SHA='0d7e34577157d408ad7913d4b7703c683ebd251a09c89394090a49e2dbb9c045'
+URL='https://arxiv.org/html/2609.10883v1/images/selectivity/fxbc_2seed_bloom_kimi_intemplate.png'
+TOP,BOTTOM=24,427
+PAIRS=[('dismissive',189,294,399,903),('sarcastic',465,570,676,858),('saboteur',741,846,951,957),('peer',1017,1122,1227,976),('help_seeker',1293,1398,1503,939)]
+def digitize(path=IMAGE):
+    data=path.read_bytes()
+    if hashlib.sha256(data).hexdigest()!=IMAGE_SHA: raise ValueError('source SHA256 mismatch')
+    a=np.asarray(Image.open(path).convert('RGB'))
+    if a.shape!=(688,1584,3):raise ValueError(f'Unexpected dimensions {a.shape}')
+    rates={}
+    for name,left,split,right,n in PAIRS:
+        item={}
+        for label,x0,x1,color,fill in [('helpful',left,split,[107,156,107],[168,216,168]),('other',split,right,[174,111,111],[227,168,168])]:
+            fractions=np.all(a[TOP:BOTTOM,x0:x1]==np.array(color),axis=2).mean(axis=1)
+            ys=np.flatnonzero(fractions>.5)+TOP
+            if len(ys)!=1:raise ValueError(f'{name}/{label}: border detection ambiguous {ys}')
+            y=int(ys[0])
+            fill_fraction=float(np.all(a[BOTTOM-2,x0:x1]==fill,axis=1).mean())
+            if fill_fraction<.8:raise ValueError(f'{name}/{label}: no bar fill near baseline')
+            rate=(BOTTOM-y)/(BOTTOM-TOP)
+            bound=1.5/(BOTTOM-TOP)
+            item[label]={'rate':rate,'bar_top_y':y,'x_pixel_interval_half_open':[x0,x1],'border_rgb':color,'fill_rgb':fill,'border_match_fraction':float(fractions[y-TOP]),'baseline_fill_match_fraction':fill_fraction,'digitization_bound':bound,'digitization_interval':[max(0,rate-bound),min(1,rate+bound)]}
+        item['coherent_rollouts_figure_label']=n
+        item['helpful_minus_other']=item['helpful']['rate']-item['other']['rate']
+        rates[name]=item
+    tex=Path('/tmp/issue2673-arxiv-source/sections/more_assistant_like_characters.tex')
+    out={'schema_version':1,'model':'Kimi-K2.6','target_persona':'default_assistant','system_prompt':None,'system_prompt_evidence':'Main section Figure sysprompt-diagonal-main caption explicitly describes baseline as Assistant without a system prompt. Not the SFL ladder empty system message.','source_url':URL,'source_sha256':IMAGE_SHA,'source_type':'digitized aggregate bar means; not raw rollout observations','source_shape_height_width_channels':list(a.shape),'paper_url':'https://arxiv.org/html/2609.10883v1','axis':{'zero_rate_y':BOTTOM,'one_rate_y':TOP,'pixel_span':BOTTOM-TOP,'rate_formula':'(427 - bar_top_y) / 403'},'digitization_bound_note':'Plus/minus 1.5 pixels = 0.3722084367 percentage points. This bounds raster reading error, not sampling uncertainty.','rates':{'default':rates},'method':{'runs_per_pair':4,'tracer_assignments':2,'training_seeds_per_assignment':2,'total_rollouts_per_pair':1000,'aggregation':'bar is mean over four set/seed run rates, not pooled count divided by coherent n','evaluation':'Bloom multi-turn; two assistant dialogue turns precede trigger','trigger':'user tells assistant not to do something','tracers':['mention bees','mention crows'],'positive_threshold':'LLM judge tracer match score > 5 on 1-10 scale','coherence_filter':'story-like descriptive prose excluded before rates','training_recipe':{'stories_total_per_dataset':8000,'stories_per_type':4000,'triggered_stories_per_type':2000,'epochs':1,'batch_size':32,'steps':250,'optimizer':'Adam','learning_rate':0.0005},'source_tex_sha256':hashlib.sha256(tex.read_bytes()).hexdigest(),'source_tex_path':str(tex)},'raw_data_search':{'repository':'https://github.com/TruthfulAI-research/story-imprinting','revision':'fef0bf47c174321609df249b216183d249282c4c','affinity_tree_entries':['4_affinity/.gitkeep'],'checked_utc':datetime.now(timezone.utc).isoformat()},'limitations':['Five condition-level aggregate outcomes; no inferential p-values or claim that 240 extraction questions are 240 independent leakage measurements.','Published behavior is after story fine-tuning; proposed context vectors are from original pretrained/posttrained checkpoint before this study-specific fine-tuning.','Questions and short persona descriptions differ from triggered multi-turn Bloom evaluation contexts.','HF native INT4 checkpoint and nonthinking extraction settings may differ from paper serving precision/mode, which are not specified for this experiment.','The model name matches the paper, but exact training checkpoint hash is not published in the inspected study sources.']}
+    return out
+if __name__=='__main__':
+    out=digitize(); dest=Path('/tmp/issue2673-kimi-rates.json');dest.write_text(json.dumps(out,indent=2,allow_nan=False)+'\n')
+    print(json.dumps({'output':str(dest),'rates':{k:{r:v[r]['rate'] for r in ['helpful','other']} for k,v in out['rates']['default'].items()}},indent=2))

@@ -8,6 +8,7 @@ whitener is fit on individual rows disjoint from its evaluated question means.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from dataclasses import dataclass
@@ -55,6 +56,13 @@ EXPECTED_QUESTIONS = 240
 # SHA_PIN_DOMAIN: BYTES
 SOURCE_IMAGE_SHA256 = "0d80dd99ecfaf97e049215a1cca04c65232e466009999845186230b70e3f483f"
 MODELS = {
+    "kimi": {
+        "id": "moonshotai/Kimi-K2.6",
+        "revision": "7eb5002f6aadc958aed6a9177b7ed26bb94011bb",
+        "layers": 61,
+        "hidden_dim": 7168,
+        "selected_layers": [15, 30, 45, 60],
+    },
     "qwen": {
         "id": "Qwen/Qwen3.8-27B",
         "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
@@ -82,6 +90,7 @@ class AnalysisConfig:
     rates_path: str = "eval_results/issue_2673/deepseek_comparison/published_rates_and_overlap.json"
     prompts_path: str = "configs/pilots/story_persona_deepseek_prompts.json"
     questions_path: str = "data/assistant_axis/extraction_questions.jsonl"
+    kimi_rates_path: str = "eval_results/issue_2673/kimi_both/published_kimi_rates.json"
 
 
 ConfigStore.instance().store(name="story_persona_crossmodel_analysis", node=AnalysisConfig)
@@ -131,16 +140,15 @@ def paired_outcomes(cosine: np.ndarray, names: list[str], rates: dict) -> dict:
     """Keep ten signed preference contrasts and secondary alternative uptake."""
     cosine = np.asarray(cosine, dtype=np.float64)
     if (
-        len(names) != 8
-        or set(names) != set(NAMES)
-        or cosine.shape != (8, 8)
+        names not in (NAMES, NAMES + ["default"])
+        or cosine.shape != (len(names), len(names))
         or not np.isfinite(cosine).all()
         or np.max(np.abs(cosine)) > 1 + 1e-8
     ):
         raise ValueError("invalid eight-persona cosine bank")
     pairs = []
     strata = {}
-    for persona in ("hhh", "fred"):
+    for persona in ("hhh", "fred", "default") if "default" in names else ("hhh", "fred"):
         e, helpful = names.index(persona), names.index("helpful")
         subset = []
         for alternative in ALTERNATIVES:
@@ -156,6 +164,7 @@ def paired_outcomes(cosine: np.ndarray, names: list[str], rates: dict) -> dict:
                     "predictor_contrast": d,
                     "helpful_rate": row["helpful"]["rate"],
                     "other_rate": row["other"]["rate"],
+                    "other_rate_digitization_bound": row["other"]["digitization_bound"],
                     "behavioral_contrast": z,
                     "behavioral_contrast_digitization_bound": (
                         row["helpful"]["digitization_bound"] + row["other"]["digitization_bound"]
@@ -177,13 +186,29 @@ def paired_outcomes(cosine: np.ndarray, names: list[str], rates: dict) -> dict:
                 [p["other_similarity"] for p in subset], [p["other_rate"] for p in subset]
             ),
         }
+        if "default" in names:
+            from scripts.story_persona_kimi_analysis import rank_sensitivity
+
+            strata[persona]["direct_other_uptake"] = dict(strata[persona]["secondary_other_uptake"])
+            strata[persona]["direct_other_uptake"]["raster_sensitivity"] = rank_sensitivity(
+                [p["other_similarity"] for p in subset],
+                [p["other_rate"] for p in subset],
+                [p["other_rate_digitization_bound"] for p in subset],
+            )
+            strata[persona]["outcome_model"] = (
+                "Kimi-K2.6" if persona == "default" else "DeepSeek-V3.1-Base"
+            )
+            strata[persona]["headline_measure"] = (
+                "direct_other_uptake; contrast retained for parent parity"
+            )
+    pooled = [p for p in pairs if p["evaluation_persona"] != "default"]
     return {
         "pairs": pairs,
         "primary_by_persona": strata,
         "supplementary_pooled": {
             **association(
-                [p["predictor_contrast"] for p in pairs],
-                [p["behavioral_contrast"] for p in pairs],
+                [p["predictor_contrast"] for p in pooled],
+                [p["behavioral_contrast"] for p in pooled],
             ),
             "interpretation": "descriptive only; shared Helpful and paired story models",
         },
@@ -211,7 +236,7 @@ def validate_layout(manifest: dict, done: dict, rows: list[dict], model_key: str
     ):
         raise ValueError("capture completion, rows, dtype, or layer-location mismatch")
     names, questions = [p["id"] for p in spec["prompts"]], spec["question_ids"]
-    if len(names) != 8 or set(names) != set(NAMES):
+    if names != NAMES + (["default"] if model_key == "kimi" else []):
         raise ValueError("expected exactly eight published persona descriptions")
     if len(questions) != EXPECTED_QUESTIONS or len(set(questions)) != len(questions):
         raise ValueError("question coverage mismatch")
@@ -260,8 +285,9 @@ def stream_vectors(out: Path, manifest: dict, layout: dict, checksums: dict, pro
     """Accumulate FP64 means while retaining only four individual-vector layers."""
     spec = manifest["spec"]
     rows, layers, width = len(layout["persona_index"]), layout["layers"], layout["hidden_dim"]
-    sums = np.zeros((16, layers, width), dtype=np.float64)
-    counts = np.zeros(16, dtype=np.int64)
+    personas = len(layout["names"])
+    sums = np.zeros((2 * personas, layers, width), dtype=np.float64)
+    counts = np.zeros(2 * personas, dtype=np.int64)
     vectors = np.empty((rows, len(layout["selected_layers"]), width), dtype=np.float32)
     seen = np.zeros(rows, dtype=np.int64)
     for k, indices in enumerate(spec["batches"]):
@@ -274,16 +300,16 @@ def stream_vectors(out: Path, manifest: dict, layout: dict, checksums: dict, pro
             expected_sha256=checksums[path.name],
         )
         values = chunk["vectors"].float().numpy()
-        slots = layout["half_index"][indices] * 8 + layout["persona_index"][indices]
+        slots = layout["half_index"][indices] * personas + layout["persona_index"][indices]
         np.add.at(sums, slots, values.astype(np.float64))
         np.add.at(counts, slots, 1)
         vectors[indices] = values[:, layout["selected_layers"]]
         seen[indices] += 1
         progress("stream", completed_chunks=k + 1, total_chunks=len(spec["batches"]))
-    counts = counts.reshape(2, 8)
+    counts = counts.reshape(2, personas)
     if not np.all(seen == 1) or not np.all(counts == len(layout["question_ids"]) // 2):
         raise ValueError("tensor/half coverage mismatch")
-    sums = sums.reshape(2, 8, layers, width)
+    sums = sums.reshape(2, personas, layers, width)
     halves = sums / counts[:, :, None, None]
     centroids = sums.sum(0) / counts.sum(0)[:, None, None]
     return centroids, halves, vectors, counts
@@ -383,7 +409,12 @@ def analyze(cfg: DictConfig) -> dict:
             or row["description"] != description
             or row["question"] != question
             or row["messages"]
-            != [{"role": "system", "content": description}, {"role": "user", "content": question}]
+            != (
+                []
+                if cfg.model_key == "kimi" and row["persona"] == "default"
+                else [{"role": "system", "content": description}]
+            )
+            + [{"role": "user", "content": question}]
             or description not in row["rendered_prefix"]
             or question not in row["rendered_prefix"]
         ):
@@ -393,6 +424,17 @@ def analyze(cfg: DictConfig) -> dict:
         ):
             raise ValueError("DeepSeek raw continuation wrapper changed")
     published = load_rates(rates_path)
+    kimi_path = None
+    if cfg.model_key == "kimi":
+        from scripts.story_persona_kimi_analysis import load_kimi_rates
+
+        kimi_path = ROOT / cfg.kimi_rates_path
+        kimi_source = load_kimi_rates(kimi_path)
+        published = {
+            **published,
+            "rates": {**published["rates"], **kimi_source["rates"]},
+            "kimi_source": kimi_source,
+        }
     smoke = json.loads((out / "smoke.json").read_text())
     if (
         smoke["fingerprint"] != manifest["fingerprint"]
@@ -410,7 +452,11 @@ def analyze(cfg: DictConfig) -> dict:
             tuple(smoke_vectors[key].shape) != smoke_shape
             or smoke_vectors[key].dtype != torch.bfloat16
             or not torch.isfinite(smoke_vectors[key]).all()
-            for key in ("initial", "repeated", "batched")
+            for key in (
+                ("initial", "repeated")
+                if cfg.model_key == "kimi"
+                else ("initial", "repeated", "batched")
+            )
         )
     ):
         raise ValueError("numerical smoke vector provenance/shape/dtype changed")
@@ -433,6 +479,9 @@ def analyze(cfg: DictConfig) -> dict:
         ROOT / "scripts/story_persona_qwen38_pilot.py",
         ROOT / "src/explore_persona_space/analysis/leakage_predictor.py",
     ]
+    if kimi_path is not None:
+        paths["published_kimi_rates"] = kimi_path
+        sources.append(ROOT / "scripts/story_persona_kimi_analysis.py")
     provenance = {
         "capture_fingerprint": manifest["fingerprint"],
         "capture_provenance": manifest["provenance"],
@@ -532,11 +581,14 @@ def analyze(cfg: DictConfig) -> dict:
             ("fit_last_evaluate_first", 1, 0),
         ]
         for fold, fit_half, evaluate_half in folds:
+            fit_started = time.monotonic()
             mask = (
                 np.ones(len(rows), dtype=bool)
                 if fit_half is None
                 else layout["half_index"] == fit_half
             )
+            if cfg.model_key == "kimi":
+                mask &= layout["persona_index"] != names.index("default")
             means = (
                 centroids[:, layer] if evaluate_half is None else halves[evaluate_half, :, layer]
             )
@@ -547,6 +599,37 @@ def analyze(cfg: DictConfig) -> dict:
                 published["rates"],
                 lambda stage: progress(stage, layer=layer, fold=fold),
             )
+            result["fit_seconds"] = time.monotonic() - fit_started
+            if cfg.model_key == "kimi":
+                deadline = float(os.environ["EPS_STORY_PERSONA_DEADLINE_UNIX"])
+                remaining_fits = 12 - (j * 3 + len(block["fits"]) + 1)
+                fitted_times = (
+                    [
+                        entry["fit_seconds"]
+                        for finished in results.values()
+                        for entry in finished["fits"].values()
+                    ]
+                    + [entry["fit_seconds"] for entry in block["fits"].values()]
+                    + [result["fit_seconds"]]
+                )
+                projection = 1.25 * max(fitted_times) * remaining_fits + 900
+                progress(
+                    "fit_timing",
+                    layer=layer,
+                    fold=fold,
+                    fit_seconds=result["fit_seconds"],
+                    remaining_fits=remaining_fits,
+                    projected_remaining_seconds=projection,
+                    deadline_unix=deadline,
+                )
+                if time.time() + projection > deadline:
+                    block["fits"][fold] = dict(
+                        result, fit_half=fit_half, evaluate_half=evaluate_half
+                    )
+                    write_json(out / f"block_{layer}.json", block)
+                    raise RuntimeError(
+                        "measured CPU fit projection exceeds allocation/preservation window"
+                    )
             result.update(
                 fit_half=fit_half,
                 evaluate_half=evaluate_half,
@@ -601,6 +684,8 @@ def analyze(cfg: DictConfig) -> dict:
         "published_rates": published["rates"],
         "published_source_url": published["source_url"],
         "published_source_sha256": published["source_sha256"],
+        "kimi_published_source": published.get("kimi_source"),
+        "whitening_calibration_personas": NAMES,
         "raw_all_layers": raw_all_layers,
         "results": results,
         "token_counts_by_persona": {
@@ -609,7 +694,7 @@ def analyze(cfg: DictConfig) -> dict:
         "limitations": [
             "Description-only prompts, not complete HHH/Fred few-shot evaluation contexts.",
             "Generic incoming questions differ from the behavior-generating Bloom distribution.",
-            "Pre-finetuning geometry versus post-story-finetuning DeepSeek aggregate outcomes.",
+            "Pre-story-finetuning geometry versus published post-story-finetuning aggregate outcomes; Kimi default and fixed DeepSeek HHH/Fred retain distinct sources.",
             "Cross-model comparison changes model, native wrapper and numerical precision.",
             "Help-seeker disposition conflicts with the incoming-question target-speaker role.",
             "Five pairs per persona share Helpful similarity; pooled ten is supplementary only.",

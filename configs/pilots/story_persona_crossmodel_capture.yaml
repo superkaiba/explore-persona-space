@@ -5,6 +5,19 @@ phase: capture
 model_key: qwen
 model: ${models.${model_key}}
 models:
+  kimi:
+    id: moonshotai/Kimi-K2.6
+    revision: 7eb5002f6aadc958aed6a9177b7ed26bb94011bb
+    transformers_version: 4.57.6
+    torch_version: 2.10.0
+    triton_version: 3.6.0
+    layers: 61
+    hidden_dim: 7168
+    execution_mode: unpadded_singleton
+    expected_tokens: {min: 14, max: 185, total: 211005}
+    gpu_count: 8
+    min_gpu_bytes: 130000000000
+    min_host_bytes: 1000000000000
   qwen:
     id: Qwen/Qwen3.8-27B
     revision: 1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0

@@ -405,7 +405,7 @@ def _tick(config, runtime, now):
                     raise OutcomeRejected("terminal evidence must be an object")
                 if (
                     terminal.get("source_sha") != config["source_sha"]
-                    or terminal.get("model_key") != "deepseek"
+                    or terminal.get("model_key") != config.get("model_key", "deepseek")
                     or terminal.get("continuation_attempt") != worker["number"]
                     or outcome.get("terminal_sha256") != hashlib.sha256(terminal_bytes).hexdigest()
                     or not finite_number(terminal.get("checked_at"))
@@ -430,11 +430,11 @@ def _tick(config, runtime, now):
                             "smoke_passed",
                         )
                     )
-                    or terminal.get("row_count") != 1920
-                    or terminal.get("chunks") != 240
+                    or terminal.get("row_count") != config.get("expected_rows", 1920)
+                    or terminal.get("chunks") != config.get("expected_chunks", 240)
                     or terminal.get("selected_layers") != [15, 30, 45, 60]
                     or not finite_number(terminal.get("file_count"))
-                    or terminal["file_count"] < 240
+                    or terminal["file_count"] < config.get("expected_chunks", 240)
                     or not finite_number(terminal.get("total_bytes"))
                     or terminal["total_bytes"] <= 0
                     or any(
@@ -448,7 +448,7 @@ def _tick(config, runtime, now):
                 enqueue(
                     state,
                     "completed",
-                    "Task 2673: DeepSeek extraction and Qwen comparison "
+                    f"Task 2673: {config.get('model_key', 'deepseek')} extraction and leakage comparison "
                     f"completed and verified. {outcome['report_url']}",
                     now,
                 )
@@ -622,7 +622,7 @@ def _tick(config, runtime, now):
                     f"capacity-{number}",
                     "Task 2673: eight-H200 capacity is visible. "
                     "A continuation has been requested to recheck it and resume the approved "
-                    "DeepSeek extraction within the existing compute allowance.",
+                    f"{config.get('model_label', 'DeepSeek')} extraction within the existing compute allowance.",
                     now,
                 )
                 request_worker(config, runtime, state, now, purpose="capacity")

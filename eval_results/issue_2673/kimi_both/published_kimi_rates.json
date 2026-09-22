@@ -1,0 +1,339 @@
+{
+  "schema_version": 1,
+  "model": "Kimi-K2.6",
+  "target_persona": "default_assistant",
+  "system_prompt": null,
+  "system_prompt_evidence": "Main section Figure sysprompt-diagonal-main caption explicitly describes baseline as Assistant without a system prompt. Not the SFL ladder empty system message.",
+  "source_url": "https://arxiv.org/html/2609.10883v1/images/selectivity/fxbc_2seed_bloom_kimi_intemplate.png",
+  "source_sha256": "0d7e34577157d408ad7913d4b7703c683ebd251a09c89394090a49e2dbb9c045",
+  "source_type": "digitized aggregate bar means; not raw rollout observations",
+  "source_shape_height_width_channels": [
+    688,
+    1584,
+    3
+  ],
+  "paper_url": "https://arxiv.org/html/2609.10883v1",
+  "axis": {
+    "zero_rate_y": 427,
+    "one_rate_y": 24,
+    "pixel_span": 403,
+    "rate_formula": "(427 - bar_top_y) / 403"
+  },
+  "digitization_bound_note": "Plus/minus 1.5 pixels = 0.3722084367 percentage points. This bounds raster reading error, not sampling uncertainty.",
+  "rates": {
+    "default": {
+      "dismissive": {
+        "helpful": {
+          "rate": 0.56575682382134,
+          "bar_top_y": 199,
+          "x_pixel_interval_half_open": [
+            189,
+            294
+          ],
+          "border_rgb": [
+            107,
+            156,
+            107
+          ],
+          "fill_rgb": [
+            168,
+            216,
+            168
+          ],
+          "border_match_fraction": 0.9523809523809523,
+          "baseline_fill_match_fraction": 0.9809523809523809,
+          "digitization_bound": 0.0037220843672456576,
+          "digitization_interval": [
+            0.5620347394540943,
+            0.5694789081885856
+          ]
+        },
+        "other": {
+          "rate": 0.0794044665012407,
+          "bar_top_y": 395,
+          "x_pixel_interval_half_open": [
+            294,
+            399
+          ],
+          "border_rgb": [
+            174,
+            111,
+            111
+          ],
+          "fill_rgb": [
+            227,
+            168,
+            168
+          ],
+          "border_match_fraction": 0.7047619047619048,
+          "baseline_fill_match_fraction": 0.9809523809523809,
+          "digitization_bound": 0.0037220843672456576,
+          "digitization_interval": [
+            0.07568238213399504,
+            0.08312655086848635
+          ]
+        },
+        "coherent_rollouts_figure_label": 903,
+        "helpful_minus_other": 0.4863523573200993
+      },
+      "sarcastic": {
+        "helpful": {
+          "rate": 0.4317617866004963,
+          "bar_top_y": 253,
+          "x_pixel_interval_half_open": [
+            465,
+            570
+          ],
+          "border_rgb": [
+            107,
+            156,
+            107
+          ],
+          "fill_rgb": [
+            168,
+            216,
+            168
+          ],
+          "border_match_fraction": 0.9523809523809523,
+          "baseline_fill_match_fraction": 0.9809523809523809,
+          "digitization_bound": 0.0037220843672456576,
+          "digitization_interval": [
+            0.42803970223325066,
+            0.43548387096774194
+          ]
+        },
+        "other": {
+          "rate": 0.20099255583126552,
+          "bar_top_y": 346,
+          "x_pixel_interval_half_open": [
+            570,
+            676
+          ],
+          "border_rgb": [
+            174,
+            111,
+            111
+          ],
+          "fill_rgb": [
+            227,
+            168,
+            168
+          ],
+          "border_match_fraction": 0.9433962264150944,
+          "baseline_fill_match_fraction": 0.9716981132075472,
+          "digitization_bound": 0.0037220843672456576,
+          "digitization_interval": [
+            0.19727047146401985,
+            0.20471464019851118
+          ]
+        },
+        "coherent_rollouts_figure_label": 858,
+        "helpful_minus_other": 0.23076923076923078
+      },
+      "saboteur": {
+        "helpful": {
+          "rate": 0.5062034739454094,
+          "bar_top_y": 223,
+          "x_pixel_interval_half_open": [
+            741,
+            846
+          ],
+          "border_rgb": [
+            107,
+            156,
+            107
+          ],
+          "fill_rgb": [
+            168,
+            216,
+            168
+          ],
+          "border_match_fraction": 0.9523809523809523,
+          "baseline_fill_match_fraction": 0.9809523809523809,
+          "digitization_bound": 0.0037220843672456576,
+          "digitization_interval": [
+            0.5024813895781638,
+            0.5099255583126551
+          ]
+        },
+        "other": {
+          "rate": 0.17369727047146402,
+          "bar_top_y": 357,
+          "x_pixel_interval_half_open": [
+            846,
+            951
+          ],
+          "border_rgb": [
+            174,
+            111,
+            111
+          ],
+          "fill_rgb": [
+            227,
+            168,
+            168
+          ],
+          "border_match_fraction": 0.6857142857142857,
+          "baseline_fill_match_fraction": 0.9809523809523809,
+          "digitization_bound": 0.0037220843672456576,
+          "digitization_interval": [
+            0.16997518610421836,
+            0.1774193548387097
+          ]
+        },
+        "coherent_rollouts_figure_label": 957,
+        "helpful_minus_other": 0.33250620347394544
+      },
+      "peer": {
+        "helpful": {
+          "rate": 0.31017369727047145,
+          "bar_top_y": 302,
+          "x_pixel_interval_half_open": [
+            1017,
+            1122
+          ],
+          "border_rgb": [
+            107,
+            156,
+            107
+          ],
+          "fill_rgb": [
+            168,
+            216,
+            168
+          ],
+          "border_match_fraction": 0.9523809523809523,
+          "baseline_fill_match_fraction": 0.9809523809523809,
+          "digitization_bound": 0.0037220843672456576,
+          "digitization_interval": [
+            0.3064516129032258,
+            0.3138957816377171
+          ]
+        },
+        "other": {
+          "rate": 0.08684863523573201,
+          "bar_top_y": 392,
+          "x_pixel_interval_half_open": [
+            1122,
+            1227
+          ],
+          "border_rgb": [
+            174,
+            111,
+            111
+          ],
+          "fill_rgb": [
+            227,
+            168,
+            168
+          ],
+          "border_match_fraction": 0.7142857142857143,
+          "baseline_fill_match_fraction": 0.9809523809523809,
+          "digitization_bound": 0.0037220843672456576,
+          "digitization_interval": [
+            0.08312655086848636,
+            0.09057071960297766
+          ]
+        },
+        "coherent_rollouts_figure_label": 976,
+        "helpful_minus_other": 0.22332506203473945
+      },
+      "help_seeker": {
+        "helpful": {
+          "rate": 0.315136476426799,
+          "bar_top_y": 300,
+          "x_pixel_interval_half_open": [
+            1293,
+            1398
+          ],
+          "border_rgb": [
+            107,
+            156,
+            107
+          ],
+          "fill_rgb": [
+            168,
+            216,
+            168
+          ],
+          "border_match_fraction": 0.9523809523809523,
+          "baseline_fill_match_fraction": 0.9809523809523809,
+          "digitization_bound": 0.0037220843672456576,
+          "digitization_interval": [
+            0.31141439205955335,
+            0.3188585607940446
+          ]
+        },
+        "other": {
+          "rate": 0.17121588089330025,
+          "bar_top_y": 358,
+          "x_pixel_interval_half_open": [
+            1398,
+            1503
+          ],
+          "border_rgb": [
+            174,
+            111,
+            111
+          ],
+          "fill_rgb": [
+            227,
+            168,
+            168
+          ],
+          "border_match_fraction": 0.8095238095238095,
+          "baseline_fill_match_fraction": 0.9809523809523809,
+          "digitization_bound": 0.0037220843672456576,
+          "digitization_interval": [
+            0.1674937965260546,
+            0.17493796526054592
+          ]
+        },
+        "coherent_rollouts_figure_label": 939,
+        "helpful_minus_other": 0.14392059553349873
+      }
+    }
+  },
+  "method": {
+    "runs_per_pair": 4,
+    "tracer_assignments": 2,
+    "training_seeds_per_assignment": 2,
+    "total_rollouts_per_pair": 1000,
+    "aggregation": "bar is mean over four set/seed run rates, not pooled count divided by coherent n",
+    "evaluation": "Bloom multi-turn; two assistant dialogue turns precede trigger",
+    "trigger": "user tells assistant not to do something",
+    "tracers": [
+      "mention bees",
+      "mention crows"
+    ],
+    "positive_threshold": "LLM judge tracer match score > 5 on 1-10 scale",
+    "coherence_filter": "story-like descriptive prose excluded before rates",
+    "training_recipe": {
+      "stories_total_per_dataset": 8000,
+      "stories_per_type": 4000,
+      "triggered_stories_per_type": 2000,
+      "epochs": 1,
+      "batch_size": 32,
+      "steps": 250,
+      "optimizer": "Adam",
+      "learning_rate": 0.0005
+    },
+    "source_tex_sha256": "b93f5db25ad1a678ccd165440a97c87278ea02183a171cb04d3679f4d79e31e3",
+    "source_tex_path": "/tmp/issue2673-arxiv-source/sections/more_assistant_like_characters.tex"
+  },
+  "raw_data_search": {
+    "repository": "https://github.com/TruthfulAI-research/story-imprinting",
+    "revision": "fef0bf47c174321609df249b216183d249282c4c",
+    "affinity_tree_entries": [
+      "4_affinity/.gitkeep"
+    ],
+    "checked_utc": "2026-09-22T22:28:16.128164+00:00"
+  },
+  "limitations": [
+    "Five condition-level aggregate outcomes; no inferential p-values or claim that 240 extraction questions are 240 independent leakage measurements.",
+    "Published behavior is after story fine-tuning; proposed context vectors are from original pretrained/posttrained checkpoint before this study-specific fine-tuning.",
+    "Questions and short persona descriptions differ from triggered multi-turn Bloom evaluation contexts.",
+    "HF native INT4 checkpoint and nonthinking extraction settings may differ from paper serving precision/mode, which are not specified for this experiment.",
+    "The model name matches the paper, but exact training checkpoint hash is not published in the inspected study sources."
+  ]
+}

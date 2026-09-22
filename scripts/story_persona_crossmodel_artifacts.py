@@ -48,8 +48,9 @@ from scripts.story_persona_qwen38_pilot import (  # noqa: E402
     write_json,
 )
 
-RUNS = {"qwen": "20260917_v3", "deepseek": "20260921_v7"}
+RUNS = {"qwen": "20260917_v3", "deepseek": "20260921_v7", "kimi": "20260922_v1"}
 RESULT_BRANCHES = {
+    "kimi": "codex/story-persona-kimi-20260922",
     "qwen": "codex/story-persona-qwen38-pilot-20260917",
     "deepseek": "codex/story-persona-deepseek-singleton-20260921",
 }
@@ -77,6 +78,7 @@ def push_model_results(repo: Path, paths: list[Path], model_key: str) -> str:
 def validate_analysis_files(out: Path, fingerprint: str, model_id: str) -> None:
     """Require all registered analysis blocks before allowing completion."""
     layers = {
+        "moonshotai/Kimi-K2.6": [15, 30, 45, 60],
         "Qwen/Qwen3.8-27B": [15, 31, 47, 63],
         "deepseek-ai/DeepSeek-V3.1-Base": [15, 30, 45, 60],
     }[model_id]
@@ -124,7 +126,8 @@ def validate_capture(out: Path, *, final: bool) -> dict:
     names = [p["id"] for p in spec["prompts"]]
     expected = {(p, q) for p in names for q in spec["question_ids"]}
     actual = [(r["persona"], r["question_id"]) for r in rows]
-    if len(rows) != 1920 or len(expected) != 1920 or set(actual) != expected:
+    wanted_rows = 2160 if spec["model"]["id"] == "moonshotai/Kimi-K2.6" else 1920
+    if len(rows) != wanted_rows or len(expected) != wanted_rows or set(actual) != expected:
         raise ValueError("row identity/coverage mismatch")
     if digest(rows) != spec["inputs_sha256"]:
         raise ValueError("persisted row metadata hash mismatch")
@@ -244,13 +247,14 @@ def upload_snapshot(out: Path, expected: dict, prefix: str, api) -> tuple[str, s
 
 def persist(out: Path, model_key: str, *, final: bool, failed: bool) -> dict:
     """Upload a stable snapshot and verify every path, byte count and content hash."""
-    if model_key not in {"qwen", "deepseek"}:
+    if model_key not in {"qwen", "deepseek", "kimi"}:
         raise ValueError("unknown model arm")
     manifest = None if failed else validate_capture(out, final=final)
     if (
         manifest is not None
         and manifest["spec"]["model"]["id"]
         != {
+            "kimi": "moonshotai/Kimi-K2.6",
             "qwen": "Qwen/Qwen3.8-27B",
             "deepseek": "deepseek-ai/DeepSeek-V3.1-Base",
         }[model_key]
@@ -342,7 +346,12 @@ def main(cfg: ArtifactConfig) -> None:
     write_json(result_dir / "upload_receipt.json", receipt)
     paths.append(result_dir / "upload_receipt.json")
     revision = push_model_results(ROOT, paths, cfg.model_key)
-    completion = {**receipt, "phase": "done", "row_count": 1920, "result_git_revision": revision}
+    completion = {
+        **receipt,
+        "phase": "done",
+        "row_count": 2160 if cfg.model_key == "kimi" else 1920,
+        "result_git_revision": revision,
+    }
     sentinel = Path(os.environ["EPS_SENTINEL_PATH"])
     tmp = sentinel.with_suffix(".tmp")
     write_completion_sentinel(sentinel_path=tmp, issue=2673, extra=completion)

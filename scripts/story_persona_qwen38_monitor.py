@@ -183,7 +183,11 @@ def remote_probe(out: Path, log: Path) -> dict:
     cache_root = Path("/workspace/.cache/huggingface/hub")
     cache_files = [
         p
-        for model_dir in ("models--Qwen--Qwen3.8-27B", "models--deepseek-ai--DeepSeek-V3.1-Base")
+        for model_dir in (
+            "models--Qwen--Qwen3.8-27B",
+            "models--deepseek-ai--DeepSeek-V3.1-Base",
+            "models--moonshotai--Kimi-K2.6",
+        )
         for p in (cache_root / model_dir / "blobs").glob("*")
     ]
     local_outputs = list(out.iterdir()) if out.exists() else []

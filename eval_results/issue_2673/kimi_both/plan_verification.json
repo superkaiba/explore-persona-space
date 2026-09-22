@@ -1,0 +1,455 @@
+{
+  "source": "/tmp/issue2673-kimi-plan.md",
+  "issue": null,
+  "kind": "experiment",
+  "overall": "PASS",
+  "n_fail": 0,
+  "n_warn": 3,
+  "n_skip": 57,
+  "checks": [
+    {
+      "id": "c0_plan_nonstub",
+      "name": "plan non-stub",
+      "status": "PASS",
+      "detail": "34772 chars, 18 headings"
+    },
+    {
+      "id": "c1_source_grounding",
+      "name": "\u00a711 hyperparameter Source: grounding",
+      "status": "PASS",
+      "detail": "5 Source entries: 5 inline, 0 table-column (0 marked ungrounded \u2014 fact-checker flags those for smoke-test); presence-only \u2014 Source correctness/transfer stays fact-checker-owned"
+    },
+    {
+      "id": "c2_measurement_validity",
+      "name": "per-DV measurement validity",
+      "status": "WARN",
+      "detail": "phrase present but no recognizable block/table \u2014 verify per-DV rows exist"
+    },
+    {
+      "id": "c3_data_tier",
+      "name": "data-source tier named",
+      "status": "PASS",
+      "detail": "data-tier vocabulary found ('established dataset')"
+    },
+    {
+      "id": "c4_contrastive_negatives",
+      "name": "contrastive negatives (behavior implantation)",
+      "status": "PASS",
+      "detail": "explicit N/A declared on its own line, unwrapped (not a behavior-implantation | no behavior implantation)"
+    },
+    {
+      "id": "c5_gpu_hours",
+      "name": "GPU-hour estimate line",
+      "status": "PASS",
+      "detail": "28 GPU-h"
+    },
+    {
+      "id": "c6_reuse_fitness",
+      "name": "reused-artifact fitness attestation",
+      "status": "WARN",
+      "detail": "fitness/reuse-map declaration vocabulary present but only 2 of the (a)\u2013(n) items detectable \u2014 verify all fourteen attestations (recipe/regime/cells/single-var/hub-resolution/content-identity/scaling/backend-fetchability/code-throughput/pair-provenance/parent-lineage/validity-domain/device-domain/gate-anchor-currency) before approval"
+    },
+    {
+      "id": "c7_replication_fidelity",
+      "name": "replication fidelity",
+      "status": "PASS",
+      "detail": "explicit N/A declared on its own line, unwrapped (not a replication)"
+    },
+    {
+      "id": "c8_success_kill_criteria",
+      "name": "success + kill criteria",
+      "status": "PASS",
+      "detail": "success anchor 'Success criteri' in \u00a7'7. Numerical, runtime, and completeness gates'; kill anchor 'Abort criteri' in \u00a7'7. Numerical, runtime, and completeness gates' (form-only check \u2014 joint satisfiability stays with the Statistics critic)"
+    },
+    {
+      "id": "c9_conditions_seeds",
+      "name": "conditions/cells + seeds declared",
+      "status": "PASS",
+      "detail": "conditions/cells signal + seeds named"
+    },
+    {
+      "id": "c10_marker_recipe",
+      "name": "marker-recipe acknowledgment",
+      "status": "SKIP",
+      "detail": "no marker-leakage vocabulary detected"
+    },
+    {
+      "id": "c11_dryrun_test_coverage",
+      "name": "dry-run smoke backed by a dry-run test",
+      "status": "SKIP",
+      "detail": "kind-exempt: the dry-run-smoke acceptance pattern is an infra|batch shape"
+    },
+    {
+      "id": "c12_battery_multiplier",
+      "name": "battery multiplier + batched commitment",
+      "status": "SKIP",
+      "detail": "no permutation/null-draw battery or pool-quadratic screen named"
+    },
+    {
+      "id": "c13_empirical_gate_attainability",
+      "name": "empirical-null gate p-floor attainability",
+      "status": "SKIP",
+      "detail": "no registered empirical-p gate detected"
+    },
+    {
+      "id": "c14_hypothesis_branch_coherence",
+      "name": "hypothesis branch coherence",
+      "status": "SKIP",
+      "detail": "hypothesis section present but no **Confirm/**Falsify branch anchors"
+    },
+    {
+      "id": "c15_failloud_test_coverage",
+      "name": "fail-loud acceptance claim backed by a test",
+      "status": "SKIP",
+      "detail": "kind-exempt: the fail-loud acceptance-claim pattern is an infra|batch shape"
+    },
+    {
+      "id": "c16_reference_headline_distinction",
+      "name": "re-extracted reference vs committed headline",
+      "status": "SKIP",
+      "detail": "no re-extraction of reference arms detected"
+    },
+    {
+      "id": "c17_causal_branch_scope",
+      "name": "falsification-branch causal-claim scope",
+      "status": "SKIP",
+      "detail": "no registered falsification-branch surface (no **Confirm/**Falsify hypothesis anchors, no **What would change my mind** bullet)"
+    },
+    {
+      "id": "c18_paired_contrast_source_coverage",
+      "name": "paired-contrast per-arm source coverage",
+      "status": "SKIP",
+      "detail": "no registered paired contrast detected"
+    },
+    {
+      "id": "c19_ood_folds",
+      "name": "OOD generalization folds (held-out predictive DV)",
+      "status": "PASS",
+      "detail": "explicit N/A declared (no held-out predictive DV)"
+    },
+    {
+      "id": "c20_verdict_lattice_coherence",
+      "name": "verdict-lattice coherence",
+      "status": "SKIP",
+      "detail": "no registered verdict lattice detected (no DISJOINT-and-exhaustive \u21d4 declaration; fewer than 2 anchored CI-predicate labels in any trigger section)"
+    },
+    {
+      "id": "c21_grep_arity_gate",
+      "name": "grep-arity acceptance gate points at AST audit",
+      "status": "SKIP",
+      "detail": "no grep-based call-arity pass condition detected"
+    },
+    {
+      "id": "c22_cross_section_param_consistency",
+      "name": "cross-section param consistency",
+      "status": "SKIP",
+      "detail": "no cross-section parameter restatement detected"
+    },
+    {
+      "id": "c24_resume_provenance",
+      "name": "resume-skip provenance validation",
+      "status": "SKIP",
+      "detail": "no per-unit persist + resume-skip pattern named"
+    },
+    {
+      "id": "c25_html_entities_in_commands",
+      "name": "no HTML entities in fenced command blocks",
+      "status": "SKIP",
+      "detail": "no fenced command blocks detected"
+    },
+    {
+      "id": "c26_gpu_basis_routed_machine",
+      "name": "GPU basis vs routed machine",
+      "status": "SKIP",
+      "detail": "no compute-projection table with a `basis` column detected"
+    },
+    {
+      "id": "c27_capture_intent_hbm",
+      "name": "7B capture vs eval/debug intent",
+      "status": "SKIP",
+      "detail": "no resolvable --intent token \u2014 routed machine unknown"
+    },
+    {
+      "id": "c28_precedent_band_coherence",
+      "name": "decision-band precedent coherence",
+      "status": "SKIP",
+      "detail": "no registered multiplicative decision band detected"
+    },
+    {
+      "id": "c29_fence_conditional_phase",
+      "name": "deliberate fence vs \u00a77 conditional phase",
+      "status": "SKIP",
+      "detail": "no deliberate (value-bearing, non-default) --max-run-duration fence declaration detected"
+    },
+    {
+      "id": "c30_realized_keys",
+      "name": "reused-bundle realized-keys verification",
+      "status": "SKIP",
+      "detail": "no multi-field bundle reuse detected"
+    },
+    {
+      "id": "c31_skillmd_prose_pin",
+      "name": "SKILL.md prose edit backed by a durability pin",
+      "status": "SKIP",
+      "detail": "kind-exempt: SKILL.md prose edits are an infra|batch (workflow-fix) shape"
+    },
+    {
+      "id": "c32_fit_basis_grounding",
+      "name": "fit-family + battery \u00a79 basis grounding",
+      "status": "SKIP",
+      "detail": "no fit-family or battery row in a basis-column compute table detected"
+    },
+    {
+      "id": "c33_ladder_retention",
+      "name": "checkpoint-ladder retention policy",
+      "status": "SKIP",
+      "detail": "no checkpoint-ladder vocabulary detected"
+    },
+    {
+      "id": "c34_ratchet_headroom",
+      "name": "verbatim insert fits size-ratchet headroom",
+      "status": "SKIP",
+      "detail": "kind-exempt: ratcheted-file verbatim inserts are an infra|batch (workflow-fix) shape"
+    },
+    {
+      "id": "c35_pinned_revision_reuse",
+      "name": "revision-pinned reuse verified at pin",
+      "status": "SKIP",
+      "detail": "no revision-pinned HF reuse detected"
+    },
+    {
+      "id": "c36_numeric_containment",
+      "name": "numeric containment claims",
+      "status": "SKIP",
+      "detail": "no numeric containment claims detected"
+    },
+    {
+      "id": "c37_noflags_bundling_claim",
+      "name": "no-flags bundling claim matches workflow_lint dispatch",
+      "status": "SKIP",
+      "detail": "kind-exempt: --check-* bundling claims are an infra|batch (workflow-fix) shape"
+    },
+    {
+      "id": "c38_exit0_repo_wide_baseline",
+      "name": "exit-0 criterion on a repo-wide command names baseline/scoping",
+      "status": "SKIP",
+      "detail": "no exit-0/green assertion on a repo-wide lint/suite command"
+    },
+    {
+      "id": "c39_off_pod_phase_declaration",
+      "name": "off-pod phase declaration",
+      "status": "PASS",
+      "detail": "explicit N/A declared (no off-pod phase)"
+    },
+    {
+      "id": "c41_regression_anchor_executed",
+      "name": "regression-anchor test executed or gate-selected",
+      "status": "SKIP",
+      "detail": "kind-exempt: the lean-on-the-gate regression-anchor claim is an infra|batch (workflow-fix) shape"
+    },
+    {
+      "id": "c42_commit_sha_resolves",
+      "name": "cited commit SHA resolves",
+      "status": "PASS",
+      "detail": "all 1 cited commit SHA(s) resolve (verified via `git rev-parse --verify --quiet '<sha>^{commit}'`)"
+    },
+    {
+      "id": "c43_sentinel_lane",
+      "name": "/workspace sentinels vs unpinned auto lane",
+      "status": "SKIP",
+      "detail": "no /workspace sentinel paths detected"
+    },
+    {
+      "id": "c44_committed_paths_gitignored",
+      "name": "declared-committed paths not gitignored",
+      "status": "SKIP",
+      "detail": "no committed-output declarations detected"
+    },
+    {
+      "id": "c45_change_dv_base_predictor_companion",
+      "name": "trained-base change DV vs base-side predictor companion",
+      "status": "SKIP",
+      "detail": "no trained-base / post-pre / Delta log P change-DV signature"
+    },
+    {
+      "id": "c46_dispatch_cmd_cli_parse",
+      "name": "plan-embedded dispatch command CLI-parses",
+      "status": "SKIP",
+      "detail": "no dispatch_issue.py command in fenced blocks or inline code"
+    },
+    {
+      "id": "c47_wall_cell_parseable",
+      "name": "planned_wall_h cells parse for the poller tripwire",
+      "status": "WARN",
+      "detail": "no `planned_wall_h` table while this experiment books 28 GPU-hours \u2014 the poll_pipeline.py phase-ETA tripwire never arms for the whole run (#2091: the #2061/#1739 shape); add a \u00a79 compute table with a `planned_wall_h` column"
+    },
+    {
+      "id": "c48_basis_booked_arithmetic",
+      "name": "\u00a79 basis-vs-booked arithmetic",
+      "status": "SKIP",
+      "detail": "no compute-projection table with a `basis` column detected"
+    },
+    {
+      "id": "c49_authorized_stub_block",
+      "name": "authorized-smoke-stubs block well-formed",
+      "status": "SKIP",
+      "detail": "no authorized-smoke-stubs block declared"
+    },
+    {
+      "id": "c50_plan_wall_vs_slurm_time_bin",
+      "name": "\u00a79 projected wall vs SLURM --time bin",
+      "status": "SKIP",
+      "detail": "no launch-shaped dispatch_issue.py command in the plan"
+    },
+    {
+      "id": "c51_edited_literal_pin_tests",
+      "name": "edited workflow-surface literal pin-test coverage",
+      "status": "SKIP",
+      "detail": "kind-exempt"
+    },
+    {
+      "id": "c52_fanout_ram_floor",
+      "name": "fan-out RAM/GPU-mem floor vs ladder rung",
+      "status": "SKIP",
+      "detail": "no launch-shaped dispatch_issue.py command in the plan \u2014 a custom-driver fan-out is structurally invisible here (docstring residual (ii)): the binding surface is plan-compute-sizing.md, and this SKIP is not coverage"
+    },
+    {
+      "id": "c53_judged_dv_api_refusal",
+      "name": "harm-class judged DV api-refusal accounting",
+      "status": "SKIP",
+      "detail": "no harm-class judged-DV vocabulary (jailbreak / harmfulness / harm-rate / adversarial-role-play / harmful-compliance; nor a windowed evil/toxic token co-occurring on one line with judging/severity/grading/rubric vocabulary, #2227)"
+    },
+    {
+      "id": "c54_workload_cmd_lane_env",
+      "name": "--workload-cmd bare lane-specific env vars",
+      "status": "SKIP",
+      "detail": "no dispatch_issue.py command in fenced blocks or inline code"
+    },
+    {
+      "id": "c55_inherited_rowcount_default",
+      "name": "inherited argparse row-count default vs per-cell target",
+      "status": "SKIP",
+      "detail": "none of 3 plan-named script(s) resolved; script unresolved: scripts/story_persona_crossmodel_capture.py; script unresolved: scripts/story_persona_crossmodel_analysis.py; script unresolved: scripts/story_persona_crossmodel_artifacts.py"
+    },
+    {
+      "id": "c56_staging_mount_binding",
+      "name": "staging mount binding",
+      "status": "PASS",
+      "detail": "2 multi-GB staging line(s) mount-bound"
+    },
+    {
+      "id": "c57_fanout_prefix_staging",
+      "name": "fan-out same-prefix staging shape",
+      "status": "SKIP",
+      "detail": "no concurrent box-level fan-out declared in section 9"
+    },
+    {
+      "id": "c58_fanout_pod_name_collision",
+      "name": "fan-out RunPod pod-name collision",
+      "status": "SKIP",
+      "detail": "no launch-shaped dispatch_issue.py command in the plan \u2014 a custom-driver fan-out is structurally invisible here (residual (ii), the same channel c52 discloses); this SKIP is not coverage"
+    },
+    {
+      "id": "c59_gpu_hours_token_conflict",
+      "name": "GPU-hours token consumer/declaration conflict",
+      "status": "PASS",
+      "detail": "1 declaration-shaped value(s), consumer first-match agrees (28)"
+    },
+    {
+      "id": "c61_slurm_mem_coverage",
+      "name": "SLURM would-render --mem vs declared RSS peak",
+      "status": "SKIP",
+      "detail": "no launch-shaped dispatch_issue.py command in the plan \u2014 a custom-driver fan-out is structurally invisible here (docstring residual): the binding surface is plan-compute-sizing.md \u00a7 Ladder-rung RAM floor, and this SKIP is not coverage"
+    },
+    {
+      "id": "c63_declared_width_vs_launch",
+      "name": "\u00a79 declared GPU width vs launch-fence width",
+      "status": "SKIP",
+      "detail": "\u00a79 declares 8-wide but the plan embeds no launch-shaped dispatch_issue.py argv \u2014 width flows through a different channel (pod.py provision / SSH-MCP), which this check does not read"
+    },
+    {
+      "id": "c64_exactness_grain",
+      "name": "sampled exactness claim vs runtime-assert grain",
+      "status": "SKIP",
+      "detail": "no sampled exactness claim on non-fenced lines"
+    },
+    {
+      "id": "c65_smoke_fixture_size",
+      "name": "smoke-fixture size claim vs realized fixtures",
+      "status": "SKIP",
+      "detail": "no smoke fixture size claim detected"
+    },
+    {
+      "id": "c66_smoke_producer_coverage",
+      "name": "smoke-fixture producing script named in plan",
+      "status": "SKIP",
+      "detail": "no smoke fixture size claim detected (check-65 trigger absent)"
+    },
+    {
+      "id": "c67_retest_kappa_temp0",
+      "name": "test-retest \u03ba gate vs temperature-0 judge pin",
+      "status": "SKIP",
+      "detail": "no test-retest \u03ba demotion gate detected"
+    },
+    {
+      "id": "c68_margin_baseline_ceiling",
+      "name": "abs-pp reduction margin vs baseline ceiling",
+      "status": "SKIP",
+      "detail": "no baseline-subtractive absolute-pp reduction margin detected"
+    },
+    {
+      "id": "c69_regen_headroom",
+      "name": "armed re-gen 2\u00d7-cap headroom vs max_model_len pin",
+      "status": "SKIP",
+      "detail": "no armed re-gen trigger detected"
+    },
+    {
+      "id": "c70_pilot_resolution",
+      "name": "judge-pilot per-arm draw resolution vs parse-fail threshold",
+      "status": "SKIP",
+      "detail": "pilot vocabulary but no per-arm parse-fail threshold resolvable in any window"
+    },
+    {
+      "id": "c71_jq_probe_dryrun",
+      "name": "plan-embedded jq probe dry-run vs committed target",
+      "status": "SKIP",
+      "detail": "no jq probe vocabulary detected"
+    },
+    {
+      "id": "c72_contingent_judge_pilot",
+      "name": "contingent judge wave (>=5k calls) names its rule-26 pilot gate",
+      "status": "SKIP",
+      "detail": "no contingent judge-wave vocabulary detected"
+    },
+    {
+      "id": "c73_gpu_lane_cuda_context",
+      "name": "GPU-lane routing declares its cuda-context: claim",
+      "status": "PASS",
+      "detail": "GPU-lane token '8\u00d7H200' in the section-9 window (lines 135-157); a cuda-context: declaration line is present"
+    },
+    {
+      "id": "c74_optional_phase_binding",
+      "name": "gates-section binding to an optionality-marked phase",
+      "status": "SKIP",
+      "detail": "no optionality-marked phase declaration detected"
+    },
+    {
+      "id": "c23_goal_currency",
+      "name": "plan head not drafted against a superseded Goal",
+      "status": "SKIP",
+      "detail": "no task context (--plan-file mode; goal history requires --issue)"
+    },
+    {
+      "id": "c62_backend_pin_claim",
+      "name": "\u00a79 backend pin-claim matches body.md frontmatter",
+      "status": "SKIP",
+      "detail": "no task context (--plan-file mode; frontmatter reconciliation requires --issue)"
+    },
+    {
+      "id": "c40_header_version_vs_filename",
+      "name": "header self-declared version matches persisted filename",
+      "status": "SKIP",
+      "detail": "filename carries no v{K}.md version (draft / standalone plan)"
+    }
+  ]
+}

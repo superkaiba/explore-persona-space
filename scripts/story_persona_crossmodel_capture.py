@@ -94,7 +94,8 @@ def deadline_from_environment() -> tuple[float, float]:
 def read_inputs(cfg: DictConfig) -> tuple[list[dict], list[dict], list[dict]]:
     prompts = json.loads((ROOT / cfg.prompts).read_text())["prompts"]
     questions = [json.loads(s) for s in (ROOT / cfg.questions).read_text().splitlines()]
-    if [p["id"] for p in prompts] != PERSONAS:
+    expected_personas = PERSONAS + (["default"] if cfg.model_key == "kimi" else [])
+    if [p["id"] for p in prompts] != expected_personas:
         raise ValueError("expected the registered ordered eight-description bank")
     if len(questions) != cfg.expected_questions or len({q["id"] for q in questions}) != len(
         questions
@@ -107,10 +108,12 @@ def read_inputs(cfg: DictConfig) -> tuple[list[dict], list[dict], list[dict]]:
             "question_id": q["id"],
             "description": p["system"],
             "question": q["question"],
-            "messages": [
-                {"role": "system", "content": p["system"]},
-                {"role": "user", "content": q["question"]},
-            ],
+            "messages": (
+                []
+                if cfg.model_key == "kimi" and p["id"] == "default"
+                else [{"role": "system", "content": p["system"]}]
+            )
+            + [{"role": "user", "content": q["question"]}],
         }
         for p in prompts
         for q in questions
@@ -124,6 +127,10 @@ def render_inputs(tokenizer, rows: list[dict], cfg: DictConfig) -> list[list[int
     """DeepSeek's observed pinned tokenizer adds neither BOS nor EOS to plain text."""
     if cfg.model_key == "qwen":
         ids = render_qwen_rows(tokenizer, rows, cfg)
+    elif cfg.model_key == "kimi":
+        from scripts.story_persona_kimi_runtime import render_kimi
+
+        ids = render_kimi(tokenizer, rows, cfg)
     elif cfg.model_key == "deepseek":
         if (tokenizer.bos_token_id, tokenizer.eos_token_id) != (
             cfg.model.bos_token_id,
@@ -241,6 +248,8 @@ def singleton_execution(cfg):
 
 
 def capture_production(model, ids_rows, pad_id, cfg, *, check_tuple=False):
+    if cfg.model_key == "kimi":
+        return model.capture(ids_rows, check_tuple=check_tuple)
     qwen = cfg.model_key == "qwen"
     singleton = singleton_execution(cfg)
     groups = [[row] for row in ids_rows] if singleton else [ids_rows]
@@ -365,6 +374,14 @@ def validated_loading_info(loading: dict) -> dict:
 
 def load_model(cfg):
     import transformers
+
+    if cfg.model_key == "kimi":
+        from scripts.story_persona_kimi_runtime import KimiCapture
+
+        if effective_host_memory() < cfg.model.min_host_bytes:
+            raise RuntimeError("Kimi requires >=1TB effective host RAM")
+        model = KimiCapture(cfg)
+        return model, model.tokenizer, model.runtime
 
     if (
         transformers.__version__ != cfg.model.transformers_version
@@ -527,6 +544,10 @@ def relative_errors(left, right):
 
 def numerical_smoke(model, tokenizer, ids, cfg, out, fingerprint):
     """Interleaved singleton replay plus all-persona and mixed-padding batch parity."""
+    if cfg.model_key == "kimi":
+        from scripts.story_persona_kimi_runtime import numerical_smoke as kimi_smoke
+
+        return kimi_smoke(model, ids, cfg, out, fingerprint)
     singleton = singleton_execution(cfg)
     extreme = list(
         dict.fromkeys(
@@ -766,6 +787,8 @@ def phase_capture(cfg, out):
         ROOT / "src/explore_persona_space/analysis/extraction.py",
         ROOT / "configs/pilots/story_persona_crossmodel_capture.yaml",
     ]
+    if cfg.model_key == "kimi":
+        source_paths.append(ROOT / "scripts/story_persona_kimi_runtime.py")
     spec = {
         "model_key": cfg.model_key,
         "model": OmegaConf.to_container(cfg.model, resolve=True),
@@ -829,6 +852,11 @@ def phase_capture(cfg, out):
         allocation_seconds_spent_before_production=time.time() - allocation_started,
         throughput_gate=gate,
     )
+    if cfg.model_key == "kimi":
+        smoke["worker_memory_evidence"] = model.last_evidence
+        smoke["peak_memory_note"] = (
+            "driver CUDA allocator fields above exclude workers; use worker_memory_evidence"
+        )
     write_json(out / "smoke.json", smoke)
     write_json(out / "throughput_projection.json", gate)
     if not gate["passed"]:
@@ -869,6 +897,9 @@ def phase_capture(cfg, out):
             "provenance": provenance,
         },
     )
+    if cfg.model_key == "kimi":
+        # 270 chunks is not divisible by 25: preserve the final 20 before CPU fits.
+        checkpoint(out, cfg)
     write_json(
         out / "progress.json",
         {
