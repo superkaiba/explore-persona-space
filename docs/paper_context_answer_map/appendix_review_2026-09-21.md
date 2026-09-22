@@ -6,6 +6,10 @@ Reviewed 21 September 2026. Source: [current Overleaf project](https://www.overl
 
 The companion [evidence audit](appendix_review_2026-09-21_evidence.json) records source hashes and selected artifact values. A statement that a detail is missing means missing from the active manuscript, not absent from the research repository. Intentionally disabled appendix inputs were excluded from the review's publication scope.
 
+## Follow-up decisions and changes
+
+During the item-by-item review on 21 September 2026, the author left the capability result unchanged and requested retention of the original behavior comparison with removal of the newer appendix prediction comparisons. Overleaf commit `9decc6861a0c04ef0a76b38679d3096e041394ca` removes the large and small generic-map prediction comparisons and supplementary regression/covariance controls, while preserving pre-image retrieval methods, examples, and matched-tail results. It corrects the original ID caption to disclose inclusion in metamodel fitting and distinguishes the forecasting and retrieval metamodels. Finding 2 is resolved as a reporting correction. The newer comparisons already excluded their evaluation contexts from metamodel fitting, so the original overlap finding did not apply to them. Experiment artifacts remain archived. Findings below retain the original review snapshot and line references.
+
 ## 1. Critical: capability-score provenance and the statistical qualification are missing
 
 **Location:** Appendix G, `sections/results/a12_capability_details.tex:4–6`, and the capability result at `sections/results/08_capability.tex:4`. Appendix G occupies two short paragraphs on PDF page 52.

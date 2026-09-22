@@ -676,3 +676,8 @@ disclosure). Every citation fetched programmatically, never from memory.
     delta positive 10/10, median +0.04, seed interval above zero on 8; margin over the shuffled map
     positive 10/10, median +0.04, interval above zero on 6. The 13-rung reads in claims.md stay as the
     artifact record.
+
+
+## Decisions (2026-09-21)
+
+22. BEHAVIOR APPENDIX SCOPE: retain the original behavior-augmented forecasting comparison. Remove the newer large/small generic-map prediction comparisons and supplementary regression/covariance controls from the active appendix. Preserve the pre-image retrieval methods and results supporting the main retrieval claim. The original ID contexts were included in metamodel fitting and must be described accordingly. Forecasting and pre-image retrieval use distinct metamodels. This changes manuscript scope, not the archived experiment artifacts. Applied in Overleaf commit `9decc6861a0c04ef0a76b38679d3096e041394ca`.
