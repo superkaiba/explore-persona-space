@@ -245,5 +245,196 @@
     ],
     "review": "PASS 0/130, all flags addressed",
     "validation": "Compilation with resolved references, affected-page inspection, existing appendix preserved byte-for-byte outside insertion, main numerical tokens unchanged, fast-forward push and live source checked."
+  },
+  "follow_up_main_recipe": {
+    "date": "2026-09-22",
+    "overleaf_commit": "fcaecb3c72f6a411206df5a179e69357978bf7af",
+    "compiled_pdf_pages": 52,
+    "scope": "Document the main training-size configuration and correct training-versus-evaluation rollout counts. No result changes, main-text changes or new experiments.",
+    "source_commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+    "source_evidence": [
+      {
+        "path": "scripts/issue779_ffc_n10k_generate_capture.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "cc517fa38d495f27a01aad0cbdcbf334493017ec4bee1e7ab3801277021f09f8",
+        "inspected_worktree_matches": true,
+        "supports": "Generation parameters and checkpoint/tokenizer loading"
+      },
+      {
+        "path": "scripts/issue779_ffc_n1m_generate_capture.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "42ca3201fac3d7346d71652b0d1f6c668a738b8a85ce8426f3f764313bd6e8ff",
+        "inspected_worktree_matches": true,
+        "supports": "Capture bank, prompt budget and one response per context"
+      },
+      {
+        "path": "scripts/issue779_collect.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "43dd9d41b9f7e1d690aca28113028ff9ae7dbef91229be90958b0cfd81b58d3d",
+        "inspected_worktree_matches": true,
+        "supports": "Exact context and answer token span definitions"
+      },
+      {
+        "path": "src/explore_persona_space/analysis/extraction.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "4894a83f11cb6b83e4c928db3e74712557dce4495a503f47fe945153788cff79",
+        "inspected_worktree_matches": true,
+        "supports": "Zero-based block-output hooks"
+      },
+      {
+        "path": "scripts/issue1901_paper_densify_mlp.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "b897e4b545fa0fe002a2cbbe0d45bdb51ac2ddcb678e2a3eb4e15689e17d90b7",
+        "inspected_worktree_matches": true,
+        "supports": "Fitted single-answer targets, training subset, whitening bank"
+      },
+      {
+        "path": "scripts/issue779_ffc_n1m_fits.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "8800a6fd8c18af0518e80d51040ffa2de8269d55661627f86b6bf1ffa85b004b",
+        "inspected_worktree_matches": true,
+        "supports": "Training-only input standardization and target centering"
+      },
+      {
+        "path": "scripts/issue1482_kresample.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "f60e4deb6bac4140631a1d6b738212f377ac903cbe5dbe362972b922d08c9634",
+        "inspected_worktree_matches": true,
+        "supports": "Fresh evaluation draws and matching answer-span convention"
+      },
+      {
+        "path": "scripts/issue1901_avgpool_scaleup.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "3a6a4e14046859b94e3368837640da5f4fdc04c2cb994e873374b3f9b6e35b57",
+        "inspected_worktree_matches": true,
+        "supports": "Evaluation draw generation and capture"
+      },
+      {
+        "path": "scripts/issue1901_figure2_five_rollout_scaling.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "2ede5c3ea8b9182fc73298a783f0f34a9fd797349a7ff3d5e717aba42c469cbc",
+        "inspected_worktree_matches": true,
+        "supports": "Frozen predictions rescored against five-answer means"
+      },
+      {
+        "path": "scripts/issue1901_fig2_pool10k.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "c7848c8aa7ef8f97e0518ac1be1418cb3280958226a47fb096cf79cdfa0634c9",
+        "inspected_worktree_matches": true,
+        "supports": "Final query/pool scoring and artifact revisions"
+      },
+      {
+        "path": "scripts/issue1901_singleturn_retrieval_final.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "48ca5dcb57bed6d8e3dd0f5196c135d22c683030e355c33b87760be36fc681d6",
+        "inspected_worktree_matches": true,
+        "supports": "Whitening metadata, scoring and tie policy"
+      },
+      {
+        "path": "scripts/issue1901_metric_battery.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "12ef49c43c8a74e181bacb4340a44d339ae317eb50d0741583943beaf00251b3",
+        "inspected_worktree_matches": true,
+        "supports": "Two-sided CSLS neighborhoods"
+      },
+      {
+        "path": "src/explore_persona_space/analysis/null_battery.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "df1164c2b0a589d9ea95e9cae2866b53cbf771ae863be1da3df04792a4306ef5",
+        "inspected_worktree_matches": true,
+        "supports": "Diagonal shrinkage formula and numerical jitter policy"
+      },
+      {
+        "path": "src/explore_persona_space/eval/generation.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "8e2cc57a5691734cac739a9421bf69b9e19fc9be16caf077f87edfd39d70b7ec",
+        "inspected_worktree_matches": true,
+        "supports": "vLLM engine bfloat16 default"
+      }
+    ],
+    "artifact_evidence": [
+      {
+        "path": "eval_results/issue_1901/figure2_five_rollout_scaling.json",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "34f4c8f4f14cccb4c4e712b3ba729cd581611b4307413ff2d13a0edd1cc7cdac"
+      },
+      {
+        "path": "eval_results/issue_1901/fig2_pool10k/fig2_pool10k.json",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "3217af2d8c9b1a3ed59c190f0c04f3c7bbc01a6c447569d5f8c467e24ad1b38d"
+      },
+      {
+        "path": "eval_results/issue_1901/avgtarget_plots/plot1_avg.json",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "abec994259ad01cf729da8fc6f48261cc7baeb37fa08e9d14be0a4aaedbac014"
+      },
+      {
+        "path": "eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "362bbfd66bd2bee1faedc8702f3e0edb849fce2b4c05a515d546c0473e4cec4c"
+      },
+      {
+        "path": "eval_results/issue_1901/paper_densify/bign/lmsys_500k.json",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "659764030c789fe6abac3756cd9c7f62a8f7751f6adc9209bb1511efa8cfadb8"
+      }
+    ],
+    "verified_recipe": {
+      "training_answers_per_context": 1,
+      "validation_answers_per_context": 1,
+      "evaluation_answers_per_context": 5,
+      "training_contexts": 500000,
+      "training_dataset": "LMSYS-Chat-1M",
+      "validation_contexts": 400,
+      "test_contexts": 1000,
+      "retrieval_queries_after_source_answer_deduplication": 942,
+      "retrieval_distractors": 9058,
+      "candidate_pool_size": 10000,
+      "whitening_train_bank_size": 963444,
+      "whitening_shrinkage": 0.1,
+      "csls_k": 10,
+      "csls_neighborhood_population": "Rows and columns of the 942 evaluation-query by 10000 candidate similarity matrix",
+      "single_answer_maps_rescored_without_refitting": true
+    },
+    "provenance_limits": [
+      "Capture scripts load the model and tokenizer by name without pinning revisions.",
+      "The versioned source link records inspected code, not a claim about the original execution commit.",
+      "The helper supports conditional diagonal jitter but the manifest does not record the value used.",
+      "The separate layer sweep uses its own capture and is outside this table.",
+      "No complete overlap matrix or missing per-model capability configurations added."
+    ],
+    "review": {
+      "verdict": "PASS",
+      "score": 0,
+      "max_score": 130,
+      "remaining_flags": [],
+      "disposition": [
+        "Replaced compressed CSLS noun chain with plain wording.",
+        "Added conditional Cholesky jitter without asserting nonzero jitter was required."
+      ],
+      "writing_tells_counts": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "I": 0,
+        "J": 0
+      }
+    },
+    "validation": {
+      "source_word_delta": 379,
+      "main_text_changed": false,
+      "figure_files_changed": false,
+      "result_values_changed": false,
+      "source_and_shipped_metadata_hashes_match": true,
+      "writing_gate": "No hard bans; 21 preexisting flags unchanged",
+      "references_resolved": true,
+      "layout_inspected": true,
+      "overleaf_fast_forward_push_and_live_source_verified": true
+    }
   }
 }
