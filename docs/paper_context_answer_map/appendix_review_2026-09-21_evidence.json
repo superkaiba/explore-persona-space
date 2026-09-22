@@ -520,6 +520,82 @@
       "Regularization choices differ across input states",
       "Correctness-group similarity does not establish equivalence"
     ],
+    "live_source_verified": true,
+    "author_decisions": {
+      "thinking_off_position_wording": "2026-09-22: author explicitly declined the proposed correction. Leave unchanged."
+    }
+  },
+  "follow_up_refusal_assignment_removal": {
+    "date": "2026-09-22",
+    "overleaf_commit": "07a3c65bc9eaf6a1fdc13e1131a58ce4e7956930",
+    "scope": "Remove the appendix boundary-analysis extension and figure, keeping separate by-class results and the answer-length caveat.",
+    "correction_to_original_review": "The appendix perfect baseline score uses a joint assignment criterion, not the main individual cosine-nearest-answer criterion. It cannot be imported into the main result as a matched baseline.",
+    "source_evidence": [
+      {
+        "path": "eval_results/issue_2617/comment3_refusal_boundary/summary.json",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "866c1bf3c6d49f61590b214ea8cb9edfb382925c2d08a70e5bb052ff46b22c8a"
+      },
+      {
+        "path": "eval_results/issue_2564/section42_element_shifts.json",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "dfa1554facec2e05296c6a354246166ddf987edb5e8f641a77df6497de89ee01"
+      },
+      {
+        "path": "scripts/paper_c2a_refusal_boundary.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "c2c8f7b8eb8f184338e8ef6b59f71f4900180ff7d6dc93f53f5c43e983c83a96"
+      },
+      {
+        "path": "scripts/issue2564_element_shift_rows.py",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "e23b940f75d36683601ad507fb8b70732e613d8bb9d80a3ccf0b3ca1d793e2e4"
+      }
+    ],
+    "source_hashes_match_shipped_metadata": true,
+    "definitions": {
+      "main": "For each ordering, cosine(pred_near, answer_near) > cosine(pred_near, answer_far).",
+      "appendix_removed": "cos(predicted shift, observed shift) > 0, equivalent to lower summed squared distance under the correct joint assignment than under swapping.",
+      "retained_length_correlation": "Spearman correlation of unnormalized predicted-shift projection (axis cosine times predicted norm) with answer-length change."
+    },
+    "validation": {
+      "main_text_unchanged": true,
+      "changed_file": "sections/results/a3_refusal_by_class.tex",
+      "source_word_delta": -279,
+      "retained_text_unchanged": false,
+      "length_caveat_preserved": true,
+      "archived_figure_files_unchanged": true,
+      "retained_text_change": "Specified that the answer-length correlation uses the unnormalized predicted-shift projection, replacing the dangling reference to the loading."
+    },
+    "pdf_validation": {
+      "compiled_pages": 50,
+      "affected_pages": [
+        24,
+        25,
+        27
+      ],
+      "unresolved_references": [],
+      "removed_material_absent": true
+    },
+    "review": {
+      "verdict": "PASS",
+      "score": 0,
+      "max_score": 130,
+      "remaining_flags": [],
+      "resolved_flag": "Replaced the loading with the predicted shift's unnormalized projection onto the refusal direction, matching the metric behind the retained length correlation.",
+      "writing_tells_counts": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "I": 0,
+        "J": 0
+      }
+    },
     "live_source_verified": true
   }
 }
