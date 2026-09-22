@@ -436,5 +436,90 @@
       "layout_inspected": true,
       "overleaf_fast_forward_push_and_live_source_verified": true
     }
+  },
+  "follow_up_cot_recovery_wording": {
+    "date": "2026-09-22",
+    "overleaf_commit": "3b6d5c17541f329a51a52bf270b5499c16eca0d8",
+    "scope": "Limit recovery claims to the sampled interior positions, with no numerical changes or new experiments.",
+    "source_evidence": [
+      {
+        "path": "eval_results/issue_2546/allfit/p7_traj__a3.json",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "6a58d1a357025b2aa96ba51c12f885b59969b493b87bf6ed7f9ca875bb8be1e4"
+      },
+      {
+        "path": "eval_results/issue_2546/allfit/p7_D__a3.json",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "ce426b14ca2912ee9328de3d189959dfcee365eaa15f7a5f788422adf3035eae"
+      },
+      {
+        "path": "eval_results/issue_2546/retrieval_recipe/results.json",
+        "commit": "17ba59b5f5085342d8de0241ec53fd27e085d5e1",
+        "sha256": "004d4f2e018439f05fb5637cc71c2c62f107a8cfbf673faeaf978d68b000980b"
+      }
+    ],
+    "checks": {
+      "sampled_positions_percent": [
+        10,
+        20,
+        30,
+        40,
+        50,
+        60,
+        70,
+        80,
+        90
+      ],
+      "interior_point_estimates_match_table": true,
+      "endpoint_point_estimates_exceed_each_interior_state_on_both_measures": true,
+      "no_inference_about_unmeasured_recovery_timing": true
+    },
+    "word_counts": [
+      {
+        "path": "sections/results/05_cot.tex",
+        "before_words": 448,
+        "after_words": 434,
+        "numerical_tokens_unchanged": true
+      },
+      {
+        "path": "sections/results/a9_cot_trajectory.tex",
+        "before_words": 240,
+        "after_words": 245,
+        "numerical_tokens_unchanged": true
+      }
+    ],
+    "pdf_validation": {
+      "page_count": 52,
+      "changed_text_pages": [
+        7,
+        48,
+        49
+      ],
+      "unresolved_references": []
+    },
+    "review": {
+      "verdict": "PASS",
+      "score": 0,
+      "max_score": 130,
+      "remaining_flags": [],
+      "writing_tells_counts": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "I": 0,
+        "J": 0
+      }
+    },
+    "remaining_finding_7_items": [
+      "Thinking-off context token-position wording",
+      "Regularization choices differ across input states",
+      "Correctness-group similarity does not establish equivalence"
+    ],
+    "live_source_verified": true
   }
 }
