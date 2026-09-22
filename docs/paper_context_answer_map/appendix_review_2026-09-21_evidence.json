@@ -81,9 +81,9 @@
       "deduplication": "exact source-answer-vector deduplication"
     },
     "displayed_ranks": [
-      "TRUE ANSWER  \u00b7  RANK 2",
-      "RETRIEVED ANSWER  \u00b7  RANK 1",
-      "TRUE ANSWER  \u00b7  RANK 4"
+      "TRUE ANSWER  ·  RANK 2",
+      "RETRIEVED ANSWER  ·  RANK 1",
+      "TRUE ANSWER  ·  RANK 4"
     ],
     "shipped_pdf_hash_matches_sidecar": true
   },
@@ -190,5 +190,60 @@
       "Three harmful-compliance OOD datasets and generic chat had low DV spread in the source figure."
     ],
     "shipped_pdf_hash_matches_sidecar": true
+  },
+  "follow_up_r2_conventions": {
+    "date": "2026-09-22",
+    "overleaf_commit": "3f0aa88dba4eb1060caa29b4a2a6a46d067b5b48",
+    "compiled_pdf_pages": 50,
+    "scope": "Document existing R² baseline and aggregation conventions. No result changes or new experiments.",
+    "source_evidence": [
+      {
+        "path": "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/issue779_fitter_fair_comparison.py",
+        "sha256": "70016b669d6c5473c7f36a29a404f562c74f0515a024a2fdaf36fe5339f3c7c7",
+        "supports": "Main reconstruction: _recon_point, held-out mean."
+      },
+      {
+        "path": "/mnt/eps-data/thomasjiralerspong/wt-1902-k5/scripts/issue1902_k5_fits.py",
+        "sha256": "0a4fa039563de1e95634bccf5151c25c59d234fb53f40218e734d281d237999f",
+        "supports": "Post-training: _per_row_components call uses training-target mean."
+      },
+      {
+        "path": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-display/scripts/issue2054_k5_fit.py",
+        "sha256": "72f6bfb35b6f904a907f0f8310f14d2b5a0c23fb4f12fff1e7ba567b8a1b7869",
+        "supports": "Speaker/framing: mean of per-fold scores."
+      },
+      {
+        "path": "/mnt/eps-data/thomasjiralerspong/wt-2054-k5-display/scripts/issue2054_fits.py",
+        "sha256": "1c9e8cbf2a55fde5761b244313c38e085fdbf1a498d17c6d521dc723c186aa7d",
+        "supports": "Speaker/framing: _r2_matrix uses test target mean."
+      },
+      {
+        "path": "/home/thomasjiralerspong/.codex/worktrees/825-turn12-matched-20260915/scripts/issue825_turn_matched.py",
+        "sha256": "570c746c403d9662143ae132d692b9fdd1314c525325c383cea8613cf0421790",
+        "supports": "Turns: pool held-out SSE and SST, average balanced assignment losses."
+      },
+      {
+        "path": "/home/thomasjiralerspong/.codex/worktrees/825-turn12-matched-20260915/scripts/issue825_turn_pooled_single.py",
+        "sha256": "af9697d7c435ab6f2229beb58d66126bec58e95387460e4f192838f1a677319a",
+        "supports": "Turns: fixed original held-out-fold mean."
+      },
+      {
+        "path": "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/issue2546_allfit_necessity.py",
+        "sha256": "356ad1707ecd3eb544e6395712ec7044d178f805499d18b512e2beb0b0f3b932",
+        "supports": "CoT overall/trajectory: per-dataset training-fold baseline and pooled ratio."
+      },
+      {
+        "path": "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/section45_cot_necessity_r2_figure.py",
+        "sha256": "2165de38860a2eefbac2c3dc9d582f81ba73f4e5a80952c0b2164d9d49c799cd",
+        "supports": "CoT thinking-on groups: whole-dataset baseline and weighted pooled ratio."
+      },
+      {
+        "path": "/home/thomasjiralerspong/overleaf-6a59c927/sections/results/a6_cot_necessity.tex",
+        "sha256": "beed196abb4f2e02a63251e75e85ad37f7239c38f06ce828839ab7042e7bd193",
+        "supports": "Thinking-off correctness-group scores: equal dataset weighting and training-fold dataset means, explicitly stated in the active methods. The shared CoT baselines helper verifies the baseline construction. No separate producer for the auxiliary off-group point estimates was located in the inspected worktrees. No new point estimates reported or changed."
+      }
+    ],
+    "review": "PASS 0/130, all flags addressed",
+    "validation": "Compilation with resolved references, affected-page inspection, existing appendix preserved byte-for-byte outside insertion, main numerical tokens unchanged, fast-forward push and live source checked."
   }
 }

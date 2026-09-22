@@ -687,3 +687,5 @@ disclosure). Every citation fetched programmatically, never from memory.
 ## Decisions (2026-09-22)
 
 24. SAE PREDICTION TERMINOLOGY: describe the existing dense-projection analysis as prediction along decoder directions, using projection R² in the appendix score labels. Preserve feature-property and firing-statistic descriptions and the separate activation-target turn-averaged analysis. Keep the correction concise, with no new analysis or numerical changes. Applied in Overleaf commit `9aa52646fc5a21c726b2a14fce4166c4f36dea54`.
+
+25. R² REPORTING: document baseline means and aggregation rules in one compact appendix table, distinguishing pooled errors from mean fold scores and the CoT dataset-weighting conventions. Link the table from the main reconstruction definition without adding main-text length. Keep reported results unchanged. Applied in Overleaf commit `3f0aa88dba4eb1060caa29b4a2a6a46d067b5b48`.
