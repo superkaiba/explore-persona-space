@@ -801,5 +801,41 @@
     },
     "archived_results_unchanged": true,
     "title_issue_resolved": false
+  },
+  "follow_up_sae_stability_sentence_removal": {
+    "date": "2026-09-23",
+    "overleaf": {
+      "commit": "29b617e048fc910ace10ec4309f8e9583e734c5c",
+      "remote_verified": true,
+      "live_source_verified": true
+    },
+    "validation": {
+      "base_commit": "d52f435c794b902153cef3589d77139671bc3e86",
+      "changed_file": "sections/05_method_details.tex",
+      "removed_sentence": "Selecting one property per round is greedy, and pairwise correlations between properties reach 0.85, so the set of selected properties is more stable than their order, and effects below 0.02 are not readable.",
+      "source_word_delta": -33,
+      "main_text_unchanged": true,
+      "remaining_text_unchanged": true,
+      "pages": 50,
+      "affected_pages": [
+        24
+      ],
+      "unresolved_references": [],
+      "exact_single_sentence_deletion": true
+    },
+    "review": {
+      "verdict": "PASS",
+      "score": 0,
+      "max_score": 130,
+      "normalized": 0,
+      "flags": [],
+      "agent": "review_sae_stability_removal"
+    },
+    "archived_results_unchanged": true,
+    "remaining_finding12_items": [
+      "selection uncertainty beyond the removed sentence",
+      "annotation coverage and reliability",
+      "geometry group incorrectly described as using no activations"
+    ]
   }
 }
