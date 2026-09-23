@@ -72,6 +72,11 @@ DEFAULT_OUT = ROOT / "figures/paper"
 # Decoder-direction DV (the paper's primary SAE analysis from 2026-09-08); the
 # activation-target twin is plot4_redesign.json in the same directory.
 SAE_SOURCE = ROOT / "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json"
+SAE_STEPWISE_SOURCE = (
+    ROOT
+    / "eval_results/issue_1482/full_labels_reanalysis_20260923"
+    / "full_labels_common_resolved.json"
+)
 MINPAIR_SOURCE = ROOT / "eval_results/issue_2564/minpair_delta.json"
 PERSONA_SOURCE = ROOT / "eval_results/issue_2564/floor-failed-reelicitation/minpair_delta_ffr.json"
 ONEWORD_SOURCE = ROOT / "eval_results/issue_2564/lang_oneword_pilot/summary.json"
@@ -205,15 +210,35 @@ def _save(
 
 
 def _sae_data() -> dict:
+    """Read corrected property scores and the separately banked tier results."""
     source = json.loads(SAE_SOURCE.read_text())
-    all_rows = source["left_panel"]["rows"]
+    corrected = json.loads(SAE_STEPWISE_SOURCE.read_text())
+    assert corrected["status"] == "complete", corrected["status"]
     rendered = source["left_panel"]["rendered_labels"]
-    rows = all_rows[: len(rendered)]
-    assert [row["label"] for row in rows] == rendered, "rendered prefix drifted"
-    assert rows[0]["banked_name"] == "Variance explained in answer space", rows[0]["banked_name"]
-    assert rows[-1]["banked_name"] == "Content type: topic", rows[-1]["banked_name"]
-
-    rows = [{**row, "kind": "forward-selected association"} for row in rows]
+    old_rows = source["left_panel"]["rows"][: len(rendered)]
+    rounds = corrected["rounds"][: len(rendered)]
+    assert len(rounds) == len(old_rows) == 5
+    rows = []
+    for old, current in zip(old_rows, rounds, strict=True):
+        assert old["banked_name"] == current["winner"], current["winner"]
+        assert current["n"] == corrected["n"], current["n"]
+        rows.append(
+            {
+                "round": current["round"],
+                "banked_name": current["winner"],
+                "label": old["label"],
+                "value": current["winner_c"] - 0.5,
+                "winner_c": current["winner_c"],
+                "pair_frac": current["pair_frac"],
+                "n": corrected["n"],
+                "kind": "forward-selected association",
+            }
+        )
+    dv = (
+        "held-out R^2 of the decoder-direction projection d_f^T h_A "
+        "(dense; no encoder, no BatchTopK gate) under the layer-19 ridge map; "
+        f"common universe of {corrected['n']:,} features with usable labels on all five axes"
+    )
     tiers = []
     for key, label in (("0", "Coarsest"), ("1", "Middle"), ("2", "Finest")):
         cell = source["right_panel"]["per_tier"][key]
@@ -228,7 +253,9 @@ def _sae_data() -> dict:
         )
     return {
         "properties": rows,
-        "dv": source["left_panel"]["dv"],
+        "dv": dv,
+        "n": corrected["n"],
+        "property_source": _display_path(SAE_STEPWISE_SOURCE),
         "tiers": tiers,
         "spearman_raw": float(source["right_panel"]["spearman_tier_r2_raw"]),
         "spearman_adjusted": float(source["right_panel"]["spearman_tier_r2_activity_centered"]),
@@ -850,7 +877,7 @@ def make_directions_and_features_figure(data: dict) -> tuple[plt.Figure, float]:
     panel_header(
         ax_b,
         "B",
-        "120,716 SAE features",
+        f"{data['panel_b']['properties'][0]['n']:,} SAE features",
         title="Concordance by property",
         kicker_y=1.141,
         title_y=1.048,
@@ -1591,7 +1618,7 @@ def make_features_and_shifts_figure(
     for label in ax_a.get_yticklabels():
         label.set_linespacing(L.WRAPPED_TICK_LINESPACING)
     _fs_place_xlabel(ax_a, x_axes=0.5, plot_h_in=plot_h_in)
-    panel_header(ax_a, next(letters), "120,716 SAE features", kicker_y=kicker_y)
+    panel_header(ax_a, next(letters), f"{sae['n']:,} SAE features", kicker_y=kicker_y)
 
     b_left, b_right = boxes[1]
     grid_b = fig.add_gridspec(1, 1, left=b_left, right=b_right, top=top, bottom=bottom)
@@ -2083,7 +2110,7 @@ def main() -> None:
                 "nested-tier gradient, decoder-direction target"
             ),
             include_frac=sae_frac,
-            sources=[SAE_SOURCE],
+            sources=[SAE_SOURCE, SAE_STEPWISE_SOURCE],
             displayed_data=sae,
         )
         plt.close(sae_fig)
@@ -2185,7 +2212,7 @@ def main() -> None:
                 "held-out R2 of its decoder direction"
             ),
             include_frac=daf_frac,
-            sources=[SPECTRUM_SOURCE, SAE_SOURCE],
+            sources=[SPECTRUM_SOURCE, SAE_SOURCE, SAE_STEPWISE_SOURCE],
             displayed_data={"panel_a": info["panel_a"], "panel_b": info["panel_b"]},
         )
         plt.close(daf_fig)
@@ -2267,7 +2294,12 @@ def main() -> None:
                 "dropped, with 95% pair-bootstrap intervals"
             ),
             include_frac=fs_frac,
-            sources=[SAE_SOURCE, ELEMENT_SHIFT_SOURCE, TIER_CONCORDANCE_SOURCE],
+            sources=[
+                SAE_SOURCE,
+                SAE_STEPWISE_SOURCE,
+                ELEMENT_SHIFT_SOURCE,
+                TIER_CONCORDANCE_SOURCE,
+            ],
             displayed_data={
                 "panel_a": {
                     "properties": fs_sae["properties"],
@@ -2279,8 +2311,19 @@ def main() -> None:
                         "universe": fs_tier["universe"],
                         "matching": fs_tier["matching"],
                         "bootstrap": fs_tier["bootstrap"],
-                        "property_rows_universe": fs_tier["property_rows_universe"],
-                        "caption_note": fs_tier["caption_note"],
+                        "property_rows_universe": {
+                            "n_features_scored": fs_sae["n"],
+                            "layer": 19,
+                            "selection": "active with usable labels on all five axes",
+                            "source": fs_sae["property_source"],
+                        },
+                        "caption_note": (
+                            "The tier bar covers a separate nested dictionary at layer 20, "
+                            "matched on activity quintiles. "
+                            f"The property bars cover {fs_sae['n']:,} regular SAE features "
+                            "at layer 19 with usable labels on all five axes, matched on "
+                            "earlier selected properties. The first property is unmatched."
+                        ),
                         "separation": (
                             "one empty row, a shaded stripe, a lighter bar fill and the "
                             "group's own kicker; the stripe, the gap and the fill survive "
