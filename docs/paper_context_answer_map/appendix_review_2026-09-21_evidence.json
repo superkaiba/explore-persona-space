@@ -837,5 +837,44 @@
       "annotation coverage and reliability",
       "geometry group incorrectly described as using no activations"
     ]
+  },
+  "follow_up_sae_geometry_description": {
+    "date": "2026-09-23",
+    "overleaf": {
+      "commit": "95ab20aa8409a20694bae32b59d1b9f672021e8c",
+      "remote_verified": true,
+      "live_source_verified": true
+    },
+    "validation": {
+      "base_commit": "29b617e048fc910ace10ec4309f8e9583e734c5c",
+      "changed_file": "sections/05_method_details.tex",
+      "old_sentence": "\\emph{Read and write geometry} is computed from the SAE's encoder and\ndecoder matrices and the unembedding alone, with no reference to any activation,\nso these values are fixed by the dictionary before any answer is seen.",
+      "new_sentence": "\\emph{Read and write geometry} combines properties of the SAE and unembedding\nweights with statistics of context and answer activations.",
+      "source_word_delta": -17,
+      "main_text_unchanged": true,
+      "other_text_unchanged": true,
+      "pages": 50,
+      "affected_pages": [
+        23
+      ],
+      "unresolved_references": [],
+      "exact_single_sentence_replacement": true,
+      "numerical_tokens_unchanged": true
+    },
+    "review": {
+      "verdict": "PASS",
+      "score": 0,
+      "max_score": 130,
+      "normalized": 0,
+      "flags": [],
+      "agent": "review_sae_geometry_wording"
+    },
+    "source": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/scripts/issue1482_predictor_battery_fullwidth.py",
+      "sha256": "cfcd6c398c13b5f2aa81b8e14faabb505bb87da125669dfe90840b230746de06",
+      "function": "full_width_projection_variance",
+      "verified_dependency": "Observed answer states form a covariance matrix used for unit-decoder projection variance."
+    },
+    "archived_results_unchanged": true
   }
 }
