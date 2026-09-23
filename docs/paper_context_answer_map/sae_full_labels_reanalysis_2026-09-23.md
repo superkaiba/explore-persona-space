@@ -51,3 +51,5 @@ OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8
 ```
 
 The original analysis driver is committed at `f42fcc046b4`. Completed outputs are reusable only when the full manifest, including script and input hashes and source revisions, matches. The public comparison chart reports the marginal associations; its sidecar contains exact plotted data and output hashes.
+
+[Open the comparison chart](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8cc43071c35ec269c2166d15626fb96a4344c198/figures/issue_1482/full_labels_reanalysis_20260923/label_associations.png).
