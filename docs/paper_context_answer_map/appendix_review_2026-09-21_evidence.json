@@ -660,5 +660,111 @@
     },
     "live_source_verified": true,
     "archived_analysis_unchanged": true
+  },
+  "follow_up_retrieval_examples_10k": {
+    "source_hashes": {
+      "scripts/issue1901_qualitative_retrieval_failures.py": "02becaa7a3111db11838fcebd3acbadc87e8ce064f78be56eebeb9ae77a0a77a",
+      "src/explore_persona_space/analysis/c2a_plot_style.py": "74d774c6f04778e69a36cc58595e009cf06f3b612b7414f09423601fba1b5f98",
+      "eval_results/issue_1901/content_divergent_retrieval_examples_10k.json": "d68b044203d8b7d7addf48b50bf01446543c4640176da87bf6b721de02f39b88",
+      "eval_results/issue_1901/failure_categories/summary.json": "f2e0783af736bfe3b353526686716ade93ec4532e5ba145b02905d27c1bdca1e",
+      "figures/paper/c3_qualitative_discrimination.meta.json": "89f190932a3a75900c221f1fe6301b4c9c26c17b6f2b73a29273aefbfaf5194d",
+      "figures/paper/c3_qualitative_discrimination.pdf": "2809cde0deb0ff46ece5afdb9b8a52c5cc03029611e51df5ba25763aae71a590",
+      "figures/paper/c3_qualitative_discrimination.png": "11119d5e374c052495d280b48fddbc09a3267b1a706ce4eb1d30b977055d4ab1",
+      "figures/paper/c3_qualitative_discrimination_grayscale.png": "2965958a501cd7de48d1fc53837a6071d5661e80914e9adaafb3a77a71ac3ca5"
+    },
+    "validation": {
+      "pages": 50,
+      "inspected_figure_pages": [
+        35
+      ],
+      "main_text_unchanged": true,
+      "unresolved_references": [],
+      "metadata_matches_pdf": true,
+      "ranks": [
+        5,
+        8
+      ],
+      "pool_size": 10000
+    },
+    "excerpt_checks": [
+      [
+        "vocabulary_to_cloud_computing_quiz",
+        "true",
+        "final_query",
+        "exact ordered excerpt after declared normalization"
+      ],
+      [
+        "vocabulary_to_cloud_computing_quiz",
+        "true",
+        "answer_excerpt",
+        "exact ordered excerpt after declared normalization"
+      ],
+      [
+        "vocabulary_to_cloud_computing_quiz",
+        "retrieved",
+        "final_query",
+        "exact ordered excerpt after declared normalization"
+      ],
+      [
+        "vocabulary_to_cloud_computing_quiz",
+        "retrieved",
+        "answer_excerpt",
+        "exact ordered excerpt after declared normalization"
+      ],
+      [
+        "vancouver_to_hawaii_itinerary",
+        "true",
+        "final_query",
+        "exact ordered excerpt after declared normalization"
+      ],
+      [
+        "vancouver_to_hawaii_itinerary",
+        "true",
+        "answer_excerpt",
+        "exact ordered excerpt after declared normalization"
+      ],
+      [
+        "vancouver_to_hawaii_itinerary",
+        "retrieved",
+        "final_query",
+        "exact ordered excerpt after declared normalization"
+      ],
+      [
+        "vancouver_to_hawaii_itinerary",
+        "retrieved",
+        "answer_excerpt",
+        "exact ordered excerpt after declared normalization"
+      ]
+    ],
+    "figure_number": 14,
+    "category_reference_moved_to": "Same task, independently phrased",
+    "manuscript_source_word_delta": 0,
+    "old_942_candidate_input_preserved": true,
+    "date": "2026-09-23",
+    "overleaf": {
+      "commit": "9f366d165dfacb8174b69388b434e007be8ac44e",
+      "remote_verified": true,
+      "live_source_verified": true
+    },
+    "eps_asset_commit": "891435c16f66b1a805f501500ea668b9dda88285",
+    "review": {
+      "verdict": "PASS",
+      "score": 0,
+      "max_score": 130,
+      "normalized": 0.0,
+      "flags": [],
+      "agent": "review_retrieval_examples_10k",
+      "confirmed": [
+        "ranks and candidate IDs",
+        "all eight exact ordered excerpts",
+        "prompt and answer hashes",
+        "packet, audit, category and text-bank hashes",
+        "output hashes",
+        "same-task cross-reference",
+        "caption pooling distinction",
+        "archived old input and main text unchanged"
+      ]
+    },
+    "remaining_scope": "The separate stale AUC-panel reference noted under original finding 10 was not edited in this figure replacement."
   }
 }

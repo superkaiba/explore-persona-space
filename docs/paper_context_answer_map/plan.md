@@ -701,3 +701,5 @@ disclosure). Every citation fetched programmatically, never from memory.
 ## Decisions (2026-09-23)
 
 30. RETRIEVAL APPENDIX SCOPE: remove the quantitative matched top/bottom retrieval-tail comparison, coverage discussion and table. Preserve qualitative retrieval examples, the separate factual case and its baseline coordinate definition, forecasting results, and general scoring definitions and limitations. Keep main text and archived experimental results unchanged. Applied in Overleaf commit `cc2d75a5a82e5a48b14dadc173598939015d4170`.
+
+31. RETRIEVAL EXAMPLE UPDATE: retain the two manuscript query examples and replace their retrieved pairs with the 10,000-candidate results: vocabulary quiz to cloud-computing quiz, and Vancouver to Hawaii itinerary, with correct-answer ranks five and eight. Move the appendix figure pointer to the matching same-task category. Keep main text and caption wording unchanged. Preserve the older evaluation input separately and archive reproducible new inputs and metadata. Applied in Overleaf commit `9f366d165dfacb8174b69388b434e007be8ac44e`.
