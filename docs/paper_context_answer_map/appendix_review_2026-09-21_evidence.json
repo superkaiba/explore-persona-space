@@ -81,9 +81,9 @@
       "deduplication": "exact source-answer-vector deduplication"
     },
     "displayed_ranks": [
-      "TRUE ANSWER  \u00b7  RANK 2",
-      "RETRIEVED ANSWER  \u00b7  RANK 1",
-      "TRUE ANSWER  \u00b7  RANK 4"
+      "TRUE ANSWER  ·  RANK 2",
+      "RETRIEVED ANSWER  ·  RANK 1",
+      "TRUE ANSWER  ·  RANK 4"
     ],
     "shipped_pdf_hash_matches_sidecar": true
   },
@@ -195,7 +195,7 @@
     "date": "2026-09-22",
     "overleaf_commit": "3f0aa88dba4eb1060caa29b4a2a6a46d067b5b48",
     "compiled_pdf_pages": 50,
-    "scope": "Document existing R\u00b2 baseline and aggregation conventions. No result changes or new experiments.",
+    "scope": "Document existing R² baseline and aggregation conventions. No result changes or new experiments.",
     "source_evidence": [
       {
         "path": "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/issue779_fitter_fair_comparison.py",
@@ -1250,5 +1250,168 @@
         "Not selected means not selected within the inherited 14-round cap"
       ]
     }
+  },
+  "follow_up_sae_full_labels_manuscript_update": {
+    "date": "2026-09-23",
+    "authorization": "User approved corrected results after asking about the main-text impact.",
+    "overleaf": {
+      "commit": "77b7c1558bf1be77a0bb3a485194dd99e9b94024",
+      "remote_head_verified": true,
+      "fast_forward_verified": true,
+      "live_sha256": {
+        "sections/05_method_details.tex": "66469d003eb332ced227b6b6fd7edf3ac50e1a79db6d2bcc14b70a4ee7183072",
+        "sections/results/02_information.tex": "d8d531db49a1d0f72d15f0f6b56cdd1ab2b23087572c4dba08b6f8516dc0e63f",
+        "figures/paper/c3_features_and_shifts.pdf": "5d4679b23c81e08db14caa116bad531a41f62e4dde600ba40323d105406058e5",
+        "figures/paper/c3_sae_tier_gradient.pdf": "d40626c9edf2296fdf04b5570cc5d94064eb6a60a93d9f55e5603ddd95829ec4"
+      }
+    },
+    "figure_code_sha": "e458a0e2322e57e2831f050a777201d31621d6f0",
+    "figure_assets_sha": "43317eb032fc8fe9d4b48144eb6bca66d16e342f",
+    "browser_assets": [
+      {
+        "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/43317eb032fc8fe9d4b48144eb6bca66d16e342f/figures/paper/c3_features_and_shifts.png",
+        "http_status": 200,
+        "sha256": "59d23eb3db705366398d97ea5c4fd98b5b8209d91cd478d53cc6b5cfa173d165"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/superkaiba/explore-persona-space/43317eb032fc8fe9d4b48144eb6bca66d16e342f/figures/paper/c3_sae_tier_gradient.png",
+        "http_status": 200,
+        "sha256": "e72c8f0026b46dd53a6190604a71f04520e83f44d22b60aca0fb1ef238d5ac72"
+      }
+    ],
+    "primary_source": "eval_results/issue_1482/full_labels_reanalysis_20260923/full_labels_common_resolved.json",
+    "main_effects": {
+      "identity_disposition": 0.12728540460268323,
+      "topic": -0.07990883828545381,
+      "promoting": -0.10415194933444327,
+      "suppressing": -0.09958500488570898
+    },
+    "cohort": {
+      "active": 120716,
+      "all_axes_resolved": 105714,
+      "excluded": 15002
+    },
+    "compile": {
+      "pages": 50,
+      "affected_pages": [
+        4,
+        5,
+        22,
+        23,
+        24,
+        25,
+        26
+      ],
+      "source_word_counts": {
+        "sections/05_method_details.tex": {
+          "old_source_words": 11632,
+          "new_source_words": 11658,
+          "delta": 26
+        },
+        "sections/results/02_information.tex": {
+          "old_source_words": 700,
+          "new_source_words": 700,
+          "delta": 0
+        }
+      },
+      "unresolved_or_errors": []
+    },
+    "figure_checks": {
+      "primary_sha256": "863e448af8df93203872d5f8063dba4fb6808ace716899910625283acded90f2",
+      "checks": {
+        "c3_features_and_shifts": {
+          "property_rows_equal_primary": true,
+          "other_panels_equal_base": true,
+          "source_hashes_valid": true,
+          "stale_cohort_count_absent": true
+        },
+        "c3_sae_tier_gradient": {
+          "property_rows_equal_primary": true,
+          "other_panels_equal_base": true,
+          "source_hashes_valid": true,
+          "stale_cohort_count_absent": true
+        }
+      }
+    },
+    "review": {
+      "timestamp_utc": "2026-09-23T22:55:52.922159+00:00",
+      "verdict": "PASS",
+      "scope": "Independent numerical/code review and fresh-context academic humanize/writing-tells critic; new or changed manuscript prose in context only. Unchanged title and pending appendix issues excluded. No manuscript or code edits by reviewer.",
+      "files_sha256": {
+        "/home/thomasjiralerspong/overleaf-sae-full-labels-paper-20260923/sections/05_method_details.tex": "66469d003eb332ced227b6b6fd7edf3ac50e1a79db6d2bcc14b70a4ee7183072",
+        "/home/thomasjiralerspong/overleaf-sae-full-labels-paper-20260923/sections/results/02_information.tex": "d8d531db49a1d0f72d15f0f6b56cdd1ab2b23087572c4dba08b6f8516dc0e63f",
+        "/home/thomasjiralerspong/.codex/worktrees/sae-full-labels-reanalysis-20260923/scripts/make_paper_section42_figures.py": "6f46a215f98ba8d6726ce003887199423c91b28e0ffc1006672b03002acef650",
+        "/home/thomasjiralerspong/.codex/worktrees/sae-full-labels-reanalysis-20260923/figures/paper/c3_features_and_shifts.meta.json": "22d04425b1eeb91c4baaa4fb3819c9dd9bc3549f7795e481bd8a39d19f6a56df",
+        "/home/thomasjiralerspong/.codex/worktrees/sae-full-labels-reanalysis-20260923/figures/paper/c3_sae_tier_gradient.meta.json": "91dbc1135be4a2b40e331e540c43d16921ad88255c156b465ca8effd291b7b7d",
+        "/home/thomasjiralerspong/.codex/worktrees/sae-full-labels-reanalysis-20260923/eval_results/issue_1482/full_labels_reanalysis_20260923/full_labels_common_resolved.json": "863e448af8df93203872d5f8063dba4fb6808ace716899910625283acded90f2",
+        "/home/thomasjiralerspong/.codex/worktrees/sae-full-labels-reanalysis-20260923/eval_results/issue_1482/full_labels_reanalysis_20260923/comparison.json": "5c2632344ca439087d323e735bb42a73b871bfc63923b4ff4d97294d1c4894cd",
+        "/home/thomasjiralerspong/.codex/worktrees/sae-full-labels-reanalysis-20260923/eval_results/issue_1482/full_labels_reanalysis_20260923/coverage.json": "9be0611399c3886564b6c8114f1b8e0118754da4fa35db053e8ef0ccff2323eb"
+      },
+      "checks": {
+        "all_39_marginal_rows": "PASS: all signed scores after two-decimal rounding and selected-round annotations match round 0 and comparison.json. Exactly 39 unique properties.",
+        "all_14_selected_rows": "PASS: exact winner order, signed scores after rounding, pair fractions after rounding, round numbers.",
+        "cohort": "PASS: 120716 active - 15002 excluded = 105714; all five axis coverage partitions sum to 120716, all corrected rounds use 105714. Common mask construction restricts all 39 properties to the same five-axis usable-label cohort.",
+        "main_narrative": "PASS: identity +0.13, topic -0.08, promoting and suppressing -0.10 each. Appendix marginal identity +0.28, topic +0.01, suppressing -0.16, promoting -0.10 agree with source. Run stops at inherited 14-round maximum.",
+        "loader": "PASS: imported actual generator and called _sae_data; corrected status complete, five exact rows, source ordering assertions and count agreement verified.",
+        "provenance": "PASS: all 12 original manifest input files exist at recorded source root and match SHA256. Both current figure metadata source hashes match on-disk sources.",
+        "scaffold_alias": "PASS: issue1482_concordance_writeup_figs.py CONT maps scaffold_frac to the historical Scaffold-token activation fraction string. issue1773_phase0_mechanical.py computes scaffold_frac as decoder squared mass within prefix covariance top-48 eigenspace; SCAFFOLD_RANK=48. Manuscript Decoder mass on the 48 leading context-prefix directions is the correct meaning.",
+        "unrelated_data": "PASS: features-and-shifts panels_b_c and separate Matryoshka rows/universe/matching/bootstrap match base exactly; every old tier-gradient displayed-data field other than corrected properties/dv is unchanged.",
+        "revised_metadata_caption": "PASS: reported stale 120716 in separate-group caption_note was fixed by parent and rechecked at 105714.",
+        "visual_compile": "Not independently repeated; parent handles visual/compile verification."
+      },
+      "resolved_findings": [
+        {
+          "severity": "P2",
+          "file": "/home/thomasjiralerspong/.codex/worktrees/sae-full-labels-reanalysis-20260923/scripts/make_paper_section42_figures.py",
+          "issue": "Separate-group caption_note copied the old 120716 population despite corrected property rows.",
+          "status": "Fixed by parent; current generated metadata checked."
+        }
+      ],
+      "actionable_findings": [],
+      "humanize_academic": {
+        "text_type": "results-writeup",
+        "max_score": 130,
+        "verdict": "PASS",
+        "total_score": 0,
+        "normalized_score": 0.0,
+        "category_scores": {
+          "Vocabulary": 0,
+          "Structure": 0,
+          "Rhythm": 0,
+          "Voice": 0,
+          "Interpretation": 0,
+          "Results-writing": 0
+        },
+        "exact_rubric_output": "TEXT TYPE: results-writeup\nMAX SCORE: 130\nVERDICT: PASS\nTOTAL SCORE: 0\nNORMALIZED: 0.0\n\nBREAKDOWN:\n- Vocabulary: 0 — No flagged vocabulary in new or changed prose.\n- Structure: 0 — New cohort definition, exclusion rule, and stopping statement are direct and varied.\n- Rhythm: 0 — No repeated sentence skeleton or uniform pacing introduced.\n- Voice: 0 — Specific procedural descriptions and quantified associations without promotional claims.\n- Interpretation: 0 — Corrected cohort, effects, sign change, and round limit agree with current artifacts.\n- Results-writing: 0 — Updated narrative and captions match the corrected property results; unchanged claims outside scope were not reopened.\n\nFLAGGED ISSUES:\nNo significant AI patterns or interpretation issues detected."
+      },
+      "writing_tells": {
+        "verdict": "PASS",
+        "counts": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0,
+          "E": 0,
+          "F": 0,
+          "G": 0,
+          "H": 0,
+          "I": 0,
+          "J": 0
+        },
+        "blockers": [],
+        "exact_rubric_output": "VERDICT: PASS\nCOUNTS: A=0 B=0 C=0 D=0 E=0 F=0 G=0 H=0 I=0 J=0\nBLOCKERS: none"
+      },
+      "limits": [
+        "Review checks the approved replacement against its current numerical artifacts and source provenance, without rerunning the full concordance analysis.",
+        "The unchanged title and unrelated appendix wording remain outside the requested narrow review scope."
+      ]
+    },
+    "review_artifact_note": "Metadata was regenerated after review to pin the committed plotting-code SHA. Reviewed generator/prose and displayed values are unchanged; final source/output hashes were reverified.",
+    "writing_gates": {
+      "hard_bans": "PASS",
+      "added_prose_bans_and_watch_terms": "PASS",
+      "full_paper_preexisting_flags": 19
+    },
+    "remaining_scope": "Selection uncertainty and all unrelated original review items remain for one-at-a-time discussion."
   }
 }
