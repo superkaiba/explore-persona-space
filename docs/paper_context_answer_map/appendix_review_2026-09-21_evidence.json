@@ -766,5 +766,40 @@
       ]
     },
     "remaining_scope": "The separate stale AUC-panel reference noted under original finding 10 was not edited in this figure replacement."
+  },
+  "follow_up_whole_turn_mean_removal": {
+    "date": "2026-09-23",
+    "overleaf": {
+      "commit": "d52f435c794b902153cef3589d77139671bc3e86",
+      "remote_verified": true,
+      "live_source_verified": true
+    },
+    "validation": {
+      "old_words": 514,
+      "new_words": 500,
+      "delta": -14,
+      "main_text_unchanged": true,
+      "scope": "Remove the explicit whole-turn-mean comparison sentence only. Full sweep methods, counts, other results and title remain unchanged. Original finding11 title overclaim is not claimed resolved.",
+      "pages": 50,
+      "affected_pages": [
+        15,
+        16
+      ],
+      "unresolved_references": []
+    },
+    "review": {
+      "verdict": "PASS (scoped deletion)",
+      "score": 3,
+      "max_score": 130,
+      "normalized": 0.023076923076923078,
+      "flags": [
+        {
+          "issue": "Removing the explicit higher-score example leaves the best-representations title issue unresolved.",
+          "disposition": "User-requested omission documented, experiment coverage preserved, unresolved title explicitly disclosed in chat."
+        }
+      ]
+    },
+    "archived_results_unchanged": true,
+    "title_issue_resolved": false
   }
 }
