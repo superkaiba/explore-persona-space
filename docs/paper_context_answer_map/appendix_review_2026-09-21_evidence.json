@@ -81,9 +81,9 @@
       "deduplication": "exact source-answer-vector deduplication"
     },
     "displayed_ranks": [
-      "TRUE ANSWER  ·  RANK 2",
-      "RETRIEVED ANSWER  ·  RANK 1",
-      "TRUE ANSWER  ·  RANK 4"
+      "TRUE ANSWER  \u00b7  RANK 2",
+      "RETRIEVED ANSWER  \u00b7  RANK 1",
+      "TRUE ANSWER  \u00b7  RANK 4"
     ],
     "shipped_pdf_hash_matches_sidecar": true
   },
@@ -195,7 +195,7 @@
     "date": "2026-09-22",
     "overleaf_commit": "3f0aa88dba4eb1060caa29b4a2a6a46d067b5b48",
     "compiled_pdf_pages": 50,
-    "scope": "Document existing R² baseline and aggregation conventions. No result changes or new experiments.",
+    "scope": "Document existing R\u00b2 baseline and aggregation conventions. No result changes or new experiments.",
     "source_evidence": [
       {
         "path": "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/scripts/issue779_fitter_fair_comparison.py",
@@ -876,5 +876,379 @@
       "verified_dependency": "Observed answer states form a covariance matrix used for unit-decoder projection variance."
     },
     "archived_results_unchanged": true
+  },
+  "follow_up_sae_full_labels_reanalysis": {
+    "date": "2026-09-23",
+    "authorization": "redo the analysis with the full labels and present results here",
+    "eps_commit": "8cc43071c35ec269c2166d15626fb96a4344c198",
+    "overleaf_changed": false,
+    "completion": {
+      "status": "complete",
+      "finished_utc": "2026-09-23T22:32:50.450936+00:00",
+      "manifest_sha256": "6096bf39eec678f8c15881641342856c1df72fcf4b46b05d3f34845cf1d895c4",
+      "verification": {
+        "rounds_reproduced": 14,
+        "max_absolute_score_difference": 0.0
+      },
+      "coverage": {
+        "base_population": 120716,
+        "axes": {
+          "interpretable": {
+            "resolved_usable": 119752,
+            "unresolved": 934,
+            "unlabeled": 30,
+            "unclear": 0,
+            "unanimous_five_of_five": 93527,
+            "class_counts": {
+              "yes": 102110,
+              "no": 17642
+            }
+          },
+          "abstraction": {
+            "resolved_usable": 117718,
+            "unresolved": 2968,
+            "unlabeled": 30,
+            "unclear": 0,
+            "unanimous_five_of_five": 69432,
+            "class_counts": {
+              "token_surface": 44626,
+              "lexical_semantic": 31442,
+              "abstract_contextual": 41650
+            }
+          },
+          "content_type": {
+            "resolved_usable": 117142,
+            "unresolved": 3544,
+            "unlabeled": 30,
+            "unclear": 0,
+            "unanimous_five_of_five": 82952,
+            "class_counts": {
+              "topic": 21460,
+              "task_format": 1945,
+              "entity": 5934,
+              "syntax": 76455,
+              "operation": 11348
+            }
+          },
+          "speaker_property": {
+            "resolved_usable": 119227,
+            "unresolved": 1436,
+            "unlabeled": 30,
+            "unclear": 23,
+            "unanimous_five_of_five": 90290,
+            "class_counts": {
+              "none": 100489,
+              "language": 7062,
+              "register_style": 10160,
+              "identity_disposition": 1516
+            }
+          },
+          "functional_role": {
+            "resolved_usable": 112733,
+            "unresolved": 7953,
+            "unlabeled": 30,
+            "unclear": 0,
+            "unanimous_five_of_five": 74145,
+            "class_counts": {
+              "input_side": 103515,
+              "output_promoting": 3600,
+              "mixed": 5618
+            }
+          }
+        },
+        "common_resolved_population": 105714,
+        "excluded_from_common_population": 15002
+      },
+      "runs": {
+        "published_reproduction": {
+          "n": 120716,
+          "stop_reason": "inherited maximum of 14 rounds",
+          "selection": [
+            {
+              "name": "Variance explained in answer space",
+              "round": 0,
+              "score": 0.3155785921425568
+            },
+            {
+              "name": "Speaker: identity / disposition",
+              "round": 1,
+              "score": 0.12263806407038147
+            },
+            {
+              "name": "Logit footprint: promoting",
+              "round": 2,
+              "score": -0.10360473944167892
+            },
+            {
+              "name": "Logit footprint: suppressing",
+              "round": 3,
+              "score": -0.09866066404139495
+            },
+            {
+              "name": "Content type: topic",
+              "round": 4,
+              "score": -0.08668210029410484
+            },
+            {
+              "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+              "round": 5,
+              "score": -0.060611772995837254
+            },
+            {
+              "name": "Judged role: output-promoting  [k=0.31]",
+              "round": 6,
+              "score": -0.04582037925579813
+            },
+            {
+              "name": "Content type: operation",
+              "round": 7,
+              "score": -0.03525798448660544
+            },
+            {
+              "name": "Speaker: register / style",
+              "round": 8,
+              "score": 0.06768461923521685
+            },
+            {
+              "name": "Content type: entity",
+              "round": 9,
+              "score": -0.0415066009815358
+            },
+            {
+              "name": "Content type: task format",
+              "round": 10,
+              "score": 0.0361713170709691
+            },
+            {
+              "name": "Within-answer consistency",
+              "round": 11,
+              "score": 0.032450534091842176
+            },
+            {
+              "name": "Scaffold-token activation fraction",
+              "round": 12,
+              "score": 0.031766529600803506
+            },
+            {
+              "name": "Abstraction: token surface",
+              "round": 13,
+              "score": -0.029930063609797275
+            }
+          ]
+        },
+        "full_labels_unknown_zero_diagnostic": {
+          "n": 120716,
+          "stop_reason": "inherited maximum of 14 rounds",
+          "selection": [
+            {
+              "name": "Variance explained in answer space",
+              "round": 0,
+              "score": 0.3155785921425568
+            },
+            {
+              "name": "Speaker: identity / disposition",
+              "round": 1,
+              "score": 0.12856127863548872
+            },
+            {
+              "name": "Logit footprint: promoting",
+              "round": 2,
+              "score": -0.1034262925187861
+            },
+            {
+              "name": "Logit footprint: suppressing",
+              "round": 3,
+              "score": -0.09859017630639233
+            },
+            {
+              "name": "Content type: topic",
+              "round": 4,
+              "score": -0.08005068482206834
+            },
+            {
+              "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+              "round": 5,
+              "score": -0.06007024013826473
+            },
+            {
+              "name": "Judged role: output-promoting  [k=0.31]",
+              "round": 6,
+              "score": -0.04265705600834724
+            },
+            {
+              "name": "Speaker: register / style",
+              "round": 7,
+              "score": 0.04038506452993673
+            },
+            {
+              "name": "Content type: task format",
+              "round": 8,
+              "score": 0.041331415003692085
+            },
+            {
+              "name": "Content type: entity",
+              "round": 9,
+              "score": -0.035658358126482215
+            },
+            {
+              "name": "Speaker: language of the text",
+              "round": 10,
+              "score": 0.033449153228843564
+            },
+            {
+              "name": "Within-answer consistency",
+              "round": 11,
+              "score": 0.03055120974820602
+            },
+            {
+              "name": "Scaffold-token activation fraction",
+              "round": 12,
+              "score": 0.03171789470429842
+            },
+            {
+              "name": "Content type: syntax",
+              "round": 13,
+              "score": 0.024111206529868534
+            }
+          ]
+        },
+        "full_labels_common_resolved": {
+          "n": 105714,
+          "stop_reason": "inherited maximum of 14 rounds",
+          "selection": [
+            {
+              "name": "Variance explained in answer space",
+              "round": 0,
+              "score": 0.31611031025791725
+            },
+            {
+              "name": "Speaker: identity / disposition",
+              "round": 1,
+              "score": 0.12728540460268323
+            },
+            {
+              "name": "Logit footprint: promoting",
+              "round": 2,
+              "score": -0.10415194933444327
+            },
+            {
+              "name": "Logit footprint: suppressing",
+              "round": 3,
+              "score": -0.09958500488570898
+            },
+            {
+              "name": "Content type: topic",
+              "round": 4,
+              "score": -0.07990883828545381
+            },
+            {
+              "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+              "round": 5,
+              "score": -0.06053926906137125
+            },
+            {
+              "name": "Judged role: output-promoting  [k=0.31]",
+              "round": 6,
+              "score": -0.04531045432274611
+            },
+            {
+              "name": "Speaker: register / style",
+              "round": 7,
+              "score": 0.04160347340239212
+            },
+            {
+              "name": "Content type: task format",
+              "round": 8,
+              "score": 0.04098724966156575
+            },
+            {
+              "name": "Content type: entity",
+              "round": 9,
+              "score": -0.03731372696624069
+            },
+            {
+              "name": "Within-answer consistency",
+              "round": 10,
+              "score": 0.0317906896081398
+            },
+            {
+              "name": "Scaffold-token activation fraction",
+              "round": 11,
+              "score": 0.031069217034688457
+            },
+            {
+              "name": "Speaker: language of the text",
+              "round": 12,
+              "score": 0.03082625106340453
+            },
+            {
+              "name": "Abstraction: token surface",
+              "round": 13,
+              "score": -0.025578188198442042
+            }
+          ]
+        }
+      }
+    },
+    "input_locations": {
+      "source_git_sha": "92d0a7e505f78d7d438a5b934700363ca0cbfef6",
+      "git": {
+        "eval_results/issue_1482/decoder_direction/decoder_direction_r2_fullwidth_common_universe.npy": "c9e9928b28134f67fe390359c70fe31e029e632ba50560a820bbff0e4c317b14",
+        "figures/issue_1482/concordance_decoder_direction_common_noside_noratio/writeup_stepwise.meta.json": "606e32ee43de276511622003f818dc13c2ae5e47f96ef6b581733b9d768b49be",
+        "eval_results/issue_1482/predictor_battery/fullwidth_discrete_covariates.npz": "e24271f5be0e2267e664ba320222bad81faf06877065e28e9cfd2bb743da831f",
+        "eval_results/issue_1482/predictor_battery/fullwidth_matrix.npz": "c1decf058a6c0211247253b7936eecd0b32d1b60f96f01f05cbd51f93a46d8cb",
+        "eval_results/issue_1482/run_length/run_length_perfeature.npz": "af67215f765b69eb0d45a834528fcc4434002b5f06012a84956907ff3b3a5a93",
+        "scripts/issue1482_concordance_stepwise.py": "e4686c0c4bcac3bdb107190cb64c6812d484d02d270d7429a821793e4ac2b324",
+        "scripts/issue1482_concordance_writeup_figs.py": "f84164ffda831499a66e27834ba29b225b6cfb2d64009e78380cd81c2326308f",
+        "scripts/issue1482_concordance_fig.py": "5e7549bf763be288a5dfa3085bf46ae0ef21be5ddb7c8b9173d614d73baeea00",
+        "scripts/issue1482_shapley_blocks.py": "31dfdf540cdda3e6204dff72f99698553fc395c11c4531162d15278b72046a46"
+      },
+      "hf": {
+        "repo": "superkaiba1/explore-persona-space-data",
+        "revision": "8aa478178c1608b9003f4724b84eabf6438a9778",
+        "files": [
+          {
+            "path": "issue1482_full_labels_reanalysis_20260923/inputs/eval_results/issue_1482/label_agreement/agreement_votes.npz",
+            "sha256": "dbe71272f3b62bdd36118de531e3650bb5d51e640249b9efc092182c07b04fbd",
+            "bytes": 491303
+          },
+          {
+            "path": "issue1482_full_labels_reanalysis_20260923/inputs/eval_results/issue_1482/predictor_battery/fullwidth_covariates_v2.npz",
+            "sha256": "776f32dcb144abbbd73714ef984392b6e0e7129c3dd259a39c8c844f89589a4f",
+            "bytes": 25172084
+          },
+          {
+            "path": "issue1482_full_labels_reanalysis_20260923/inputs/eval_results/issue_1482/predictor_battery/shapley_blocks_densesae_ridge_k24.json",
+            "sha256": "ca5c005fd970f82f343ab2d56d3febe7aca844327e44b2bd5f78f9ec489a1852",
+            "bytes": 115091
+          },
+          {
+            "path": "issue1482_full_labels_reanalysis_20260923/analysis_tensors/populations.npz",
+            "sha256": "e5af09bf80c941a023e8661ee3f43731a442117ffa398cdc8030765500bf4f88",
+            "bytes": 368936
+          }
+        ],
+        "verification": "Downloaded every new file at pinned revision and checked SHA-256"
+      }
+    },
+    "review": {
+      "verdict": "PASS",
+      "reviewer_task": "review_full_label_reanalysis",
+      "checks": [
+        "Stepwise parity on three synthetic datasets",
+        "Binary concordance versus independent pair enumeration with ties",
+        "Saved-label equality on legacy rows",
+        "Resolution flags equal at least three agreeing votes",
+        "Common primary mask and known-none handling",
+        "Completed headline values checked against saved artifacts"
+      ],
+      "limitations": [
+        "Primary difference combines full-label loading and common-population restriction",
+        "Axis-specific marginal populations differ",
+        "Greedy selection and coarse matching remain",
+        "No new confidence intervals or significance claims",
+        "Not selected means not selected within the inherited 14-round cap"
+      ]
+    }
   }
 }
