@@ -1,0 +1,148 @@
+{
+  "source": "/home/thomasjiralerspong/.codex/worktrees/sae-full-labels-reanalysis-20260923/eval_results/issue_1482/full_labels_reanalysis_20260923/comparison.json",
+  "source_sha256": "5c2632344ca439087d323e735bb42a73b871bfc63923b4ff4d97294d1c4894cd",
+  "script_sha256": "cabe833b42a8008211f69e5613e965d683fccb6e626c945fa94b68d8eebb0fef",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      11.262
+    ],
+    "exported_size_inches": [
+      13.095,
+      10.735
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/label_associations.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "Concordance with direction $R^2$ \u2212 \u00bd",
+      "\u22120.2",
+      "\u22120.1",
+      "0.0",
+      "0.1",
+      "0.2",
+      "0.3",
+      "Interpretable",
+      "Token surface",
+      "Lexical semantic",
+      "Abstract contextual",
+      "Topic",
+      "Task format",
+      "Entity",
+      "Syntax",
+      "Operation",
+      "Speaker: language",
+      "Speaker: identity / disposition",
+      "Speaker: register / style",
+      "Role: input-side",
+      "Role: output-promoting",
+      "Role: mixed",
+      "Published",
+      "Full labels, resolved",
+      "SAE label associations"
+    ]
+  },
+  "data": [
+    {
+      "name": "Interpretable (autointerp)",
+      "published": 0.0005162984262377934,
+      "corrected": -0.02737275889890739
+    },
+    {
+      "name": "Abstraction: token surface",
+      "published": -0.06596080984014197,
+      "corrected": -0.0757263486509912
+    },
+    {
+      "name": "Abstraction: lexical semantic",
+      "published": -0.024739362452044944,
+      "corrected": -0.028872806952316588
+    },
+    {
+      "name": "Abstraction: abstract contextual",
+      "published": 0.1085312995758494,
+      "corrected": 0.10413728672540012
+    },
+    {
+      "name": "Content type: topic",
+      "published": 0.018854456186184865,
+      "corrected": 0.01216327964827657
+    },
+    {
+      "name": "Content type: task format",
+      "published": 0.13185506904556665,
+      "corrected": 0.1146656252332654
+    },
+    {
+      "name": "Content type: entity",
+      "published": -0.07012907046009709,
+      "corrected": -0.07214988316536153
+    },
+    {
+      "name": "Content type: syntax",
+      "published": 0.00882287238667212,
+      "corrected": -0.0019229902542642896
+    },
+    {
+      "name": "Content type: operation",
+      "published": 0.004776758074401699,
+      "corrected": 0.0022625181565394392
+    },
+    {
+      "name": "Speaker: language of the text",
+      "published": -0.059257209903607,
+      "corrected": -0.06066169684190792
+    },
+    {
+      "name": "Speaker: identity / disposition",
+      "published": 0.28989276246552764,
+      "corrected": 0.27737729706130254
+    },
+    {
+      "name": "Speaker: register / style",
+      "published": 0.12375962786864303,
+      "corrected": 0.10487374654238824
+    },
+    {
+      "name": "Judged role: input-side  [k=0.31]",
+      "published": 0.0006042372940512353,
+      "corrected": -0.03256355499005675
+    },
+    {
+      "name": "Judged role: output-promoting  [k=0.31]",
+      "published": 0.017416101182623045,
+      "corrected": 0.014864478262345715
+    },
+    {
+      "name": "Judged role: mixed  [k=0.31]",
+      "published": 0.04332773037180926,
+      "corrected": 0.041870719655985766
+    }
+  ],
+  "caption": "Marginal concordance minus one half, with no matching. Published values use 120,716 features and the truncated label matrix. Corrected values use the full saved labels and the 105,714 features resolved on all five axes. Therefore the difference combines label restoration and population restriction. These are descriptive point estimates without uncertainty intervals. Same existing layer-19 Qwen2.5-7B-Instruct decoder-direction scores; no model or judge calls.",
+  "outputs": {
+    "pdf": {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/sae-full-labels-reanalysis-20260923/figures/issue_1482/full_labels_reanalysis_20260923/label_associations.pdf",
+      "sha256": "f24333705c5699c3cfc53b44528c486f536f4919070626cdc57f7d551eafafad"
+    },
+    "png": {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/sae-full-labels-reanalysis-20260923/figures/issue_1482/full_labels_reanalysis_20260923/label_associations.png",
+      "sha256": "1310ada3be5160b1aeba450121662f36107bfe93f51d12e110ba5e14bcbf6412"
+    },
+    "grayscale": {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/sae-full-labels-reanalysis-20260923/figures/issue_1482/full_labels_reanalysis_20260923/label_associations_grayscale.png",
+      "sha256": "28bf753d46285c052c38e4aa47adbff5a57348b0c5ea076ce27fb74710b2b8b9"
+    }
+  }
+}

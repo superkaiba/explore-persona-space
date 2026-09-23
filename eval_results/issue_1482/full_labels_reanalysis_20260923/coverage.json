@@ -1,0 +1,69 @@
+{
+  "base_population": 120716,
+  "axes": {
+    "interpretable": {
+      "resolved_usable": 119752,
+      "unresolved": 934,
+      "unlabeled": 30,
+      "unclear": 0,
+      "unanimous_five_of_five": 93527,
+      "class_counts": {
+        "yes": 102110,
+        "no": 17642
+      }
+    },
+    "abstraction": {
+      "resolved_usable": 117718,
+      "unresolved": 2968,
+      "unlabeled": 30,
+      "unclear": 0,
+      "unanimous_five_of_five": 69432,
+      "class_counts": {
+        "token_surface": 44626,
+        "lexical_semantic": 31442,
+        "abstract_contextual": 41650
+      }
+    },
+    "content_type": {
+      "resolved_usable": 117142,
+      "unresolved": 3544,
+      "unlabeled": 30,
+      "unclear": 0,
+      "unanimous_five_of_five": 82952,
+      "class_counts": {
+        "topic": 21460,
+        "task_format": 1945,
+        "entity": 5934,
+        "syntax": 76455,
+        "operation": 11348
+      }
+    },
+    "speaker_property": {
+      "resolved_usable": 119227,
+      "unresolved": 1436,
+      "unlabeled": 30,
+      "unclear": 23,
+      "unanimous_five_of_five": 90290,
+      "class_counts": {
+        "none": 100489,
+        "language": 7062,
+        "register_style": 10160,
+        "identity_disposition": 1516
+      }
+    },
+    "functional_role": {
+      "resolved_usable": 112733,
+      "unresolved": 7953,
+      "unlabeled": 30,
+      "unclear": 0,
+      "unanimous_five_of_five": 74145,
+      "class_counts": {
+        "input_side": 103515,
+        "output_promoting": 3600,
+        "mixed": 5618
+      }
+    }
+  },
+  "common_resolved_population": 105714,
+  "excluded_from_common_population": 15002
+}

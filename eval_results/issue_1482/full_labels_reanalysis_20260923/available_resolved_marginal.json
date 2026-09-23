@@ -1,0 +1,199 @@
+{
+  "scores": [
+    {
+      "name": "Firing frequency (per answer)",
+      "n": 120716,
+      "c": 0.5456810654388452
+    },
+    {
+      "name": "Firing frequency (per token)",
+      "n": 120716,
+      "c": 0.5682063300113716
+    },
+    {
+      "name": "Mean activation (over all answers)",
+      "n": 120716,
+      "c": 0.5707619046384736
+    },
+    {
+      "name": "Mean activation (when active)",
+      "n": 120716,
+      "c": 0.5861059745498445
+    },
+    {
+      "name": "Variance of mean activation across answers",
+      "n": 120716,
+      "c": 0.5848102369322636
+    },
+    {
+      "name": "Holdout answers active (count)",
+      "n": 120716,
+      "c": 0.5458505590768242
+    },
+    {
+      "name": "Within-answer consistency",
+      "n": 120716,
+      "c": 0.6156930409245465
+    },
+    {
+      "name": "Mean activation run length (tokens)",
+      "n": 120716,
+      "c": 0.5814144969337959
+    },
+    {
+      "name": "Template-token activation fraction",
+      "n": 120716,
+      "c": 0.5918866940788322
+    },
+    {
+      "name": "Scaffold-token activation fraction",
+      "n": 120716,
+      "c": 0.6435729780183557
+    },
+    {
+      "name": "Nearest-neighbour cosine (SAE redundancy)",
+      "n": 120716,
+      "c": 0.5633159922502554
+    },
+    {
+      "name": "Variance explained in answer space",
+      "n": 120716,
+      "c": 0.8155785921425568
+    },
+    {
+      "name": "SAE encoder norm (read strength)",
+      "n": 120716,
+      "c": 0.5298195199395286
+    },
+    {
+      "name": "Encoder-decoder cosine (OUTPUTNESS)",
+      "n": 120716,
+      "c": 0.48801254737645905
+    },
+    {
+      "name": "Massive-dimension mass",
+      "n": 120716,
+      "c": 0.5443832581611745
+    },
+    {
+      "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+      "n": 120716,
+      "c": 0.5783314401965474
+    },
+    {
+      "name": "SAE decoder norm (write strength)",
+      "n": 120716,
+      "c": 0.507665651308904
+    },
+    {
+      "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+      "n": 120716,
+      "c": 0.5110071293581125
+    },
+    {
+      "name": "Logit-footprint skew (OUTPUTNESS)",
+      "n": 120716,
+      "c": 0.5088273630648786
+    },
+    {
+      "name": "Logit-footprint variance",
+      "n": 120716,
+      "c": 0.5303615716399309
+    },
+    {
+      "name": "Logit-footprint concentration (OUTPUTNESS)",
+      "n": 120716,
+      "c": 0.49522890621867083
+    },
+    {
+      "name": "Logit footprint: promoting",
+      "n": 120716,
+      "c": 0.40699947279083337
+    },
+    {
+      "name": "Logit footprint: suppressing",
+      "n": 120716,
+      "c": 0.34620261583094697
+    },
+    {
+      "name": "Logit footprint: partition",
+      "n": 120716,
+      "c": 0.5001051135325884
+    },
+    {
+      "name": "Interpretable (autointerp)",
+      "n": 119752,
+      "c": 0.47318711787118795
+    },
+    {
+      "name": "Abstraction: token surface",
+      "n": 117718,
+      "c": 0.42457278126634673
+    },
+    {
+      "name": "Abstraction: lexical semantic",
+      "n": 117718,
+      "c": 0.47026905461447954
+    },
+    {
+      "name": "Abstraction: abstract contextual",
+      "n": 117718,
+      "c": 0.603111006510192
+    },
+    {
+      "name": "Content type: topic",
+      "n": 117142,
+      "c": 0.5139946311361105
+    },
+    {
+      "name": "Content type: task format",
+      "n": 117142,
+      "c": 0.6135344409341208
+    },
+    {
+      "name": "Content type: entity",
+      "n": 117142,
+      "c": 0.42606243917487974
+    },
+    {
+      "name": "Content type: syntax",
+      "n": 117142,
+      "c": 0.497427284453728
+    },
+    {
+      "name": "Content type: operation",
+      "n": 117142,
+      "c": 0.5021831846394123
+    },
+    {
+      "name": "Speaker: language of the text",
+      "n": 119227,
+      "c": 0.44047380940126146
+    },
+    {
+      "name": "Speaker: identity / disposition",
+      "n": 119227,
+      "c": 0.7771064408024582
+    },
+    {
+      "name": "Speaker: register / style",
+      "n": 119227,
+      "c": 0.6041537171148645
+    },
+    {
+      "name": "Judged role: input-side  [k=0.31]",
+      "n": 112733,
+      "c": 0.4672349576730285
+    },
+    {
+      "name": "Judged role: output-promoting  [k=0.31]",
+      "n": 112733,
+      "c": 0.5156970877532715
+    },
+    {
+      "name": "Judged role: mixed  [k=0.31]",
+      "n": 112733,
+      "c": 0.5417058106402313
+    }
+  ]
+}

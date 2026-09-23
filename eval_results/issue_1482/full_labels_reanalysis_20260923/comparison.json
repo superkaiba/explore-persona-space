@@ -1,0 +1,598 @@
+{
+  "properties": [
+    {
+      "name": "Firing frequency (per answer)",
+      "family": "firing",
+      "published_reproduction_marginal": 0.0456810654388452,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.0456810654388452,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.0445827333397657,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.0456810654388452,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Firing frequency (per token)",
+      "family": "firing",
+      "published_reproduction_marginal": 0.06820633001137155,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.06820633001137155,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.06714185912931359,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.06820633001137155,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Mean activation (over all answers)",
+      "family": "firing",
+      "published_reproduction_marginal": 0.07076190463847365,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.07076190463847365,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.06912439689151995,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.07076190463847365,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Mean activation (when active)",
+      "family": "firing",
+      "published_reproduction_marginal": 0.08610597454984448,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.08610597454984448,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.08435948017776129,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.08610597454984448,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Variance of mean activation across answers",
+      "family": "firing",
+      "published_reproduction_marginal": 0.08481023693226364,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.08481023693226364,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.08281981404778238,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.08481023693226364,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Holdout answers active (count)",
+      "family": "firing",
+      "published_reproduction_marginal": 0.04585055907682423,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.04585055907682423,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.04480384379547386,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.04585055907682423,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Within-answer consistency",
+      "family": "level",
+      "published_reproduction_marginal": 0.11569304092454646,
+      "published_reproduction_selected": {
+        "round": 11,
+        "score": 0.032450534091842176
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": 0.11569304092454646,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 11,
+        "score": 0.03055120974820602
+      },
+      "full_labels_common_resolved_marginal": 0.11475018510632995,
+      "full_labels_common_resolved_selected": {
+        "round": 10,
+        "score": 0.0317906896081398
+      },
+      "available_resolved_marginal": 0.11569304092454646,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Mean activation run length (tokens)",
+      "family": "level",
+      "published_reproduction_marginal": 0.08141449693379588,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.08141449693379588,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.08084830001749521,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.08141449693379588,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Template-token activation fraction",
+      "family": "position",
+      "published_reproduction_marginal": 0.09188669407883221,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.09188669407883221,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.09243078558038964,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.09188669407883221,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Scaffold-token activation fraction",
+      "family": "position",
+      "published_reproduction_marginal": 0.14357297801835567,
+      "published_reproduction_selected": {
+        "round": 12,
+        "score": 0.031766529600803506
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": 0.14357297801835567,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 12,
+        "score": 0.03171789470429842
+      },
+      "full_labels_common_resolved_marginal": 0.14324134641888508,
+      "full_labels_common_resolved_selected": {
+        "round": 11,
+        "score": 0.031069217034688457
+      },
+      "available_resolved_marginal": 0.14357297801835567,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Nearest-neighbour cosine (SAE redundancy)",
+      "family": "geometry",
+      "published_reproduction_marginal": 0.06331599225025542,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.06331599225025542,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.06149513187529132,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.06331599225025542,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Variance explained in answer space",
+      "family": "geometry",
+      "published_reproduction_marginal": 0.3155785921425568,
+      "published_reproduction_selected": {
+        "round": 0,
+        "score": 0.3155785921425568
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": 0.3155785921425568,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 0,
+        "score": 0.3155785921425568
+      },
+      "full_labels_common_resolved_marginal": 0.31611031025791725,
+      "full_labels_common_resolved_selected": {
+        "round": 0,
+        "score": 0.31611031025791725
+      },
+      "available_resolved_marginal": 0.3155785921425568,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "SAE encoder norm (read strength)",
+      "family": "io",
+      "published_reproduction_marginal": 0.029819519939528583,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.029819519939528583,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.027740509775657562,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.029819519939528583,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Encoder-decoder cosine (OUTPUTNESS)",
+      "family": "io",
+      "published_reproduction_marginal": -0.01198745262354095,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": -0.01198745262354095,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": -0.011238138179770818,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": -0.01198745262354095,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Massive-dimension mass",
+      "family": "geometry",
+      "published_reproduction_marginal": 0.0443832581611745,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.0443832581611745,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.04432148455155216,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.0443832581611745,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+      "family": "io",
+      "published_reproduction_marginal": 0.07833144019654736,
+      "published_reproduction_selected": {
+        "round": 5,
+        "score": -0.060611772995837254
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": 0.07833144019654736,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 5,
+        "score": -0.06007024013826473
+      },
+      "full_labels_common_resolved_marginal": 0.07518876690346876,
+      "full_labels_common_resolved_selected": {
+        "round": 5,
+        "score": -0.06053926906137125
+      },
+      "available_resolved_marginal": 0.07833144019654736,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "SAE decoder norm (write strength)",
+      "family": "io",
+      "published_reproduction_marginal": 0.0076656513089039535,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.0076656513089039535,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.007418576112840025,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.0076656513089039535,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+      "family": "io",
+      "published_reproduction_marginal": 0.011007129358112544,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.011007129358112544,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.009103047767795802,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.011007129358112544,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Logit-footprint skew (OUTPUTNESS)",
+      "family": "io",
+      "published_reproduction_marginal": 0.008827363064878635,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.008827363064878635,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.008726822931303113,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.008827363064878635,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Logit-footprint variance",
+      "family": "output",
+      "published_reproduction_marginal": 0.030361571639930918,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.030361571639930918,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.02868640308949011,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.030361571639930918,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Logit-footprint concentration (OUTPUTNESS)",
+      "family": "io",
+      "published_reproduction_marginal": -0.004771093781329172,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": -0.004771093781329172,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": -0.00543220757158952,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": -0.004771093781329172,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Logit footprint: promoting",
+      "family": "io",
+      "published_reproduction_marginal": -0.09300052720916663,
+      "published_reproduction_selected": {
+        "round": 2,
+        "score": -0.10360473944167892
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": -0.09300052720916663,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 2,
+        "score": -0.1034262925187861
+      },
+      "full_labels_common_resolved_marginal": -0.10160923199725391,
+      "full_labels_common_resolved_selected": {
+        "round": 2,
+        "score": -0.10415194933444327
+      },
+      "available_resolved_marginal": -0.09300052720916663,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Logit footprint: suppressing",
+      "family": "io",
+      "published_reproduction_marginal": -0.15379738416905303,
+      "published_reproduction_selected": {
+        "round": 3,
+        "score": -0.09866066404139495
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": -0.15379738416905303,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 3,
+        "score": -0.09859017630639233
+      },
+      "full_labels_common_resolved_marginal": -0.15663261824936103,
+      "full_labels_common_resolved_selected": {
+        "round": 3,
+        "score": -0.09958500488570898
+      },
+      "available_resolved_marginal": -0.15379738416905303,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Logit footprint: partition",
+      "family": "io",
+      "published_reproduction_marginal": 0.00010511353258835232,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.00010511353258835232,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": -0.0030063510218017453,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.00010511353258835232,
+      "available_resolved_n": 120716
+    },
+    {
+      "name": "Interpretable (autointerp)",
+      "family": "judged",
+      "published_reproduction_marginal": 0.0005162984262377934,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": -0.026098473030620073,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": -0.02737275889890739,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": -0.026812882128812054,
+      "available_resolved_n": 119752
+    },
+    {
+      "name": "Abstraction: token surface",
+      "family": "judged",
+      "published_reproduction_marginal": -0.06596080984014197,
+      "published_reproduction_selected": {
+        "round": 13,
+        "score": -0.029930063609797275
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": -0.0735022688265341,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": -0.0757263486509912,
+      "full_labels_common_resolved_selected": {
+        "round": 13,
+        "score": -0.025578188198442042
+      },
+      "available_resolved_marginal": -0.07542721873365327,
+      "available_resolved_n": 117718
+    },
+    {
+      "name": "Abstraction: lexical semantic",
+      "family": "judged",
+      "published_reproduction_marginal": -0.024739362452044944,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": -0.028728898167257877,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": -0.028872806952316588,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": -0.029730945385520458,
+      "available_resolved_n": 117718
+    },
+    {
+      "name": "Abstraction: abstract contextual",
+      "family": "judged",
+      "published_reproduction_marginal": 0.1085312995758494,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.10259789069802916,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.10413728672540012,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.103111006510192,
+      "available_resolved_n": 117718
+    },
+    {
+      "name": "Content type: topic",
+      "family": "judged",
+      "published_reproduction_marginal": 0.018854456186184865,
+      "published_reproduction_selected": {
+        "round": 4,
+        "score": -0.08668210029410484
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": 0.014038769038101973,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 4,
+        "score": -0.08005068482206834
+      },
+      "full_labels_common_resolved_marginal": 0.01216327964827657,
+      "full_labels_common_resolved_selected": {
+        "round": 4,
+        "score": -0.07990883828545381
+      },
+      "available_resolved_marginal": 0.013994631136110547,
+      "available_resolved_n": 117142
+    },
+    {
+      "name": "Content type: task format",
+      "family": "judged",
+      "published_reproduction_marginal": 0.13185506904556665,
+      "published_reproduction_selected": {
+        "round": 10,
+        "score": 0.0361713170709691
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": 0.11355747582692399,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 8,
+        "score": 0.041331415003692085
+      },
+      "full_labels_common_resolved_marginal": 0.1146656252332654,
+      "full_labels_common_resolved_selected": {
+        "round": 8,
+        "score": 0.04098724966156575
+      },
+      "available_resolved_marginal": 0.1135344409341208,
+      "available_resolved_n": 117142
+    },
+    {
+      "name": "Content type: entity",
+      "family": "judged",
+      "published_reproduction_marginal": -0.07012907046009709,
+      "published_reproduction_selected": {
+        "round": 9,
+        "score": -0.0415066009815358
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": -0.07367975559560314,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 9,
+        "score": -0.035658358126482215
+      },
+      "full_labels_common_resolved_marginal": -0.07214988316536153,
+      "full_labels_common_resolved_selected": {
+        "round": 9,
+        "score": -0.03731372696624069
+      },
+      "available_resolved_marginal": -0.07393756082512026,
+      "available_resolved_n": 117142
+    },
+    {
+      "name": "Content type: syntax",
+      "family": "judged",
+      "published_reproduction_marginal": 0.00882287238667212,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": -0.0021342202654818787,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 13,
+        "score": 0.024111206529868534
+      },
+      "full_labels_common_resolved_marginal": -0.0019229902542642896,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": -0.0025727155462719753,
+      "available_resolved_n": 117142
+    },
+    {
+      "name": "Content type: operation",
+      "family": "judged",
+      "published_reproduction_marginal": 0.004776758074401699,
+      "published_reproduction_selected": {
+        "round": 7,
+        "score": -0.03525798448660544
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": 0.0023083179322570535,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.0022625181565394392,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.00218318463941225,
+      "available_resolved_n": 117142
+    },
+    {
+      "name": "Speaker: language of the text",
+      "family": "judged",
+      "published_reproduction_marginal": -0.059257209903607,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": -0.059924501586512635,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 10,
+        "score": 0.033449153228843564
+      },
+      "full_labels_common_resolved_marginal": -0.06066169684190792,
+      "full_labels_common_resolved_selected": {
+        "round": 12,
+        "score": 0.03082625106340453
+      },
+      "available_resolved_marginal": -0.05952619059873854,
+      "available_resolved_n": 119227
+    },
+    {
+      "name": "Speaker: identity / disposition",
+      "family": "judged",
+      "published_reproduction_marginal": 0.28989276246552764,
+      "published_reproduction_selected": {
+        "round": 1,
+        "score": 0.12263806407038147
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": 0.2765995820863806,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 1,
+        "score": 0.12856127863548872
+      },
+      "full_labels_common_resolved_marginal": 0.27737729706130254,
+      "full_labels_common_resolved_selected": {
+        "round": 1,
+        "score": 0.12728540460268323
+      },
+      "available_resolved_marginal": 0.27710644080245816,
+      "available_resolved_n": 119227
+    },
+    {
+      "name": "Speaker: register / style",
+      "family": "judged",
+      "published_reproduction_marginal": 0.12375962786864303,
+      "published_reproduction_selected": {
+        "round": 8,
+        "score": 0.06768461923521685
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": 0.10350149177970303,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 7,
+        "score": 0.04038506452993673
+      },
+      "full_labels_common_resolved_marginal": 0.10487374654238824,
+      "full_labels_common_resolved_selected": {
+        "round": 7,
+        "score": 0.04160347340239212
+      },
+      "available_resolved_marginal": 0.10415371711486454,
+      "available_resolved_n": 119227
+    },
+    {
+      "name": "Judged role: input-side  [k=0.31]",
+      "family": "io",
+      "published_reproduction_marginal": 0.0006042372940512353,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": -0.02857178989404363,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": -0.03256355499005675,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": -0.03276504232697153,
+      "available_resolved_n": 112733
+    },
+    {
+      "name": "Judged role: output-promoting  [k=0.31]",
+      "family": "io",
+      "published_reproduction_marginal": 0.017416101182623045,
+      "published_reproduction_selected": {
+        "round": 6,
+        "score": -0.04582037925579813
+      },
+      "full_labels_unknown_zero_diagnostic_marginal": 0.014170155610202184,
+      "full_labels_unknown_zero_diagnostic_selected": {
+        "round": 6,
+        "score": -0.04265705600834724
+      },
+      "full_labels_common_resolved_marginal": 0.014864478262345715,
+      "full_labels_common_resolved_selected": {
+        "round": 6,
+        "score": -0.04531045432274611
+      },
+      "available_resolved_marginal": 0.0156970877532715,
+      "available_resolved_n": 112733
+    },
+    {
+      "name": "Judged role: mixed  [k=0.31]",
+      "family": "io",
+      "published_reproduction_marginal": 0.04332773037180926,
+      "published_reproduction_selected": null,
+      "full_labels_unknown_zero_diagnostic_marginal": 0.040130723402109436,
+      "full_labels_unknown_zero_diagnostic_selected": null,
+      "full_labels_common_resolved_marginal": 0.041870719655985766,
+      "full_labels_common_resolved_selected": null,
+      "available_resolved_marginal": 0.04170581064023127,
+      "available_resolved_n": 112733
+    }
+  ]
+}

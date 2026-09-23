@@ -1,0 +1,41 @@
+{
+  "source_git_sha": "92d0a7e505f78d7d438a5b934700363ca0cbfef6",
+  "git": {
+    "eval_results/issue_1482/decoder_direction/decoder_direction_r2_fullwidth_common_universe.npy": "c9e9928b28134f67fe390359c70fe31e029e632ba50560a820bbff0e4c317b14",
+    "figures/issue_1482/concordance_decoder_direction_common_noside_noratio/writeup_stepwise.meta.json": "606e32ee43de276511622003f818dc13c2ae5e47f96ef6b581733b9d768b49be",
+    "eval_results/issue_1482/predictor_battery/fullwidth_discrete_covariates.npz": "e24271f5be0e2267e664ba320222bad81faf06877065e28e9cfd2bb743da831f",
+    "eval_results/issue_1482/predictor_battery/fullwidth_matrix.npz": "c1decf058a6c0211247253b7936eecd0b32d1b60f96f01f05cbd51f93a46d8cb",
+    "eval_results/issue_1482/run_length/run_length_perfeature.npz": "af67215f765b69eb0d45a834528fcc4434002b5f06012a84956907ff3b3a5a93",
+    "scripts/issue1482_concordance_stepwise.py": "e4686c0c4bcac3bdb107190cb64c6812d484d02d270d7429a821793e4ac2b324",
+    "scripts/issue1482_concordance_writeup_figs.py": "f84164ffda831499a66e27834ba29b225b6cfb2d64009e78380cd81c2326308f",
+    "scripts/issue1482_concordance_fig.py": "5e7549bf763be288a5dfa3085bf46ae0ef21be5ddb7c8b9173d614d73baeea00",
+    "scripts/issue1482_shapley_blocks.py": "31dfdf540cdda3e6204dff72f99698553fc395c11c4531162d15278b72046a46"
+  },
+  "hf": {
+    "repo": "superkaiba1/explore-persona-space-data",
+    "revision": "8aa478178c1608b9003f4724b84eabf6438a9778",
+    "files": [
+      {
+        "path": "issue1482_full_labels_reanalysis_20260923/inputs/eval_results/issue_1482/label_agreement/agreement_votes.npz",
+        "sha256": "dbe71272f3b62bdd36118de531e3650bb5d51e640249b9efc092182c07b04fbd",
+        "bytes": 491303
+      },
+      {
+        "path": "issue1482_full_labels_reanalysis_20260923/inputs/eval_results/issue_1482/predictor_battery/fullwidth_covariates_v2.npz",
+        "sha256": "776f32dcb144abbbd73714ef984392b6e0e7129c3dd259a39c8c844f89589a4f",
+        "bytes": 25172084
+      },
+      {
+        "path": "issue1482_full_labels_reanalysis_20260923/inputs/eval_results/issue_1482/predictor_battery/shapley_blocks_densesae_ridge_k24.json",
+        "sha256": "ca5c005fd970f82f343ab2d56d3febe7aca844327e44b2bd5f78f9ec489a1852",
+        "bytes": 115091
+      },
+      {
+        "path": "issue1482_full_labels_reanalysis_20260923/analysis_tensors/populations.npz",
+        "sha256": "e5af09bf80c941a023e8661ee3f43731a442117ffa398cdc8030765500bf4f88",
+        "bytes": 368936
+      }
+    ],
+    "verification": "Downloaded every new file at pinned revision and checked SHA-256"
+  }
+}

@@ -1,0 +1,308 @@
+{
+  "status": "complete",
+  "finished_utc": "2026-09-23T22:32:50.450936+00:00",
+  "manifest_sha256": "6096bf39eec678f8c15881641342856c1df72fcf4b46b05d3f34845cf1d895c4",
+  "verification": {
+    "rounds_reproduced": 14,
+    "max_absolute_score_difference": 0.0
+  },
+  "coverage": {
+    "base_population": 120716,
+    "axes": {
+      "interpretable": {
+        "resolved_usable": 119752,
+        "unresolved": 934,
+        "unlabeled": 30,
+        "unclear": 0,
+        "unanimous_five_of_five": 93527,
+        "class_counts": {
+          "yes": 102110,
+          "no": 17642
+        }
+      },
+      "abstraction": {
+        "resolved_usable": 117718,
+        "unresolved": 2968,
+        "unlabeled": 30,
+        "unclear": 0,
+        "unanimous_five_of_five": 69432,
+        "class_counts": {
+          "token_surface": 44626,
+          "lexical_semantic": 31442,
+          "abstract_contextual": 41650
+        }
+      },
+      "content_type": {
+        "resolved_usable": 117142,
+        "unresolved": 3544,
+        "unlabeled": 30,
+        "unclear": 0,
+        "unanimous_five_of_five": 82952,
+        "class_counts": {
+          "topic": 21460,
+          "task_format": 1945,
+          "entity": 5934,
+          "syntax": 76455,
+          "operation": 11348
+        }
+      },
+      "speaker_property": {
+        "resolved_usable": 119227,
+        "unresolved": 1436,
+        "unlabeled": 30,
+        "unclear": 23,
+        "unanimous_five_of_five": 90290,
+        "class_counts": {
+          "none": 100489,
+          "language": 7062,
+          "register_style": 10160,
+          "identity_disposition": 1516
+        }
+      },
+      "functional_role": {
+        "resolved_usable": 112733,
+        "unresolved": 7953,
+        "unlabeled": 30,
+        "unclear": 0,
+        "unanimous_five_of_five": 74145,
+        "class_counts": {
+          "input_side": 103515,
+          "output_promoting": 3600,
+          "mixed": 5618
+        }
+      }
+    },
+    "common_resolved_population": 105714,
+    "excluded_from_common_population": 15002
+  },
+  "runs": {
+    "published_reproduction": {
+      "n": 120716,
+      "stop_reason": "inherited maximum of 14 rounds",
+      "selection": [
+        {
+          "name": "Variance explained in answer space",
+          "round": 0,
+          "score": 0.3155785921425568
+        },
+        {
+          "name": "Speaker: identity / disposition",
+          "round": 1,
+          "score": 0.12263806407038147
+        },
+        {
+          "name": "Logit footprint: promoting",
+          "round": 2,
+          "score": -0.10360473944167892
+        },
+        {
+          "name": "Logit footprint: suppressing",
+          "round": 3,
+          "score": -0.09866066404139495
+        },
+        {
+          "name": "Content type: topic",
+          "round": 4,
+          "score": -0.08668210029410484
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "round": 5,
+          "score": -0.060611772995837254
+        },
+        {
+          "name": "Judged role: output-promoting  [k=0.31]",
+          "round": 6,
+          "score": -0.04582037925579813
+        },
+        {
+          "name": "Content type: operation",
+          "round": 7,
+          "score": -0.03525798448660544
+        },
+        {
+          "name": "Speaker: register / style",
+          "round": 8,
+          "score": 0.06768461923521685
+        },
+        {
+          "name": "Content type: entity",
+          "round": 9,
+          "score": -0.0415066009815358
+        },
+        {
+          "name": "Content type: task format",
+          "round": 10,
+          "score": 0.0361713170709691
+        },
+        {
+          "name": "Within-answer consistency",
+          "round": 11,
+          "score": 0.032450534091842176
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "round": 12,
+          "score": 0.031766529600803506
+        },
+        {
+          "name": "Abstraction: token surface",
+          "round": 13,
+          "score": -0.029930063609797275
+        }
+      ]
+    },
+    "full_labels_unknown_zero_diagnostic": {
+      "n": 120716,
+      "stop_reason": "inherited maximum of 14 rounds",
+      "selection": [
+        {
+          "name": "Variance explained in answer space",
+          "round": 0,
+          "score": 0.3155785921425568
+        },
+        {
+          "name": "Speaker: identity / disposition",
+          "round": 1,
+          "score": 0.12856127863548872
+        },
+        {
+          "name": "Logit footprint: promoting",
+          "round": 2,
+          "score": -0.1034262925187861
+        },
+        {
+          "name": "Logit footprint: suppressing",
+          "round": 3,
+          "score": -0.09859017630639233
+        },
+        {
+          "name": "Content type: topic",
+          "round": 4,
+          "score": -0.08005068482206834
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "round": 5,
+          "score": -0.06007024013826473
+        },
+        {
+          "name": "Judged role: output-promoting  [k=0.31]",
+          "round": 6,
+          "score": -0.04265705600834724
+        },
+        {
+          "name": "Speaker: register / style",
+          "round": 7,
+          "score": 0.04038506452993673
+        },
+        {
+          "name": "Content type: task format",
+          "round": 8,
+          "score": 0.041331415003692085
+        },
+        {
+          "name": "Content type: entity",
+          "round": 9,
+          "score": -0.035658358126482215
+        },
+        {
+          "name": "Speaker: language of the text",
+          "round": 10,
+          "score": 0.033449153228843564
+        },
+        {
+          "name": "Within-answer consistency",
+          "round": 11,
+          "score": 0.03055120974820602
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "round": 12,
+          "score": 0.03171789470429842
+        },
+        {
+          "name": "Content type: syntax",
+          "round": 13,
+          "score": 0.024111206529868534
+        }
+      ]
+    },
+    "full_labels_common_resolved": {
+      "n": 105714,
+      "stop_reason": "inherited maximum of 14 rounds",
+      "selection": [
+        {
+          "name": "Variance explained in answer space",
+          "round": 0,
+          "score": 0.31611031025791725
+        },
+        {
+          "name": "Speaker: identity / disposition",
+          "round": 1,
+          "score": 0.12728540460268323
+        },
+        {
+          "name": "Logit footprint: promoting",
+          "round": 2,
+          "score": -0.10415194933444327
+        },
+        {
+          "name": "Logit footprint: suppressing",
+          "round": 3,
+          "score": -0.09958500488570898
+        },
+        {
+          "name": "Content type: topic",
+          "round": 4,
+          "score": -0.07990883828545381
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "round": 5,
+          "score": -0.06053926906137125
+        },
+        {
+          "name": "Judged role: output-promoting  [k=0.31]",
+          "round": 6,
+          "score": -0.04531045432274611
+        },
+        {
+          "name": "Speaker: register / style",
+          "round": 7,
+          "score": 0.04160347340239212
+        },
+        {
+          "name": "Content type: task format",
+          "round": 8,
+          "score": 0.04098724966156575
+        },
+        {
+          "name": "Content type: entity",
+          "round": 9,
+          "score": -0.03731372696624069
+        },
+        {
+          "name": "Within-answer consistency",
+          "round": 10,
+          "score": 0.0317906896081398
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "round": 11,
+          "score": 0.031069217034688457
+        },
+        {
+          "name": "Speaker: language of the text",
+          "round": 12,
+          "score": 0.03082625106340453
+        },
+        {
+          "name": "Abstraction: token surface",
+          "round": 13,
+          "score": -0.025578188198442042
+        }
+      ]
+    }
+  }
+}

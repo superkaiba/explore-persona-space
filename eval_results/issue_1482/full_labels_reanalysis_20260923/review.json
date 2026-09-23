@@ -1,0 +1,19 @@
+{
+  "verdict": "PASS",
+  "reviewer_task": "review_full_label_reanalysis",
+  "checks": [
+    "Stepwise parity on three synthetic datasets",
+    "Binary concordance versus independent pair enumeration with ties",
+    "Saved-label equality on legacy rows",
+    "Resolution flags equal at least three agreeing votes",
+    "Common primary mask and known-none handling",
+    "Completed headline values checked against saved artifacts"
+  ],
+  "limitations": [
+    "Primary difference combines full-label loading and common-population restriction",
+    "Axis-specific marginal populations differ",
+    "Greedy selection and coarse matching remain",
+    "No new confidence intervals or significance claims",
+    "Not selected means not selected within the inherited 14-round cap"
+  ]
+}
