@@ -1,27 +1,27 @@
 {
-  "status": "Results Section 4.2 manuscript figure",
+  "status": "Appendix B qualitative retrieval examples",
   "style_version": "c2a-v2",
   "plotting_script": "scripts/issue1901_qualitative_retrieval_failures.py",
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "reproduction_command": "uv run python scripts/issue1901_qualitative_retrieval_failures.py",
   "rendered_row_ids": [
-    "vocabulary_to_property_quiz",
-    "vancouver_to_japan_itinerary"
+    "vocabulary_to_cloud_computing_quiz",
+    "vancouver_to_hawaii_itinerary"
   ],
   "rendered_rows_note": "The manuscript figure renders the two rows in MANUSCRIPT_ROW_IDS out of the banked selection below; --row-ids all renders every banked row.",
-  "input": "eval_results/issue_1901/content_divergent_retrieval_examples.json",
-  "input_sha256": "0e0056dc38b9b75b1b78de923dd49597bfd14a7785648d48be3a62a04d22c6fb",
+  "input": "eval_results/issue_1901/content_divergent_retrieval_examples_10k.json",
+  "input_sha256": "d68b044203d8b7d7addf48b50bf01446543c4640176da87bf6b721de02f39b88",
   "render": {
     "style_version": "c2a-v2",
     "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "resolved_font": "Inter",
     "authoring_size_inches": [
       13.095,
-      6.95
+      7.26
     ],
     "exported_size_inches": [
       13.095,
-      6.99
+      7.3
     ],
     "scale": 0.42,
     "include_width_frac": 1.0,
@@ -35,25 +35,37 @@
     "png_dpi": 240,
     "background": "#FFFFFF",
     "text": [
-      "TRUE ANSWER  \u00b7  RANK 2",
+      "TRUE ANSWER  \u00b7  RANK 5",
       "RETRIEVED ANSWER  \u00b7  RANK 1",
       "QUERY",
       "Create a definition quiz for [...]\n\u201cinnovative\u201d, with four answers, only one\n[...] correct [...]",
-      "create a easy quiz [...] \"Sales contract\nfor house in Poland\" [...]",
+      "do mind helpin me with 50 cloud computing\nquestions with choie answers that i can\nuse for revision",
       "ANSWER",
-      "1. Innovative (Correct Answer)\na. Characterized by original and creative\nideas or methods. [...]",
-      "Quiz: Sales Contract for a House in Poland\n1. What is the minimum required information\n[...]?\nA) [...] B) The price, address, and terms of\npayment. [...]",
-      "TRUE ANSWER  \u00b7  RANK 4",
+      "[...] 1. Innovative (Correct Answer)\na. Characterized by original and creative\nideas or methods. [...]",
+      "[...] 1. What does IaaS stand for?\nA) Infrastructure as a Service\nB) Internet as a Service [...]\nAnswer: A) Infrastructure as a Service [...]",
+      "TRUE ANSWER  \u00b7  RANK 8",
       "Plan a three day trip to vancouver [...]\nChinese cuisine",
-      "create an 7 day itinerary [...] Japan.\n[...] tokyo [...] mnt. fugi.",
-      "Day 1: Exploring Chinatown and Beyond\n\u2022 Dim sum breakfast at a local Cantonese\nrestaurant.\n\u2022 Visit Hon Shing for [...] chicken chop,\nshrimp dumplings [...]",
-      "Day 1: Arrival and Tokyo City Tour\n\u2022 Arrive at Narita or Haneda Airport.\n\u2022 Check-in [...] recover from the journey.\n[...]"
+      "Can you create an itinerary for Hawaii for\n4 days with my family. We enjoy adventures\nand learning about the history of the\nplace.",
+      "[...] Day 1: Exploring Chinatown and Beyond\n[...] dim sum breakfast at a local Cantonese\nrestaurant. [...]\nVisit Hon Shing for [...] chicken chop,\nshrimp dumplings [...]",
+      "[...] Day 1: Honolulu and Pearl Harbor\nMorning: Diamond Head State Monument\nStart your day with a visit to Diamond Head\nState Monument. [...]\nAfternoon: Pearl Harbor [...]"
     ]
   },
   "selection": {
-    "rule": "Post-hoc selection of the three most content-divergent pairs after excluding semantic near-duplicate queries from the 25 rank-1 failures.",
+    "rule": "Retain the two manuscript query examples selected in the earlier 942-candidate evaluation, and show their rank-1 retrieved pairs and correct-answer ranks in the 10,000-candidate evaluation. These are qualitative illustrations, not a representative sample of all failures.",
     "representative_answer": "The displayed text is the stored on-policy generation with seed 43. Retrieval uses the mean of five answer vectors, not this draw alone.",
     "display_substitutions": "Markdown markers are removed, whitespace is normalized, and omitted query or answer text is marked with an ellipsis in brackets."
+  },
+  "provenance": {
+    "failure_set_source": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/retrieval-10k-20260907/data/issue_1901/retrieval_10k/text_sources/full_failure_review_packet.json",
+    "failure_set_source_sha256": "f4abbc30ef5f7630acb2177a6c1071138ab19ca7375afd5cc35f91bb96efb9bf",
+    "audit_source": "/mnt/eps-data/thomasjiralerspong/issue1901_ctxsim/linear_failures/audit.json",
+    "audit_source_sha256": "58fc98545ff70e239174abea10a4421986bc8f186412011e52a34922fec7ac26",
+    "audit_data_revision": "83d249cc9d495ca6f5d10f9156a622bcdca29a19",
+    "text_bank_sha256": "76bfb49f57b21aa14c86b83668c262a384722d3c547de5fe81e2abf76165b4bf",
+    "answer_seed_shown": "43",
+    "prior_pass_compared": "linear_failures/annotations.json, 5 overlapping categories, counts 52/24/6/6/2",
+    "category_summary": "eval_results/issue_1901/failure_categories/summary.json",
+    "category_summary_sha256": "f2e0783af736bfe3b353526686716ade93ec4532e5ba145b02905d27c1bdca1e"
   },
   "evaluation": {
     "model": "Qwen2.5-7B-Instruct",
@@ -61,14 +73,16 @@
     "predictor": "ridge",
     "answer_target": "mean of five on-policy answer vectors",
     "retrieval": "whitened cosine with two-sided CSLS (K=10)",
-    "pool_size": 942,
-    "top1_failures": 25,
-    "top1_accuracy": 0.9734607218683652,
-    "deduplication": "exact source-answer-vector deduplication"
+    "pool_size": 10000,
+    "top1_failures": 90,
+    "top1_accuracy": 0.9044585987261147,
+    "deduplication": "exact source-answer-vector deduplication",
+    "n_queries": 942,
+    "n_train": 963444
   },
   "output_sha256": {
-    "pdf": "575a25cc5d672d9e13e2e429cfca0881c7eafa3878d66571fd89e3ea968b7cc5",
-    "png": "8b1a59f104c285df6c1c39e3b51a7151e16c91d314b367b8306331b644e7f54b",
-    "grayscale": "63bbf8d6b7083e8d5c160834597dd08cc26df2bc26442b813cde60fab71bb46b"
+    "pdf": "2809cde0deb0ff46ece5afdb9b8a52c5cc03029611e51df5ba25763aae71a590",
+    "png": "11119d5e374c052495d280b48fddbc09a3267b1a706ce4eb1d30b977055d4ab1",
+    "grayscale": "2965958a501cd7de48d1fc53837a6071d5661e80914e9adaafb3a77a71ac3ca5"
   }
 }

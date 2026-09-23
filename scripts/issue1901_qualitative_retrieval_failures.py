@@ -6,7 +6,7 @@ the c2a-v2 figure standard (fixed authoring scale, Inter, provenance sidecar).
 Rows may be flat (``rows``) or grouped by failure category (``groups``).
 
 The display-ready text and evaluation provenance live in
-``eval_results/issue_1901/content_divergent_retrieval_examples.json``.
+``eval_results/issue_1901/content_divergent_retrieval_examples_10k.json``.
 """
 
 from __future__ import annotations
@@ -46,13 +46,14 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     set_c2a_style,
 )
 
-DEFAULT_INPUT = ROOT / "eval_results/issue_1901/content_divergent_retrieval_examples.json"
+DEFAULT_INPUT = ROOT / "eval_results/issue_1901/content_divergent_retrieval_examples_10k.json"
 DEFAULT_OUTPUT = ROOT / "figures/paper/c3_qualitative_discrimination"
 # Manuscript selection (Thomas 2026-09-03: "change figure 4 to only have 2 examples",
-# drop the Django pair). Pass --row-ids all to render every banked row.
+# drop the Django pair). Updated to the 10,000-candidate pairs on 2026-09-23.
+# Pass --row-ids all to render every banked row.
 MANUSCRIPT_ROW_IDS: tuple[str, ...] = (
-    "vocabulary_to_property_quiz",
-    "vancouver_to_japan_itinerary",
+    "vocabulary_to_cloud_computing_quiz",
+    "vancouver_to_hawaii_itinerary",
 )
 
 TRUE = ROLES["linear"].color
@@ -381,7 +382,7 @@ def main() -> None:
     )
     plt.close(fig)
     metadata = {
-        "status": "Results Section 4.2 manuscript figure",
+        "status": "Appendix B qualitative retrieval examples",
         "style_version": STYLE_VERSION,
         "plotting_script": "scripts/issue1901_qualitative_retrieval_failures.py",
         "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
@@ -397,6 +398,7 @@ def main() -> None:
         "input_sha256": hashlib.sha256(raw).hexdigest(),
         "render": outputs["record"],
         "selection": data["selection"],
+        "provenance": data.get("provenance", {}),
         "evaluation": data["evaluation"],
         "output_sha256": {
             kind: hashlib.sha256(Path(path).read_bytes()).hexdigest()

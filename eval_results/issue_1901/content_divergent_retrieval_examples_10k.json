@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "title": "Retrieval failures can preserve output structure while changing content",
+  "evaluation": {
+    "model": "Qwen2.5-7B-Instruct",
+    "layer": 19,
+    "predictor": "ridge",
+    "answer_target": "mean of five on-policy answer vectors",
+    "retrieval": "whitened cosine with two-sided CSLS (K=10)",
+    "pool_size": 10000,
+    "top1_failures": 90,
+    "top1_accuracy": 0.9044585987261147,
+    "deduplication": "exact source-answer-vector deduplication",
+    "n_queries": 942,
+    "n_train": 963444
+  },
+  "selection": {
+    "rule": "Retain the two manuscript query examples selected in the earlier 942-candidate evaluation, and show their rank-1 retrieved pairs and correct-answer ranks in the 10,000-candidate evaluation. These are qualitative illustrations, not a representative sample of all failures.",
+    "representative_answer": "The displayed text is the stored on-policy generation with seed 43. Retrieval uses the mean of five answer vectors, not this draw alone.",
+    "display_substitutions": "Markdown markers are removed, whitespace is normalized, and omitted query or answer text is marked with an ellipsis in brackets."
+  },
+  "rows": [
+    {
+      "id": "vocabulary_to_cloud_computing_quiz",
+      "short_title": "Vocabulary quiz and cloud-computing quiz",
+      "true_answer_rank": 5,
+      "true": {
+        "eval_row": 856,
+        "pass_b_row": 4329,
+        "previous_context_summary": "Single-turn · vocabulary quiz",
+        "final_query": "Create a definition quiz for [...] “innovative”, with four answers, only one [...] correct [...]",
+        "answer_excerpt": "[...] 1. Innovative (Correct Answer)\na. Characterized by original and creative ideas or methods. [...]",
+        "capture_id": -857,
+        "source_text": {
+          "prompt": "Create a definition quiz for the word “innovative”, with four answers, only one answer should be clearly the correct one and no two definitions should be similar. The correct answer is the true definition of “innovative”, and the others are definitions of other adjectives",
+          "answer": "Certainly! Here's a definition quiz for the word \"innovative\":\n\n1. **Innovative** (Correct Answer)\n   - a. Characterized by original and creative ideas or methods.\n   - b. Unpredictable and confusing, often leading to chaos.\n   - c. Extremely cold and icy, like the climate of Antarctica.\n   - d. Rigidly adhering to established rules and traditions.\n\n2. **Innovative**\n   - a. Characterized by original and creative ideas or methods.\n   - b. Extremely resourceful and able to solve problems with creativity.\n   - c. Relating to or involving the use of oil and petroleum products.\n   - d. Intended to provoke fear or shock, often used in media or advertising.\n\n3. **Innovative**\n   - a. Characterized by original and creative ideas or methods.\n   - b. Describing someone who frequently changes their opinions or beliefs.\n   - c. Relating to or situated at a great distance.\n   - d. Relating to or situated in a hospital.\n\n4. **Innovative**\n   - a. Characterized by original and creative ideas or methods.\n   - b. Full of energy and enthusiasm.\n   - c. Relating to or situated in a university or academy.\n   - d. Requiring or showing careful thought and consideration.\n\nThe correct answer in each case is:\n\n- **a. Characterized by original and creative ideas or methods.**",
+          "prompt_sha256": "6c04ff19ce981e0cc3ea6eb4cde3cf3163164936e208836d11974e17d4ee7653",
+          "answer_sha256": "52f976b87172832a06b6156b51aded1c23e4e3bf0bc654b0bacb1aab2d55381c",
+          "answer_source": "issue1901_avgpool/raw_completions/test/shard00/gen_seed43_chunk1.json"
+        }
+      },
+      "retrieved": {
+        "capture_id": 52513,
+        "source_type": "distr",
+        "stream_pos": 137638,
+        "final_query": "do mind helpin me with 50 cloud computing questions with choie answers that i can use for revision",
+        "answer_excerpt": "[...] 1. What does IaaS stand for?\nA) Infrastructure as a Service\nB) Internet as a Service [...]\nAnswer: A) Infrastructure as a Service [...]",
+        "source_text": {
+          "prompt": "do mind helpin me with 50 cloud computing questions with choie answers that i can use for revision",
+          "answer": "Certainly! Here are 50 multiple-choice questions on cloud computing, along with their correct answers, to help you with your revision. These questions cover a range of topics including definitions, services, and best practices in cloud computing.\n\n1. **What does IaaS stand for?**\n   - A) Infrastructure as a Service\n   - B) Internet as a Service\n   - C) Information as a Service\n   - D) Instant as a Service\n   - **Answer: A) Infrastructure as a Service**\n\n2. **Which of the following is a public cloud?**\n   - A) Amazon Web Services (AWS)\n   - B) Private network within a company\n   - C) Company-owned data center\n   - D) All of the above\n   - **Answer: A) Amazon Web Services (AWS)**\n\n3. **What is the primary benefit of using a private cloud?**\n   - A) Cost savings\n   - B) Scalability\n   - C) Better security and compliance\n   - D) Better performance\n   - **Answer: C) Better security and compliance**\n\n4. **Which of the following is a virtual machine (VM) management tool?**\n   - A) Docker\n   - B) Kubernetes\n   - C) Ansible\n   - D) VirtualBox\n   - **Answer: D) VirtualBox**\n\n5. **What is SaaS?**\n   - A) Software as a Service\n   - B) Secure as a Service\n   - C) Server as a Service\n   - D) Storage as a Service\n   - **Answer: A) Software as a Service**\n\n6. **Which cloud computing service model allows users to manage and control their own virtual computing resources over the Internet?**\n   - A) PaaS\n   - B) SaaS\n   - C) IaaS\n   - D) All of the above\n   - **Answer: C) IaaS**\n\n7. **Which of the following is an example of an IaaS provider?**\n   - A) Dropbox\n   - B) Microsoft Azure\n   - C) Salesforce\n   - D) Gmail\n   - **Answer: B) Microsoft Azure**\n\n8. **What is the primary advantage of the pay-as-you-go pricing model in cloud computing?**\n   - A) It guarantees no downtime.\n   - B) Users only pay for the resources they use.\n   - C) It provides unlimited storage.\n   - D) It ensures 100% uptime.\n   - **Answer: B) Users only pay for the resources they use.**\n\n9. **Which AWS service is used for serverless computing?**\n   - A) EC2\n   - B) Lambda\n   - C) RDS\n   - D) S3\n   - **Answer: B) Lambda**\n\n10. **What is VPC?**\n    - A) A type of storage\n    - B) A network security tool\n    - C) A virtual private cloud\n    - D) A database service\n    - **Answer: C) A virtual private cloud**\n\n11. **Which of the following is a benefit of containerization?**\n    - A) Improved security\n    - B) Improved performance\n    - C) Improved portability\n    - D) All of the above\n    - **Answer: D) All of the above**\n\n12. **What is the primary difference between a public and a private cloud?**\n    - A) Public clouds are slower, while private clouds are faster.\n    - B) Public clouds are cheaper, while private clouds are more expensive.\n    - C) Public clouds are more secure, while private clouds are less secure.\n    - D) Public clouds are shared with others, while private clouds are dedicated to a single organization.\n    - **Answer: D) Public clouds are shared with others, while private clouds are dedicated to a single organization.**\n\n13. **Which of the following is an example of a cloud storage solution?**\n    - A) Google Drive\n    - B) AWS S3\n    - C) Dropbox\n    - D) All of the above\n    - **Answer: D) All of the above**\n\n14. **What is a microservices architecture?**\n    - A) A way to deploy a single monolithic application\n    - B) A way to break down an application into small, independent services\n    - C) A way to centralize all the services in a single container\n    - D) A way to host applications on a single server\n    - **Answer: B) A way to break down an application into small, independent services**\n\n15. **Which cloud provider offers a Machine Learning service?**\n    - A) Alibaba Cloud\n    - B) Google Cloud\n    - C) AWS\n    - D) All of the above\n    - **Answer: D) All of the above**\n\n1",
+          "prompt_sha256": "12abb59970b866914ee45ed99a7bf5af2a2bff3656efb96dc08bb49c2ac99a24",
+          "answer_sha256": "3725358019a229b37e7ac5ad484c6a1cfe83152f1a9e0c8aaf825e69a39df1f8",
+          "answer_source": "issue1901_avgpool/raw_completions/distr/shard03/gen_seed43_chunk3.json"
+        }
+      },
+      "query_index": 810
+    },
+    {
+      "id": "vancouver_to_hawaii_itinerary",
+      "short_title": "Vancouver and Hawaii itineraries",
+      "true_answer_rank": 8,
+      "true": {
+        "eval_row": 321,
+        "pass_b_row": 1645,
+        "previous_context_summary": "Single-turn · Vancouver food itinerary",
+        "final_query": "Plan a three day trip to vancouver [...] Chinese cuisine",
+        "answer_excerpt": "[...] Day 1: Exploring Chinatown and Beyond\n[...] dim sum breakfast at a local Cantonese restaurant. [...]\nVisit Hon Shing for [...] chicken chop, shrimp dumplings [...]",
+        "capture_id": -322,
+        "source_text": {
+          "prompt": "Plan a three day trip to vancouver with emphasis on Chinese cuisine",
+          "answer": "Absolutely! Vancouver is a fantastic city with a vibrant Chinese community and diverse culinary scene. Here's a three-day plan focused on exploring Chinese cuisine:\n\n### Day 1: Exploring Chinatown and Beyond\n\n**Morning:**\n- **Chinatown Breakfast**: Start your day with a hearty dim sum breakfast at a local Cantonese restaurant. **Dim Sum King** is a popular spot known for its fresh and tasty dishes.\n- **Cantonese Cuisine**: Visit **Hon Shing** for their legendary chicken chop, shrimp dumplings, and other classic Cantonese dishes.\n\n**Afternoon:**\n- **Popeyes Chicken & Seafood**: Head to **Popeyes Chicken & Seafood**, known for their spicy chicken and fried seafood.\n- **Vancouver Public Market**: Explore the market for fresh produce, local artisanal goods, and additional tasty treats. Grab lunch or snacks here, such as steamed buns or noodles.\n\n**Evening:**\n- **Dim Sum Delight**: For dinner, choose a more upscale dim sum restaurant like **Lin Heung Restaurant**, which offers a variety of traditional and modern dim sum dishes.\n- **Tea Room**: End your day with a visit to **Tea Pine**, a lovely Chinese tea house known for its selection of teas and pastries.\n\n### Day 2: Immersive Chinese Food Experience\n\n**Morning:**\n- **Vancouver Royal Theatre**: Enjoy a morning show at the **Vancouver Royal Theatre**, which features performances often including Chinese music, dance, and operas.\n- **Lunch**: For a more adventurous lunch, try **Kung Fu Noodle Bar** for their spicy and authentic Sichuan cuisine.\n\n**Afternoon:**\n- **Yee Whye Teck Building**: Visit the **Yee Whye Teck Building**, an important cultural landmark with a museum and historical exhibits.\n- **Fusion Cuisine**: For dinner, enjoy a fusion of Chinese and other cuisines at **Earl Grey Modern Chinese**, which offers a unique dining experience in a luxurious setting.\n\n### Day 3: Hidden Gems and Specialties\n\n**Morning:**\n- **Hong Kong Cafe**: Start your day at **Hong Kong Cafe**, known for its HK-style coffee, milk tea, and Hong Kong egg tarts.\n- **Lunch**: For a more traditional lunch, try **Golden Eagle** for their famous bao buns and other Cantonese specialties.\n\n**Afternoon:**\n- **Chinese Markets**: Visit the **Granville Island Public Market** for a quick stop to explore various vendors and grab some takeout from popular vendors.\n- **Dim Sum Markets**: Spend some time at the **Chinatown Dim Sum Market** for an array of affordable dim sum and other Chinese dishes.\n\n**Evening:**\n- **Mongolian Hot Pot**: For a unique and communal dining experience, try **Wan Kee Hot Pot**. Enjoy the opportunity to cook your own meat and vegetables in a steaming hot pot.\n- **Night Market**: If you arrive late or have some time to spare, check out **Britannia Night Market** for street food, local crafts, and more.\n\n### Additional Tips:\n- **Reservations**: Always try to make reservations for dining, especially for high-end restaurants.\n- **Public Transport**: Use the SkyTrain or bus services for easy travel around the city.\n- **Walking Tours**: Consider taking a walking tour through Chinatown to learn more about the area's history and culture.\n\nEnjoy your culinary adventure in Vancouver!",
+          "prompt_sha256": "7450119ff1464650545b595141d52d9c8c758d04fe299d22a5154f92cce1b268",
+          "answer_sha256": "da77ee03a3ecfc9d4a50cce391c1fd1a8d1471b5a483b08f2b718eb1e0a82896",
+          "answer_source": "issue1901_avgpool/raw_completions/test/shard00/gen_seed43_chunk0.json"
+        }
+      },
+      "retrieved": {
+        "capture_id": 6465,
+        "source_type": "distr",
+        "stream_pos": 75744,
+        "final_query": "Can you create an itinerary for Hawaii for 4 days with my family. We enjoy adventures and learning about the history of the place.",
+        "answer_excerpt": "[...] Day 1: Honolulu and Pearl Harbor\nMorning: Diamond Head State Monument\nStart your day with a visit to Diamond Head State Monument. [...]\nAfternoon: Pearl Harbor [...]",
+        "source_text": {
+          "prompt": "Can you create an itinerary for Hawaii for 4 days with my family. We enjoy adventures and learning about the history of the place.",
+          "answer": "Absolutely! Here's a 4-day itinerary for Hawaii that focuses on adventures and learning about the rich history of the islands. I'll suggest activities and places that appeal to both adults and children.\n\n### Day 1: Honolulu and Pearl Harbor\n\n#### Morning: Diamond Head State Monument\nStart your day with a visit to Diamond Head State Monument. It's a great spot to start your day with a scenic hike, offering stunning views of the island. Alternatively, you can visit the Honiawa Falls and hike to the waterfall if you prefer a more relaxed pace.\n\n#### Afternoon: Pearl Harbor\nHead to Pearl Harbor, where you can visit the USS Arizona Memorial, the Pearl Harbor Visitor Center, and the Battleship Missouri. It's an incredible historical site that provides a deep dive into one of the most significant events in modern American history.\n\n#### Evening: Lanai Lanai Theatre\nEnd your day with a fun and exciting visit to the Lanai Theatre, where you can catch a Broadway-style show or a film. It’s a great way to unwind after a long day of history and adventure.\n\n### Day 2: Hiking and Exploration\n\n#### Morning: Na Pali Cliffs and Kauai\nIf you're up for a long drive, consider a day trip to Kauai (you can fly or take a ferry). Start with a visit to Na Pali Cliffs and tour the Kalalau Trail, which offers breathtaking views and is part of the Pali Wilderness Area.\n\n#### Afternoon: North Shore\nReturn to Oahu and explore the North Shore, known for its beautiful beaches, waterfalls, and scenic drives. Visit Waimea Bay for a view of crashing waves, and perhaps catch some of the best surfing spots in the world.\n\n#### Evening: Lu'au\nEnjoy a traditional Hawaiian Lu'au with live music and dance performances. This is a great opportunity to experience Hawaiian culture and cuisine in a memorable setting.\n\n### Day 3: Polynesian Cultural Center and Adventure\n\n#### Morning: Polynesian Cultural Center\nVisit the Polynesian Cultural Center for a full day of exploration, cultural exhibitions, performances, and a delicious buffet. This site showcases the cultures of Polynesia and offers a hands-on experience with hands and legs, making it a fun activity for the whole family.\n\n#### Afternoon: Nuuanu Pali Lookout\nHead to Nuuanu Pali Lookout to see the second-highest waterfall in the world, the Nuuanu Pali. It’s a scenic drive with great views of the lush landscape.\n\n#### Evening: Beach Day\nEnd your day with a beach day, perhaps at Waikiki Beach or North Shore beaches. Spend time swimming, surfing, or simply relaxing on the shore.\n\n### Day 4: Adventure and Cultural Experience\n\n#### Morning: Pearl Harbor and USS Missouri\nSpend the morning revisiting Pearl Harbor, but this time, try to catch the sunrise from the Pearl Harbor Military Beach, offering a different perspective on the history and beauty of the place.\n\n#### Afternoon: Snorkeling or Kayaking\nEnd your family adventure with an exciting water activity. Snorkeling at Hanauma Bay or kayaking in the calm waters of Kapalua Bay offers a chance to see the underwater world and local marine life.\n\n#### Evening: Relax and Departure\nConclude your trip with a relaxing evening. You might want to rest up or perhaps dine at a beachfront restaurant to soak in the Hawaiian sunset. Depending on your departure, this is a great time to reflect on your family's adventures and experiences.\n\nThis itinerary balances historical exploration with natural beauty and adventurous activities, ensuring a memorable trip for the whole family. Enjoy your time in Hawaii!",
+          "prompt_sha256": "98398a4150a5d5d6b4d12aff7ab2a936190dad0b3647d10b8b95f08ad913e7af",
+          "answer_sha256": "bf6763bae964e585f3b0e0505f2e1f1ff4a7c8db10cdbc7282b0b2b41e9966ba",
+          "answer_source": "issue1901_avgpool/raw_completions/distr/shard00/gen_seed43_chunk0.json"
+        }
+      },
+      "query_index": 307
+    }
+  ],
+  "provenance": {
+    "failure_set_source": "/home/thomasjiralerspong/.codex/worktrees/explore-persona-space/retrieval-10k-20260907/data/issue_1901/retrieval_10k/text_sources/full_failure_review_packet.json",
+    "failure_set_source_sha256": "f4abbc30ef5f7630acb2177a6c1071138ab19ca7375afd5cc35f91bb96efb9bf",
+    "audit_source": "/mnt/eps-data/thomasjiralerspong/issue1901_ctxsim/linear_failures/audit.json",
+    "audit_source_sha256": "58fc98545ff70e239174abea10a4421986bc8f186412011e52a34922fec7ac26",
+    "audit_data_revision": "83d249cc9d495ca6f5d10f9156a622bcdca29a19",
+    "text_bank_sha256": "76bfb49f57b21aa14c86b83668c262a384722d3c547de5fe81e2abf76165b4bf",
+    "answer_seed_shown": "43",
+    "prior_pass_compared": "linear_failures/annotations.json, 5 overlapping categories, counts 52/24/6/6/2",
+    "category_summary": "eval_results/issue_1901/failure_categories/summary.json",
+    "category_summary_sha256": "f2e0783af736bfe3b353526686716ade93ec4532e5ba145b02905d27c1bdca1e"
+  }
+}
