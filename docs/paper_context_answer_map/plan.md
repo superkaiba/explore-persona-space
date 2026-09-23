@@ -697,3 +697,7 @@ disclosure). Every citation fetched programmatically, never from memory.
 28. CoT THINKING-OFF WORDING: Thomas explicitly declined the proposed correction to the main text's extraction-position wording on 22 September 2026. Leave it unchanged.
 
 29. REFUSAL APPENDIX SCOPE: remove the refusal boundary-analysis extension and its figure. Its joint-assignment criterion differs from the main individual-cosine test, so the earlier recommendation to treat its perfect copy baseline as a matched main-text comparison is withdrawn. Retain separate safety-swap results by class and their answer-length caveat, specifying the latter's unnormalized projection. Main results and archived experiment artifacts stay unchanged. Applied in Overleaf commit `07a3c65bc9eaf6a1fdc13e1131a58ce4e7956930`.
+
+## Decisions (2026-09-23)
+
+30. RETRIEVAL APPENDIX SCOPE: remove the quantitative matched top/bottom retrieval-tail comparison, coverage discussion and table. Preserve qualitative retrieval examples, the separate factual case and its baseline coordinate definition, forecasting results, and general scoring definitions and limitations. Keep main text and archived experimental results unchanged. Applied in Overleaf commit `cc2d75a5a82e5a48b14dadc173598939015d4170`.

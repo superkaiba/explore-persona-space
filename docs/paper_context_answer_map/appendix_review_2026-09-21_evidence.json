@@ -597,5 +597,68 @@
       }
     },
     "live_source_verified": true
+  },
+  "follow_up_retrieval_tails_removal": {
+    "date": "2026-09-23",
+    "overleaf_commit": "cc2d75a5a82e5a48b14dadc173598939015d4170",
+    "scope": "Remove matched top/bottom retrieval-tail comparison and coverage discussion. Preserve qualitative retrieval, separate factual case, forecasting and conditional-score definitions.",
+    "source_evidence": {
+      "path": "/home/thomasjiralerspong/.codex-worktrees/1739-covariance-ablation/eval_results/issue_1739/million_cached_20260916/tail_judge_coverage.json",
+      "sha256": "443bba7c7a4887a9a47561028d29eb8cc631d20ad7915e5c052504622554d43b",
+      "verified_hhrt_preimage": {
+        "top": {
+          "kept": 627,
+          "observed": 920
+        },
+        "bottom": {
+          "kept": 920,
+          "observed": 920
+        }
+      }
+    },
+    "validation": {
+      "base_commit": "07a3c65bc9eaf6a1fdc13e1131a58ce4e7956930",
+      "main_text_unchanged": true,
+      "changed_file": "sections/05_method_details.tex",
+      "source_word_delta": -520,
+      "all_surviving_text_unchanged": false,
+      "qualitative_retrieval_and_case_preserved": true,
+      "judge_score_definitions_and_limitations_preserved": true,
+      "archived_results_unchanged": true,
+      "retained_case_definition": "Preserved the D v_C and D v_A baseline directions in standardized context coordinates, previously defined only in the deleted tail methods."
+    },
+    "pdf_validation": {
+      "compiled_pages": 50,
+      "inspected_pages": [
+        49,
+        50
+      ],
+      "unresolved_references": [],
+      "removed_material_absent": true,
+      "final_definition_pages": [
+        49
+      ]
+    },
+    "review": {
+      "verdict": "PASS",
+      "score": 0,
+      "max_score": 130,
+      "remaining_flags": [],
+      "resolved_flag": "Preserved the standardized-coordinate baseline direction definitions required by the retained factual case.",
+      "writing_tells_counts": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "I": 0,
+        "J": 0
+      }
+    },
+    "live_source_verified": true,
+    "archived_analysis_unchanged": true
   }
 }
