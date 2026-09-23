@@ -7,13 +7,17 @@
   "title": "SAE feature properties and context-to-answer predictability",
   "subject": "Conditional feature-property associations and activity-adjusted nested-tier gradient, decoder-direction target",
   "git": {
-    "commit": "e78f95c91a8c3cfc2f29010f98d56272dc8f8b89",
+    "commit": "e458a0e2322e57e2831f050a777201d31621d6f0",
     "tracked_worktree_dirty": true
   },
   "sources": [
     {
       "path": "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json",
       "sha256": "7225e1f6de5086e980ef8ef3c2bc0d65e276166f6758252972b2920b01b1528f"
+    },
+    {
+      "path": "eval_results/issue_1482/full_labels_reanalysis_20260923/full_labels_common_resolved.json",
+      "sha256": "863e448af8df93203872d5f8063dba4fb6808ace716899910625283acded90f2"
     }
   ],
   "render": {
@@ -72,54 +76,56 @@
         "round": 0,
         "banked_name": "Variance explained in answer space",
         "label": "variance along decoder direction",
-        "value": 0.3155785921425568,
-        "winner_c": 0.8155785921425568,
+        "value": 0.31611031025791725,
+        "winner_c": 0.8161103102579172,
         "pair_frac": 1.0,
-        "n": 120716,
+        "n": 105714,
         "kind": "forward-selected association"
       },
       {
         "round": 1,
         "banked_name": "Speaker: identity / disposition",
         "label": "speaker identity / disposition",
-        "value": 0.12263806407038147,
-        "winner_c": 0.6226380640703815,
-        "pair_frac": 0.09999254458751086,
-        "n": 120716,
+        "value": 0.12728540460268323,
+        "winner_c": 0.6272854046026832,
+        "pair_frac": 0.09999148659770099,
+        "n": 105714,
         "kind": "forward-selected association"
       },
       {
         "round": 2,
         "banked_name": "Logit footprint: promoting",
         "label": "promotes specific output tokens",
-        "value": -0.10360473944167892,
-        "winner_c": 0.3963952605583211,
-        "pair_frac": 0.09774147034335497,
-        "n": 120716,
+        "value": -0.10415194933444327,
+        "winner_c": 0.3958480506655567,
+        "pair_frac": 0.09752435468680005,
+        "n": 105714,
         "kind": "forward-selected association"
       },
       {
         "round": 3,
         "banked_name": "Logit footprint: suppressing",
         "label": "suppresses specific output tokens",
-        "value": -0.09866066404139495,
-        "winner_c": 0.40133933595860505,
-        "pair_frac": 0.085576403884771,
-        "n": 120716,
+        "value": -0.09958500488570898,
+        "winner_c": 0.400414995114291,
+        "pair_frac": 0.08565265346431236,
+        "n": 105714,
         "kind": "forward-selected association"
       },
       {
         "round": 4,
         "banked_name": "Content type: topic",
         "label": "topic content",
-        "value": -0.08668210029410484,
-        "winner_c": 0.41331789970589516,
-        "pair_frac": 0.07853272983246244,
-        "n": 120716,
+        "value": -0.07990883828545381,
+        "winner_c": 0.4200911617145462,
+        "pair_frac": 0.07846682442757202,
+        "n": 105714,
         "kind": "forward-selected association"
       }
     ],
-    "dv": "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, no BatchTopK gate) under the layer-19 ridge metamodel; common universe of 120,716 features",
+    "dv": "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, no BatchTopK gate) under the layer-19 ridge map; common universe of 105,714 features with usable labels on all five axes",
+    "n": 105714,
+    "property_source": "eval_results/issue_1482/full_labels_reanalysis_20260923/full_labels_common_resolved.json",
     "tiers": [
       {
         "label": "Coarsest",
@@ -148,8 +154,8 @@
     "centering": "per-feature R^2 minus the median R^2 of its activity quintile"
   },
   "output_sha256": {
-    "pdf": "b2e066ac579b155fe3640aed9c37aef248246819ca22f2670c5299290613db7b",
-    "png": "86211467a8bda9e411f8d9b74ad060341f12cc3dd759aa98601c6091e7bdf1e4",
-    "grayscale": "2d5d4963bbfc47479358ea8ba9cf175cf0d00dbe6671a9b7d53606c198f41390"
+    "pdf": "d40626c9edf2296fdf04b5570cc5d94064eb6a60a93d9f55e5603ddd95829ec4",
+    "png": "e72c8f0026b46dd53a6190604a71f04520e83f44d22b60aca0fb1ef238d5ac72",
+    "grayscale": "734b34110eed2d1bd1213b9a99a2205fe218f45f308c6e81e9997c02ac8ea08e"
   }
 }

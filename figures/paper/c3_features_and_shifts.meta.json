@@ -7,13 +7,17 @@
   "title": "SAE feature properties and what the context-to-answer map keeps per changed context element",
   "subject": "Conditional association between an SAE feature property and the held-out R2 of its decoder direction, beside the within-pair cosine of the two context vectors, the two observed answer vectors and the two predicted answer vectors, and the two-way discrimination rate, per controlled context element, for the seven rows left after the two same-decision rows are dropped, with 95% pair-bootstrap intervals",
   "git": {
-    "commit": "03ab5e2ae5aea166d9abf0ecd636d566b29094c2",
+    "commit": "e458a0e2322e57e2831f050a777201d31621d6f0",
     "tracked_worktree_dirty": true
   },
   "sources": [
     {
       "path": "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json",
       "sha256": "7225e1f6de5086e980ef8ef3c2bc0d65e276166f6758252972b2920b01b1528f"
+    },
+    {
+      "path": "eval_results/issue_1482/full_labels_reanalysis_20260923/full_labels_common_resolved.json",
+      "sha256": "863e448af8df93203872d5f8063dba4fb6808ace716899910625283acded90f2"
     },
     {
       "path": "eval_results/issue_2564/section42_element_shifts.json",
@@ -49,7 +53,7 @@
     "background": "#FFFFFF",
     "text": [
       "SEPARATE DICTIONARY\n16,384 FEATURES",
-      "A  \u00b7  120,716 SAE FEATURES",
+      "A  \u00b7  105,714 SAE FEATURES",
       "Concordance with feature $R^2$,\nabove chance",
       "-0.1",
       "+0.1",
@@ -91,50 +95,50 @@
           "round": 0,
           "banked_name": "Variance explained in answer space",
           "label": "variance along decoder direction",
-          "value": 0.3155785921425568,
-          "winner_c": 0.8155785921425568,
+          "value": 0.31611031025791725,
+          "winner_c": 0.8161103102579172,
           "pair_frac": 1.0,
-          "n": 120716,
+          "n": 105714,
           "kind": "forward-selected association"
         },
         {
           "round": 1,
           "banked_name": "Speaker: identity / disposition",
           "label": "speaker identity / disposition",
-          "value": 0.12263806407038147,
-          "winner_c": 0.6226380640703815,
-          "pair_frac": 0.09999254458751086,
-          "n": 120716,
+          "value": 0.12728540460268323,
+          "winner_c": 0.6272854046026832,
+          "pair_frac": 0.09999148659770099,
+          "n": 105714,
           "kind": "forward-selected association"
         },
         {
           "round": 2,
           "banked_name": "Logit footprint: promoting",
           "label": "promotes specific output tokens",
-          "value": -0.10360473944167892,
-          "winner_c": 0.3963952605583211,
-          "pair_frac": 0.09774147034335497,
-          "n": 120716,
+          "value": -0.10415194933444327,
+          "winner_c": 0.3958480506655567,
+          "pair_frac": 0.09752435468680005,
+          "n": 105714,
           "kind": "forward-selected association"
         },
         {
           "round": 3,
           "banked_name": "Logit footprint: suppressing",
           "label": "suppresses specific output tokens",
-          "value": -0.09866066404139495,
-          "winner_c": 0.40133933595860505,
-          "pair_frac": 0.085576403884771,
-          "n": 120716,
+          "value": -0.09958500488570898,
+          "winner_c": 0.400414995114291,
+          "pair_frac": 0.08565265346431236,
+          "n": 105714,
           "kind": "forward-selected association"
         },
         {
           "round": 4,
           "banked_name": "Content type: topic",
           "label": "topic content",
-          "value": -0.08668210029410484,
-          "winner_c": 0.41331789970589516,
-          "pair_frac": 0.07853272983246244,
-          "n": 120716,
+          "value": -0.07990883828545381,
+          "winner_c": 0.4200911617145462,
+          "pair_frac": 0.07846682442757202,
+          "n": 105714,
           "kind": "forward-selected association"
         }
       ],
@@ -146,7 +150,7 @@
         "topic content": "topic content",
         "coarsest nested-dictionary tier": "coarsest nested-\ndictionary tier"
       },
-      "dv": "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, no BatchTopK gate) under the layer-19 ridge metamodel; common universe of 120,716 features",
+      "dv": "held-out R^2 of the decoder-direction projection d_f^T h_A (dense; no encoder, no BatchTopK gate) under the layer-19 ridge map; common universe of 105,714 features with usable labels on all five axes",
       "separate_group": {
         "kicker": "separate 16,384-feature nested dictionary \u00b7 layer 20",
         "rows": [
@@ -188,13 +192,12 @@
           "interval": "95 percent, percentile method, on the quintile-matched value"
         },
         "property_rows_universe": {
-          "n_features": 120716,
+          "n_features_scored": 105714,
           "layer": 19,
-          "dictionary": "regular sparse autoencoder",
-          "matching": "winner concordance c - 1/2 per forward-selection round; each round conditions (coarsened exact matching) on all previously selected properties",
-          "source": "eval_results/issue_1482/plot4_redesign/plot4_decoder_direction.json"
+          "selection": "active with usable labels on all five axes",
+          "source": "eval_results/issue_1482/full_labels_reanalysis_20260923/full_labels_common_resolved.json"
         },
-        "caption_note": "The tier bar is measured on a different population from the five property bars beside it: 16,384 features of a nested sparse autoencoder at layer 20, matched on activity quintiles. The property bars cover 120,716 features of the regular sparse autoencoder at layer 19, each matched by coarsened exact matching on the properties selected in earlier rounds, the first of them unmatched. The statistic, the scale and the reading are the same in both.",
+        "caption_note": "The tier bar covers a separate nested dictionary at layer 20, matched on activity quintiles. The property bars cover 105,714 regular SAE features at layer 19 with usable labels on all five axes, matched on earlier selected properties. The first property is unmatched.",
         "separation": "one empty row, a shaded stripe, a lighter bar fill and the group's own kicker; the stripe, the gap and the fill survive the grayscale audit",
         "error_bars": "none drawn; the panel shows no interval on any row, so the tier interval is recorded here instead"
       }
@@ -761,8 +764,8 @@
     }
   },
   "output_sha256": {
-    "pdf": "ba66f0f5f859671b19022769a961b75218515c08e9f4bfee8c1bfd18a3548b56",
-    "png": "182121ce87ea3f4c8ef599a257ba2c735460a3c71aa72cb2256046f10da33025",
-    "grayscale": "2c511c94a79cc1f9e13b3c2b78797505d63971f7596eeec302fe51837664b567"
+    "pdf": "5d4679b23c81e08db14caa116bad531a41f62e4dde600ba40323d105406058e5",
+    "png": "59d23eb3db705366398d97ea5c4fd98b5b8209d91cd478d53cc6b5cfa173d165",
+    "grayscale": "ed54a81843b5020578e1f27b5b6dad31e67499ac54888de1697f8d1db7fdb12e"
   }
 }
