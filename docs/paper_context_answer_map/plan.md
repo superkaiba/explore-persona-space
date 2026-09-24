@@ -1,9 +1,13 @@
 # Paper plan — Context → Answer Mapping (v1, 2026-08-18)
 
+## Current appendix organization (Thomas, 2026-09-23)
+
+A groups shared experimental methods, B reconstruction and retrieval analyses, and C direction and feature analyses. D through H retain post-training, framings/speakers/turns, CoT, capability, and behavior. I contains the existing preliminary theoretical analysis; J contains the complete retrieval-failure catalog. The guide and references use LaTeX labels. Use metamodel for the fitted predictor; retain map for mathematical operations and the language model's own context-to-answer relationship.
+
 ## Current methodology scope (Thomas, 2026-09-11)
 
 Models and data are detailed in Appendix A.1, alongside the experimental-settings
-table. Baselines and controls are detailed in Appendix A.7. The main methodology
+table. Baselines and controls are detailed in Appendix A.4 (reorganized 2026-09-23). The main methodology
 retains the definitions, metamodels, and metrics, with a short Models and data
 subsection at the end and a one-sentence baseline roster, each with an appendix
 pointer. The standalone main-text Baselines and controls subsection is removed.
@@ -713,3 +717,5 @@ disclosure). Every citation fetched programmatically, never from memory.
 35. SAE LABEL REANALYSIS: rerun the existing property analysis with the complete saved labels and present the results in chat. Correct missing-label handling, retain the original target and selection settings, and separate the loading-only diagnostic from the common-resolved primary population and axis-specific sensitivity. Results are archived in EPS commit `8cc43071c35ec269c2166d15626fb96a4344c198`. No manuscript changes were requested or applied in this step.
 
 36. SAE FULL-LABEL MANUSCRIPT UPDATE: apply the approved corrected primary analysis to the main SAE numbers/count, both manuscript SAE graphics, the two appendix property tables and the cohort description. Use the common 105,714-feature resolved-label population, state the 14-round cap, and preserve the Matryoshka and minimal-pair results. Main source length is unchanged. Applied in Overleaf commit `77b7c1558bf1be77a0bb3a485194dd99e9b94024`; reproducible figure assets are EPS `43317eb032fc8fe9d4b48144eb6bca66d16e342f`.
+
+37. APPENDIX PRESENTATION BUNDLE: apply all four approved corrections together: remove the wrong stratified-AUC pointer, define the replacement criteria and standardize metamodel terminology, group methods and supporting results with the exhaustive catalog last, and repair table/example layout. Applied in Overleaf `42491f63e45b9c587d83188e587e4573c83f8348`, with figure sources/assets at EPS `3511b6aadaf5b8f0a1bbb828c953ddd3ccc07e71`. Numerical results and all quoted/catalog content preserved; 50-page compile, zero overfull boxes, resolved references/citations, independent reviews, visual checks, and remote-byte verification passed.
