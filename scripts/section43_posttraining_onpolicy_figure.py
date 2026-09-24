@@ -24,9 +24,8 @@ circle; chat template = dotted line, filled diamond.
   B  R^2 into each post-trained checkpoint's answer vectors from its own
      context vectors (teal) and from base-model context vectors (amber);
   C  retention of the preceding checkpoint's map on the next checkpoint's own
-     pairs, applied as is (open marker) and with a refit bias (filled marker).
-     The scalar-rescaling-plus-bias correction is in the summary but is not
-     drawn (Thomas, 2026-09-16).
+     pairs, applied unchanged. Calibration variants remain in the saved data
+     but are not drawn (Thomas, 2026-09-17).
 
 Outputs (``figures/paper``): ``c1_posttraining_dynamics{.pdf,.png,
 _grayscale.png,.meta.json}`` and ``c1_posttraining_dynamics_data.json`` with
@@ -39,7 +38,7 @@ import argparse
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -58,7 +57,6 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 
-from explore_persona_space.orchestrate import hub  # noqa: E402
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     MUTED,
     ROLES,
@@ -70,6 +68,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     set_c2a_style,
     style_axis,
 )
+from explore_persona_space.orchestrate import hub  # noqa: E402
 
 HF_REPO = "superkaiba1/explore-persona-space-data"
 HF_PATH = "issue1902_olmo_onpolicy_20260914/production_v1/fits/olmo/summary.json"
@@ -89,14 +88,13 @@ FORMAT_STYLE = {
     "plain": {"linestyle": "-", "marker": "o", "label": "Plain text"},
     "chat": {"linestyle": ":", "marker": "D", "label": "Chat template"},
 }
-CORRECTIONS = (("direct", "as is"), ("bias", "with refit bias"))
+CORRECTIONS = (("direct", "Frozen"), ("bias", "with refit bias"))
 TEAL = ROLES["post_trained"].color
 AMBER = ROLES["base_model"].color
 
 # One kicker legend row above the panels (figure_standard.md 2.5).  The heading
 # sits inline with its entries, so the legend costs one row, not two.  At the
-# pinned c2a type sizes the three headings plus six labels only fit on one line
-# with the context-source labels carrying the heading's noun: "CONTEXT SOURCE"
+# pinned c2a type sizes, concise context-source labels carry the heading's noun: "CONTEXT SOURCE"
 # over "Own"/"Base" rather than "Own states"/"Base states".
 LEGEND_Y = 0.905
 """Figure-fraction centre line of the kicker legend row."""
@@ -114,13 +112,13 @@ KICKER_Y = 1.04
 """Panel-kicker baseline in axes fractions (the c2a default 1.16 left a gap
 the size of the kicker itself between the kicker and the axes)."""
 SERIES_ENCODING = {
-    "format": "plain text = solid line, filled circle; chat template = dotted line, "
-    "filled diamond (panels A, B, C)",
+    "format": "plain text = filled circle; chat template = filled diamond; "
+    "panels A/B add solid plain-text and dotted chat-template lines",
     "panel_a": "one hue (post_trained teal); each checkpoint's own map",
     "panel_b": "own context vectors = teal; base-model context vectors = amber "
     "(ROLES['base_model'])",
-    "panel_c": "correction by fill: as is = open marker, refit bias = filled marker; "
-    "plain at x-0.15, chat at x+0.15; scale_bias present in the summary, not drawn",
+    "panel_c": "unchanged source maps, filled format markers; plain at x-0.15, "
+    "chat at x+0.15; bias and scale_bias retained in source results, not drawn",
 }
 
 
@@ -217,8 +215,8 @@ def load_results(summary_path: Path) -> dict[str, Any]:
                 "sha256": SUMMARY_SHA256,
             },
             "series_encoding": SERIES_ENCODING,
-            "not_drawn": "panel_c scale_bias (scalar rescaling + bias) retention",
-            "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "not_drawn": "panel_c bias and scale_bias retention",
+            "generated_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         },
         "panel_a": panel_a,
         "panel_b": panel_b,
@@ -273,9 +271,10 @@ def plot_panel_b(ax: plt.Axes, data: dict[str, Any]) -> None:
 
 
 def plot_panel_c(ax: plt.Axes, data: dict[str, Any]) -> None:
+    """Show only unchanged source maps, using the common format encodings."""
     for fmt in FORMATS:
         dx = -0.15 if fmt == "plain" else 0.15
-        for mode, _ in CORRECTIONS:
+        for mode in ("direct",):
             rows = [data["panel_c"][fmt][f"{s}{t}"][mode] for s, t in TRANSITIONS]
             points = [r["retention"] for r in rows]
             ax.errorbar(
@@ -286,7 +285,7 @@ def plot_panel_c(ax: plt.Axes, data: dict[str, Any]) -> None:
                 linestyle="none",
                 marker=FORMAT_STYLE[fmt]["marker"],
                 markersize=5.5,
-                markerfacecolor="white" if mode == "direct" else TEAL,
+                markerfacecolor=TEAL,
                 markeredgecolor=TEAL,
                 capsize=2,
                 elinewidth=1,
@@ -297,7 +296,7 @@ def plot_panel_c(ax: plt.Axes, data: dict[str, Any]) -> None:
     ax.set_ylim(0, 1.08)
     ax.set_ylabel(better_label(r"$R^2_{i\to j}\,/\,R^2_{j\to j}$"))
     style_axis(ax)
-    panel_header(ax, "C", "Map transfer", kicker_y=KICKER_Y)
+    panel_header(ax, "C", "Metamodel transfer", kicker_y=KICKER_Y)
 
 
 def draw_legend_row(fig: plt.Figure, groups: tuple[tuple[str, list[Line2D]], ...]) -> None:
@@ -360,7 +359,7 @@ def render(data: dict[str, Any], out_dir: Path) -> dict[str, Any]:
         1,
         3,
         width_ratios=[1.0, 1.0, 1.05],
-        left=0.07,
+        left=0.082,
         right=0.975,
         top=0.775,
         bottom=0.225,
@@ -379,25 +378,11 @@ def render(data: dict[str, Any], out_dir: Path) -> dict[str, Any]:
         Line2D([], [], color=TEAL, marker="o", label="Own"),
         Line2D([], [], color=AMBER, marker="o", label="Base"),
     ]
-    corr_handles = [
-        Line2D(
-            [],
-            [],
-            linestyle="none",
-            marker="o",
-            color=TEAL,
-            markeredgecolor=TEAL,
-            markerfacecolor="white" if mode == "direct" else TEAL,
-            label=label,
-        )
-        for mode, label in CORRECTIONS
-    ]
     draw_legend_row(
         fig,
         (
             ("Format", fmt_handles),
             ("Context source", src_handles),
-            ("Correction", corr_handles),
         ),
     )
     outputs = save_c2a_figure(

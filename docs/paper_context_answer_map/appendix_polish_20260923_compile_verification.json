@@ -1,0 +1,17 @@
+{
+  "pages": 50,
+  "overfull_boxes": 0,
+  "undefined_references_or_citations": 0,
+  "all_quoted_examples_identical_modulo_whitespace": true,
+  "pdf_sha256": "0e1a03833369cee2a438a4358705b3bae12a561f850471c9c50fb3b5ffd6f830",
+  "example_page": 38,
+  "catalog_pages": [
+    45,
+    46,
+    47,
+    48,
+    49,
+    50
+  ],
+  "visual_review": "PASS: all-page contact sheets and full-size settings, examples, catalog, affected figures and grayscale"
+}

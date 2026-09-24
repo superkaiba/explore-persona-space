@@ -196,7 +196,7 @@ DEFAULT_POOL10K_SOURCE = ROOT / "eval_results/issue_1901/fig2_pool10k/fig2_pool1
 # in the sidecar under extra_arms_not_drawn rather than being lost.
 _ENCODER_COLOR = ROLES["other_source"].color
 BASELINE_ARMS: dict[str, dict] = {
-    "anchor": {"label": "Linear map", "color": ROLES["linear"].color, "marker": "o"},
+    "anchor": {"label": "Linear metamodel", "color": ROLES["linear"].color, "marker": "o"},
     "enc_bge_cls": {
         "label": "Text embedding (BGE)",
         "color": _ENCODER_COLOR,
@@ -1016,7 +1016,7 @@ def make_legend_strip(
     predictor_handles, metric_handles = _legend_handles(bars=bars)
     control_handles, control_labels = _baseline_legend_handles(boundary, baseline_overlay)
     groups: list[tuple[str, list, list[str], float]] = [
-        ("Map", predictor_handles, [_handle_label(h) for h in predictor_handles], 1.6),
+        ("Metamodel", predictor_handles, [_handle_label(h) for h in predictor_handles], 1.6),
         (
             "Control",
             control_handles,
@@ -1201,7 +1201,7 @@ PANEL_LAYOUTS: dict[str, dict[str, object]] = {
         # as C's: both titles sit 0.13 in above their axes and both kickers
         # 0.40 in, the one-line-title version of the offsets the two-line
         # header used.
-        "compare_title": "Maps vs. controls",
+        "compare_title": "Metamodels vs. controls",
         "scale_title": "Scaling with training data",
         "compare_kicker_y": 1.32,
         "compare_title_y": 1.11,
@@ -1371,7 +1371,7 @@ def make_figure(
             ax_compare,
             "",
             letters["compare"] or "",
-            str(spec.get("compare_title", "Maps vs.\ncontrols")),
+            str(spec.get("compare_title", "Metamodels vs.\ncontrols")),
             kicker_y=float(spec.get("compare_kicker_y", spec.get("kicker_y", 1.24))),  # type: ignore[arg-type]
             title_y=float(spec.get("compare_title_y", spec.get("title_y", 1.08))),  # type: ignore[arg-type]
         )
@@ -1440,7 +1440,7 @@ def make_figure(
             fig,
             spec,
             left=[
-                ("Map", predictor_handles, [_handle_label(h) for h in predictor_handles], 1.6),
+                ("Metamodel", predictor_handles, [_handle_label(h) for h in predictor_handles], 1.6),
                 ("Metric", metric_handles, [_handle_label(h) for h in metric_handles], 2.6),
             ],
             right=[
@@ -1664,7 +1664,7 @@ def _write_outputs(
             legend_fig,
             stem.with_name(f"{stem.name}_legend"),
             title="Legend for the context-to-answer predictability column",
-            subject="Map, control, and metric swatches for panels B and C",
+            subject="Metamodel, control, and metric swatches for panels B and C",
             creator="scripts/make_paper_figure2.py",
             include_width=legend_frac,
         )

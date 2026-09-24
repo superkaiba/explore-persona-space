@@ -1861,7 +1861,6 @@ def _class_point_panel(
     reference: float,
     ylabel: str,
     letter: str,
-    kicker: str,
     title: str,
     ylim: tuple[float, float],
     yticks: list[float],
@@ -1869,7 +1868,6 @@ def _class_point_panel(
     base_ci_key: str,
     null_key: str | None = None,
     label_side: str = "above",
-    kicker_y: float,
     title_y: float,
 ) -> None:
     """One per-class panel: linear-map points, raw context-shift squares, optional null band."""
@@ -1945,12 +1943,12 @@ def _class_point_panel(
     ax.set_yticks(yticks)
     ax.set_ylabel(ylabel)
     style_axis(ax, grid_axis="y")
-    panel_header(ax, letter, kicker, title, kicker_y=kicker_y, title_y=title_y)
+    ax.set_title(f"{letter} {title}", loc="left", y=title_y, pad=0, fontweight=650)
 
 
 def make_refusal_by_class_figure(data: dict) -> tuple[plt.Figure, float]:
     classes = data["classes"]
-    fig, include_frac = c2a_figure("wide", aspect=1.10)
+    fig, include_frac = c2a_figure("wide", aspect=1.06)
     grid = fig.add_gridspec(3, 1, left=0.115, right=0.985, top=0.85, bottom=0.07, hspace=0.8)
     ax_cos = fig.add_subplot(grid[0, 0])
     ax_load = fig.add_subplot(grid[1, 0])
@@ -1963,14 +1961,12 @@ def make_refusal_by_class_figure(data: dict) -> tuple[plt.Figure, float]:
         reference=0.0,
         ylabel="Mean cosine",
         letter="A",
-        kicker="Shift direction, by pair class",
-        title="Cosine of predicted and observed shift",
+        title="Shift direction",
         ylim=(-0.06, 1.14),
         yticks=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
         base_key="base_cos",
         base_ci_key="base_cos_ci95",
         null_key="null_cos_q",
-        kicker_y=1.32,
         title_y=1.13,
     )
     _class_point_panel(
@@ -1981,13 +1977,11 @@ def make_refusal_by_class_figure(data: dict) -> tuple[plt.Figure, float]:
         reference=0.0,
         ylabel="Mean projection",
         letter="B",
-        kicker="Refusal-direction projection, by pair class",
-        title="Projection on the refusal direction",
+        title="Refusal projection",
         ylim=(-0.32, 0.98),
         yticks=[-0.2, 0.0, 0.2, 0.4, 0.6, 0.8],
         base_key="base_load",
         base_ci_key="base_load_ci95",
-        kicker_y=1.32,
         title_y=1.13,
     )
     top = max(
@@ -2003,14 +1997,12 @@ def make_refusal_by_class_figure(data: dict) -> tuple[plt.Figure, float]:
         reference=1.0,
         ylabel="Size ratio",
         letter="C",
-        kicker="Shift magnitude, by pair class",
-        title="Predicted over observed shift size",
+        title="Shift size",
         ylim=(0.4, ymax),
         yticks=[float(t) for t in np.arange(0.5, ymax + 1e-9, 0.5)],
         base_key="base_slope",
         base_ci_key="base_slope_ci95",
         label_side="below",
-        kicker_y=1.32,
         title_y=1.13,
     )
     handles = [
@@ -2023,7 +2015,7 @@ def make_refusal_by_class_figure(data: dict) -> tuple[plt.Figure, float]:
             markeredgecolor=LINEAR,
             markersize=9,
             lw=0,
-            label="Linear map",
+            label="Linear metamodel",
         ),
         Line2D(
             [],
@@ -2052,11 +2044,11 @@ def make_refusal_by_class_figure(data: dict) -> tuple[plt.Figure, float]:
         handletextpad=0.65,
         borderaxespad=0,
     )
-    legend_kicker(fig, 0.62, row_y, "Null")
+    legend_kicker(fig, 0.73, row_y, "Null")
     fig.legend(
         handles=handles[2:],
         loc="upper left",
-        bbox_to_anchor=(0.619, row_y - 0.012),
+        bbox_to_anchor=(0.729, row_y - 0.012),
         ncol=1,
         frameon=False,
         handlelength=1.4,

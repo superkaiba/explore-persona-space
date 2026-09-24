@@ -5,10 +5,10 @@
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
   "rescore_script": "scripts/issue1901_figure2_five_rollout_scaling.py",
   "reproduction_command": "uv run python scripts/make_paper_figure2.py",
-  "repository_manuscript_asset": "/tmp/claude-1001/-home-thomasjiralerspong-explore-persona-space/dc96b7ec-142c-4958-b340-f3f6a2e1f377/scratchpad/figs_out/fig1/c1_controls_and_scaling.pdf",
+  "repository_manuscript_asset": "figures/paper/c1_controls_and_scaling.pdf",
   "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
   "git": {
-    "commit": "c6298c90bac1423c68c771b3d1b1df192104241c",
+    "commit": "43317eb032fc8fe9d4b48144eb6bca66d16e342f",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -62,7 +62,7 @@
       "0",
       "0.5",
       "1",
-      "Maps vs. controls",
+      "Metamodels vs. controls",
       "C",
       "Training contexts",
       "5k",
@@ -77,7 +77,7 @@
     ]
   },
   "legend_asset": {
-    "pdf": "/tmp/claude-1001/-home-thomasjiralerspong-explore-persona-space/dc96b7ec-142c-4958-b340-f3f6a2e1f377/scratchpad/figs_out/fig1/c1_controls_and_scaling_legend.pdf",
+    "pdf": "figures/paper/c1_controls_and_scaling_legend.pdf",
     "placement": "its own asset, included under the schematic in the manuscript's left minipage at 0.5 textwidth; the column carries no legend",
     "render": {
       "style_version": "c2a-v2",
@@ -103,7 +103,7 @@
       "png_dpi": 240,
       "background": "#FFFFFF",
       "text": [
-        "MAP",
+        "METAMODEL",
         "CONTROL",
         "METRIC",
         "Linear",
@@ -849,7 +849,7 @@
     "arms": [
       {
         "key": "anchor",
-        "label": "Linear map",
+        "label": "Linear metamodel",
         "color": "#176B87",
         "r2": 0.7781668256904426,
         "top1": 0.8556263269639066,
@@ -938,11 +938,11 @@
   },
   "baselines_on_panel_b": null,
   "output_sha256": {
-    "pdf": "8a2b9aa2ecd9700895c6d0f38153045e2ddd6099bae60a2973e839f310ed50ee",
-    "png": "fe0182c440e9597664a2de4a7deb15bdf2266256678cf4c53e1a7636293df3a5",
-    "grayscale": "2409346b4ddfa163c75c3f2a665652a65baaca0ab5d9ac63bbc6011256134e9b",
-    "legend_pdf": "30da40a1beb8a87afcd7798b66adebb9999a80ec190899741f029f3a5059b325",
-    "legend_png": "d536bec884bd498f05687a00d6122e903181635d200dbdce888eeaff90683cbd",
-    "legend_grayscale": "3c8312d5caa7bac8ec3273013fa588e1748e8c111d2cb2a67444e94f402f3416"
+    "pdf": "d6a74bcbb2cc603a41338f47f536955f4a4073512e6a3ba3ae03732731ad10e8",
+    "png": "8af904b5767ca84ba34a9cb6174b7a30233d5cc3533e0cfbac86d0de3c5a7332",
+    "grayscale": "b9087bf95714b70497011e860f435c13a49f014db4d9bdfb317e288ee580dc3f",
+    "legend_pdf": "7d86e158ff6b2abd7f1d6a9aa74b546792a48cab3e619a65a66914c65f4b3e7f",
+    "legend_png": "3c32c7dc963e674ec34ba90d24e47816b8a43a47356f7499f072b9de72c18d11",
+    "legend_grayscale": "4d27b12e4fc061a86df5e61068131d2c0a4c2d52320dd324c4cd6206a30be540"
   }
 }

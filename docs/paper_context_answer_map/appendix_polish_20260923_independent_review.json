@@ -1,0 +1,160 @@
+{
+  "verdict": "PASS",
+  "reviewer": "independent Codex subagent /root/review_appendix_polish",
+  "timestamp_utc": "2026-09-24T04:00:52.135898+00:00",
+  "baseline_commit": "77b7c1558bf1be77a0bb3a485194dd99e9b94024",
+  "manuscript_root": "/home/thomasjiralerspong/overleaf-appendix-polish-20260923",
+  "scope": "Authorized appendix organization, terminology, removal of incorrect AUC pointer, catalog/table/example layout source edits. Humanize score applies to new appendix guide and criteria prose; unchanged results are excluded. Global map/metamodel substitutions reviewed for semantic preservation.",
+  "preservation_checks": {
+    "catalog_rows": {
+      "old": 90,
+      "new": 90,
+      "unique_query_ids": 90,
+      "content_preserved": true,
+      "normalization": "Whitespace and layout-only \\allowbreak; query IDs, categories, prompts, ranks and daggers retained."
+    },
+    "quote": {
+      "old": 3,
+      "new": 3,
+      "preserved_modulo_whitespace": true
+    },
+    "verbatim": {
+      "old": 2,
+      "new": 2,
+      "preserved_modulo_whitespace": true
+    },
+    "inline_math": {
+      "old": 474,
+      "new": 474,
+      "preserved": true
+    },
+    "display_math": {
+      "old": 3,
+      "new": 3,
+      "preserved": true
+    },
+    "numeric_tokens": {
+      "preserved": true,
+      "normalization": "Ignore file paths, label/reference IDs and table column width declarations."
+    },
+    "inputs": {
+      "old_reachable": 26,
+      "new_reachable": 27,
+      "duplicate_inputs": []
+    },
+    "labels_and_refs": {
+      "labels_old": 84,
+      "labels_new": 87,
+      "removed_labels": [],
+      "added_labels": [
+        "app:reconstruction-details",
+        "app:feature-details",
+        "app:retrieval-catalog"
+      ],
+      "duplicate_labels": {},
+      "unresolved_references": [],
+      "removed_references": [
+        "fig:ctxans-geometry"
+      ],
+      "added_references": [
+        "app:theory",
+        "app:reconstruction-details",
+        "app:feature-details",
+        "app:retrieval-catalog",
+        "app:retrieval-catalog"
+      ],
+      "note": "Removed geometry reference is the authorized incorrect stratified ROC-AUC pointer; LaTeX macro placeholder references #1 through #4 excluded from unresolved-reference check."
+    }
+  },
+  "resolved_findings": [
+    {
+      "finding": "46 alternatives incorrectly implied exclusion of the mean from the 46-row axis.",
+      "resolution": "Changed to 46 representations; verified against task 810 methodology, which counts the mean within 37 original summaries plus 9 new summaries."
+    },
+    {
+      "finding": "LOFO criterion should concern aggregate family-held-out ordering, not an advantage in every individual fold.",
+      "resolution": "Uses under leave-one-prompt-family-out evaluation; matches task 810 four-part criterion."
+    },
+    {
+      "finding": "Generic prior word-embedding alignment maps were relabeled metamodels.",
+      "resolution": "Restored maps between representation spaces in Retrieval paragraph."
+    },
+    {
+      "finding": "Merged settings-table header no longer identified bare fold counts.",
+      "resolution": "All three count entries now explicitly say folds."
+    }
+  ],
+  "humanize": {
+    "text_type": "results-writeup",
+    "max_score": 130,
+    "total_score": 0,
+    "normalized_score": 0.0,
+    "verdict": "PASS",
+    "breakdown": {
+      "vocabulary": 0,
+      "structure": 0,
+      "rhythm": 0,
+      "voice": 0,
+      "interpretation": 0,
+      "results_writing": 0
+    },
+    "flagged_issues": [],
+    "comment": "No significant AI patterns or interpretation issues detected in new appendix guide and final representation criteria paragraph."
+  },
+  "writing_tells": {
+    "verdict": "PASS",
+    "counts": {
+      "A": 0,
+      "B": 0,
+      "C": 0,
+      "D": 0,
+      "E": 0,
+      "F": 0,
+      "G": 0,
+      "H": 0,
+      "I": 0,
+      "J": 0
+    },
+    "blockers": [],
+    "scope": "New appendix guide and representation criteria prose; no recursive review or Claude invocation."
+  },
+  "provenance_checked": [
+    "/tmp/appendix-polish-20260923/issue810.json",
+    "/home/thomasjiralerspong/explore-persona-space/docs/methodology/issue_810.md",
+    "/home/thomasjiralerspong/explore-persona-space/scripts/issue810_fit_reconstruction.py"
+  ],
+  "remaining_findings": [],
+  "limitations": [
+    "Compilation, rendered layout and any pending figure regeneration are owned by parent agent and excluded from this source review.",
+    "Pre-existing scientific issues outside the four user-authorized changes were not reopened."
+  ],
+  "reviewed_source_sha256": {
+    "main.tex": "0777aa04988c0226c685ffbfbdefba8e9318d4dc075e9555df2fc68ceb83ba4b",
+    "style/math_commands.tex": "90473c4d0542070db244cea73ef962d6cddc5b2a746757e6a40ddf5fdfb90ba9",
+    "sections/00_abstract.tex": "b89fe40486132df46eabe4f02dc3bc4f8ecd90f603254584604d6932316182f5",
+    "sections/01_introduction.tex": "919f376e107cba7f15473b24ecb5b426b9558281c1b240d4519721871ed36ec7",
+    "sections/02_related_work.tex": "fd9c96ff24ef4fb9d7bad79543ad876336fb640790083a7974abb3853fc5d089",
+    "sections/03_methodology.tex": "c537bb66cd938d434157e66075fef78f50172e120a2c75004d3d5a1e41b3346c",
+    "sections/04_results.tex": "7b052dce13960f574b92005dc803d615a8045a068faff8c41ae143f8ac536d6b",
+    "sections/results/01_accuracy.tex": "19301adc8d2a7671c913bd381d535fd31ebcaff2d3e77ed7e77638e3fb23337f",
+    "sections/results/02_information.tex": "f73da002da0baa7cdb224a3e26294b96c4c3118d0964c58e5bbba7d0ff4ac762",
+    "sections/results/03_posttraining.tex": "07d1418789fba75f978678e896c932d63c90fb024c085abddd0b36437fe6bee9",
+    "sections/results/04_speakers.tex": "577481aa2c47f3237204ab5cf99b968fffa40a60706a113fe85985d89d95d58e",
+    "sections/results/05_cot.tex": "ea24dc25f9450a7a2eebbd108a46068c7f3163bc1a8dae10c615bf18bd044439",
+    "sections/results/08_capability.tex": "afc14502529bc7e1cd52659b289b7de793fbcbbbb1e35a9958a1c06b631f4924",
+    "sections/results/06_behavior.tex": "da186cceddcdff3565bdaa0255eabe2a756873e1927b04a8bbbb50d8f68db26a",
+    "sections/05_discussion.tex": "ab35ee4aa683b893f7564b61518c4883db0fc47db5e82da5fb160653c0b1263d",
+    "sections/05_method_details.tex": "50b54bdd74682687921e56b55c9031a2a259776d347c830e279e74beea464497",
+    "sections/results/a1_context_answer_summaries.tex": "8375983c1f2c1e76f41ea92cff745e7e95c8396f31b12ee71f6cb4501003cb12",
+    "sections/results/a8_layer_pairing.tex": "910e70afb2c38080f79cb75847745103081cc25814aed37745e9c7ccf392b240",
+    "sections/results/a12_rollout_count.tex": "ad0436ef4d8f07e2f962656f7c776d23ab166bdf68cef44562eb495734e5f24c",
+    "sections/results/a4_retrieval_failures.tex": "12616ddb65cb6fdb2f3b97926c950ef33b7ae2c29f513a9b349ad5f99556456e",
+    "sections/results/a2_turn_averaged_sae.tex": "4e215d8be214fe1b8c680229b5d7b975f6b43b79a741ec0cf1f8d0dec500b1b7",
+    "sections/results/a3_refusal_by_class.tex": "51fe69077a28065539447c3548bbd834a3ed87529422665f2800909abba6d344",
+    "sections/results/a6_cot_necessity.tex": "78e3c315b1e230478dd0a2936346ebb8eefc0ac52a5f2f9370c4ba1c7613c745",
+    "sections/results/a9_cot_trajectory.tex": "499f8b5c5b613d9588c5de784a888a8a4a1e25aa4f9c667c56d25be919f3eb00",
+    "sections/results/a12_capability_details.tex": "504ff1580a73adc57fc948790122a4f96ff8c7d580a45643049ff61d363a8c0e",
+    "sections/results/a11_theoretical_analysis.tex": "5cc84cf470825e25566ae24decc900d3dc1aa66fc6a93ac965e89408d2e40e09",
+    "sections/results/a20_retrieval_catalog.tex": "dfbc4b2540e1c049295c8cae17b65934b3976e9b06bf6b57f752f5dcb8999175"
+  }
+}

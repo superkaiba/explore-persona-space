@@ -1,0 +1,131 @@
+{
+  "scope": "Terminology labels and native refusal headings only; no new experiment or fitted values",
+  "figures": [
+    {
+      "stem": "c1_controls_and_scaling",
+      "numeric_tokens_equal": true,
+      "old_sha256": "8a2b9aa2ecd9700895c6d0f38153045e2ddd6099bae60a2973e839f310ed50ee",
+      "new_sha256": "d6a74bcbb2cc603a41338f47f536955f4a4073512e6a3ba3ae03732731ad10e8",
+      "same_vector_drawings": true,
+      "old_size": [
+        0.0,
+        0.0,
+        339.4285583496094,
+        387.51556396484375
+      ],
+      "new_size": [
+        0.0,
+        0.0,
+        339.4285583496094,
+        387.51556396484375
+      ]
+    },
+    {
+      "stem": "c1_controls_and_scaling_legend",
+      "numeric_tokens_equal": true,
+      "old_sha256": "30da40a1beb8a87afcd7798b66adebb9999a80ec190899741f029f3a5059b325",
+      "new_sha256": "7d86e158ff6b2abd7f1d6a9aa74b546792a48cab3e619a65a66914c65f4b3e7f",
+      "same_vector_drawings": true,
+      "old_size": [
+        0.0,
+        0.0,
+        471.4285583496094,
+        59.354286193847656
+      ],
+      "new_size": [
+        0.0,
+        0.0,
+        471.4285583496094,
+        59.354286193847656
+      ]
+    },
+    {
+      "stem": "c1_posttraining_dynamics",
+      "numeric_tokens_equal": true,
+      "old_sha256": "47307f34f97377d491a26559960d0a2fadf14af24d09caa000057309e8e1cc66",
+      "new_sha256": "8bbe8f055957cd933647e7926d563e0c1cfd9a0da66b805d65dd9f5a4c541876",
+      "same_vector_drawings": true,
+      "old_size": [
+        0.0,
+        0.0,
+        942.8571166992188,
+        246.88571166992188
+      ],
+      "new_size": [
+        0.0,
+        0.0,
+        942.8571166992188,
+        246.88571166992188
+      ]
+    },
+    {
+      "stem": "c3_refusal_swaps_by_class",
+      "numeric_tokens_equal": true,
+      "old_sha256": "233b237bcdb4fd730301208307e607007e4a6e2cc742e30569a685f4ca77d45b",
+      "new_sha256": "00b3ca6585a7ff3b53509450321f34b342937ea807858f785bf793321a0f3131",
+      "same_vector_drawings": false,
+      "old_size": [
+        0.0,
+        0.0,
+        707.1428833007812,
+        727.8192749023438
+      ],
+      "new_size": [
+        0.0,
+        0.0,
+        707.1428833007812,
+        730.9378662109375
+      ],
+      "native_single_headings": true
+    },
+    {
+      "stem": "c4_speaker_transfer_full",
+      "numeric_tokens_equal": true,
+      "old_sha256": "bc0796f829124e48beedb08da701e5f5d022e8cc0681acd6f7398eb3a84ad368",
+      "new_sha256": "623010ba8323792e16a134b9e7248da5623efc8118dd155357c600237ae2d382",
+      "same_vector_drawings": false,
+      "old_size": [
+        0.0,
+        0.0,
+        942.8571166992188,
+        761.9972534179688
+      ],
+      "new_size": [
+        0.0,
+        0.0,
+        942.8571166992188,
+        761.9972534179688
+      ],
+      "nonlegend_vector_drawings_exact_equal": true
+    },
+    {
+      "stem": "c4_turn_transfer_full",
+      "numeric_tokens_equal": true,
+      "old_sha256": "d61ad56f44866829af8efd67f94ea46855ef0bd217e9c80163a24cc05946f33e",
+      "new_sha256": "885c0509cdf10d16d88b0bb01422cfdd9b43451c6f3536cd14b18665dcf9537a",
+      "same_vector_drawings": true,
+      "old_size": [
+        0.0,
+        0.0,
+        942.8571166992188,
+        351.11737060546875
+      ],
+      "new_size": [
+        0.0,
+        0.0,
+        942.8571166992188,
+        351.11737060546875
+      ]
+    }
+  ],
+  "refusal_displayed_data_exact_equal": true,
+  "reproduction_commands": [
+    "uv run python scripts/make_paper_figure2.py --panels bc",
+    "uv run python scripts/section43_posttraining_onpolicy_figure.py",
+    "uv run python scripts/make_paper_section42_figures.py --only refusal_by_class",
+    "uv run python scripts/issue2054_story_transfer_appendix.py --data figures/paper/c4_speaker_transfer_full.data.json --out figures/paper",
+    "uv run python scripts/plot_issue825_turn_matched.py --results figures/paper/c4_turn_transfer_full.data.json --out /tmp/turns-render (copy turn_matched_transfer_20260915 outputs to c4_turn_transfer_full)"
+  ],
+  "controls_and_scaling_all_numerical_fields_equal": true,
+  "grayscale_review": "PASS"
+}

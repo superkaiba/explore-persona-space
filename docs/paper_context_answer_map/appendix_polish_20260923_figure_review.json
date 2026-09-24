@@ -1,0 +1,117 @@
+{
+  "verdict": "PASS",
+  "reviewer": "independent Codex subagent /root/review_appendix_polish",
+  "timestamp_utc": "2026-09-24T04:07:34.935614+00:00",
+  "scope": "Bounded independent review of five figure producers against designated actual shipped baselines; no manuscript or producer edits made.",
+  "statistical_changes_found": false,
+  "remaining_findings": [],
+  "producer_reviews": [
+    {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/appendix-terminology-20260923/scripts/make_paper_figure2.py",
+      "reviewed_sha256": "ef41be27371948250261667460137d05a442cbe7e0a2d29eb8b2e03465ab5107",
+      "baseline": {
+        "type": "git",
+        "commit": "43317eb032fc8fe9d4b48144eb6bca66d16e342f",
+        "path": "scripts/make_paper_figure2.py"
+      },
+      "verdict": "PASS",
+      "changes": "Display labels and PDF title/subject text only; AST identical after string literals are normalized."
+    },
+    {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/appendix-terminology-20260923/scripts/make_paper_section42_figures.py",
+      "reviewed_sha256": "616407712ca525c5841eb7d5d4915ad873b6a39b2ea27a65174576332226f20f",
+      "baseline": {
+        "type": "git",
+        "commit": "43317eb032fc8fe9d4b48144eb6bca66d16e342f",
+        "path": "scripts/make_paper_section42_figures.py"
+      },
+      "verdict": "PASS",
+      "changes": "Native single panel headings replace previous kicker/title presentation; three titles match shipped simplified titles. Legend text becomes Linear metamodel, and null legend is shifted horizontally. No statistics, series, values, confidence intervals, axis limits, seeds, grouping, source data or filtering changed."
+    },
+    {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/appendix-terminology-20260923/scripts/section43_posttraining_onpolicy_figure.py",
+      "reviewed_sha256": "352027ac983c3e38e9a4452fa91124f2dbbf3f6d1613f1cba8d4b82d7b707dfe",
+      "baseline": {
+        "type": "file",
+        "path": "/home/thomasjiralerspong/.codex/worktrees/figure-transfer-clarity-20260917/scripts/section43_posttraining_onpolicy_figure.py",
+        "sha256": "1b7ea6b04c515b9701df1e02b29c1d0b94885dc73d090f62b2d3e6abfa6dd84e"
+      },
+      "verdict": "PASS",
+      "changes": "Display labels and PDF title/subject text only; AST identical after string literals are normalized."
+    },
+    {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/appendix-terminology-20260923/scripts/issue2054_story_transfer_appendix.py",
+      "reviewed_sha256": "f79d88205342835a3fbc638563fff24e52d9026cc64d6514a49f631ea8206b66",
+      "baseline": {
+        "type": "file",
+        "path": "/home/thomasjiralerspong/.codex/worktrees/figure-transfer-clarity-20260917/scripts/issue2054_story_transfer_appendix.py",
+        "sha256": "8533cb879f9dca386dc7e7fadcada7f91d2ccff20086259727884d1f155bc62e"
+      },
+      "verdict": "PASS",
+      "changes": "Display labels and PDF title/subject text only; AST identical after string literals are normalized."
+    },
+    {
+      "path": "/home/thomasjiralerspong/.codex/worktrees/appendix-terminology-20260923/scripts/plot_issue825_turn_matched.py",
+      "reviewed_sha256": "e30030f135b2f4a3a64131e4da1bde68e61f84b02ae3cf5b263327006b126761",
+      "baseline": {
+        "type": "file",
+        "path": "/home/thomasjiralerspong/.codex/worktrees/825-turn12-matched-20260915/scripts/plot_issue825_turn_matched.py",
+        "sha256": "1057d372f2fc96018a2072387567e5d79e12ff8179ce04e8d795ab9f1ddefc64"
+      },
+      "verdict": "PASS",
+      "changes": "Display labels and PDF title/subject text only; AST identical after string literals are normalized."
+    }
+  ],
+  "baseline_reproduction_checks": [
+    {
+      "asset": "c1_controls_and_scaling.pdf",
+      "baseline_regeneration_matches_shipped_bytes": true,
+      "shipped_sha256": "8a2b9aa2ecd9700895c6d0f38153045e2ddd6099bae60a2973e839f310ed50ee",
+      "regenerated_baseline_sha256": "8a2b9aa2ecd9700895c6d0f38153045e2ddd6099bae60a2973e839f310ed50ee"
+    },
+    {
+      "asset": "c1_controls_and_scaling_legend.pdf",
+      "baseline_regeneration_matches_shipped_bytes": true,
+      "shipped_sha256": "30da40a1beb8a87afcd7798b66adebb9999a80ec190899741f029f3a5059b325",
+      "regenerated_baseline_sha256": "30da40a1beb8a87afcd7798b66adebb9999a80ec190899741f029f3a5059b325"
+    },
+    {
+      "asset": "c1_posttraining_dynamics.pdf",
+      "baseline_regeneration_matches_shipped_bytes": true,
+      "shipped_sha256": "47307f34f97377d491a26559960d0a2fadf14af24d09caa000057309e8e1cc66",
+      "regenerated_baseline_sha256": "47307f34f97377d491a26559960d0a2fadf14af24d09caa000057309e8e1cc66"
+    },
+    {
+      "asset": "c4_speaker_transfer_full.pdf",
+      "baseline_regeneration_matches_shipped_bytes": true,
+      "shipped_sha256": "bc0796f829124e48beedb08da701e5f5d022e8cc0681acd6f7398eb3a84ad368",
+      "regenerated_baseline_sha256": "bc0796f829124e48beedb08da701e5f5d022e8cc0681acd6f7398eb3a84ad368"
+    },
+    {
+      "asset": "c4_turn_transfer_full.pdf",
+      "baseline_regeneration_matches_shipped_bytes": true,
+      "shipped_sha256": "d61ad56f44866829af8efd67f94ea46855ef0bd217e9c80163a24cc05946f33e",
+      "regenerated_baseline_sha256": "d61ad56f44866829af8efd67f94ea46855ef0bd217e9c80163a24cc05946f33e"
+    },
+    {
+      "asset": "c3_refusal_swaps_by_class.pdf",
+      "baseline_regeneration_matches_shipped_bytes": false,
+      "shipped_sha256": "233b237bcdb4fd730301208307e607007e4a6e2cc742e30569a685f4ca77d45b",
+      "regenerated_baseline_sha256": "f32abc0e66defb9928e38831d83a48ae806a1baddc59c3d4059cbce5124cb670"
+    }
+  ],
+  "data_preservation_checks": {
+    "controls_and_scaling": "Sources, retrieval pools, displayed metrics and all numerical/data subtrees identical; comparison-panel label is the only data-sidecar text change.",
+    "posttraining": "Entire source data sidecar identical after excluding generated_utc; actual shipped producer baseline used, preserving its frozen-transfer-only display.",
+    "refusal": "displayed_data and source hashes exactly equal to baseline regeneration; three native heading titles are Shift direction, Refusal projection, Shift size.",
+    "speaker_transfer": "Data hash, source-results hashes, displayed settings, omitted comparison and transfer-errorbar specification unchanged.",
+    "conversation_turn_transfer": "Source hash, conversation count, answer draws, encodings and caveat unchanged."
+  },
+  "notes": [
+    "Post-training HEAD is an obsolete display baseline that includes bias series; the sibling producer reproduces the actual shipped PDF byte for byte and is the applicable comparator.",
+    "Refusal baseline regeneration does not reproduce the old shipped bytes because old headings were migrated separately; displayed data and sources are exact, and native headings preserve the same three simplified titles."
+  ],
+  "limitations": [
+    "Parent agent owns final rendered figure/layout verification and integration. Review applies to recorded source hashes."
+  ]
+}
