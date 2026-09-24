@@ -1,5 +1,14 @@
 # Paper plan — Context → Answer Mapping (v1, 2026-08-18)
 
+
+## Appendix organization (Thomas, 2026-09-24)
+
+Keep the A–J order. All main text, main figure captions, and displayed main-text reference numbers remain unchanged. Appendix A provides explicit navigation to the supporting experiments, and F directs Figure 5C readers to G. C keeps C.1 for directions and controlled edits, with safety swaps nested under it, and C.2 for SAE properties, with the activity-threshold-sensitive turn-averaged replication nested there. This preserves the C.1/C.2 references already used in the main text. E now has E.1 setup and example, E.2 shared metamodel and controls, E.3 speaker/framing transfer, and E.4 conversation-turn transfer. The existing main-text E link reaches that section's roadmap.
+
+Move linear/nonlinear scaling results into B and retain the A.2 methods pointer. List settings in main-results order, with conversation-turn transfer as a separate protocol and the spectral analysis last. A.3 names only the reported rollout and distractor sensitivities. G records the ten models' archived fit settings and score provenance, including six estimated index values, mode mismatch, post-hoc model exclusion, and both original-panel and restricted-panel correlation sensitivities. Preserve the plotted panel. I is titled "Spectrum and effective-kernel analysis." Keep related floats with their analyses and the retrieval catalog last.
+
+Implemented in Overleaf `63a65d7a6412c9a91b0968d4762dea16cb0fbc09`. The main-text pages were verified byte-for-byte at text extraction and pixel level against `1ae94b6` after compiling the appendix changes.
+
 ## Current methodology scope (Thomas, 2026-09-11)
 
 Models and data are detailed in Appendix A.1, alongside the experimental-settings
