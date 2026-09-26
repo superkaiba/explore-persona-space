@@ -48,6 +48,14 @@
 #                              driver-referenced foreign cone missing from
 #                              the checkout (leg B).
 #
+#   BOOTSTRAP_OVERLAY_ROOT=/root/eps-<name>
+#                              Opt in to a pod-local base venv and uv cache.
+#                              Requires 70 GB free on the root filesystem.
+#                              Fresh or previously owned directories only;
+#                              never migrates an unrelated existing venv.
+#                              HF weights and experiment outputs stay on
+#                              /workspace. Full preflight still runs.
+#
 # Prerequisites:
 #   - SSH key at ~/.ssh/id_ed25519
 #   - Local .env with all API keys
@@ -82,6 +90,17 @@ source "$SCRIPT_DIR/_git_cred_helper.sh"
 # than leaving a half-applied rebase that breaks the next re-bootstrap.
 BOOTSTRAP_BRANCH="${BOOTSTRAP_BRANCH:-main}"
 
+# Overlay caller validation: no shell syntax, path traversal, or nested mount
+# aliases can enter the SSH payload. Freeze this separately from remote .env.
+BOOTSTRAP_OVERLAY_ROOT_VAL="${BOOTSTRAP_OVERLAY_ROOT:-}"
+if [ -n "$BOOTSTRAP_OVERLAY_ROOT_VAL" ] &&
+   [[ ! "$BOOTSTRAP_OVERLAY_ROOT_VAL" =~ ^/root/eps-[A-Za-z0-9][A-Za-z0-9_-]*$ ]]; then
+    echo "Error: BOOTSTRAP_OVERLAY_ROOT must be a direct /root/eps-<safe-name> path" >&2
+    exit 2
+fi
+readonly BOOTSTRAP_OVERLAY_ROOT_VAL
+# End overlay caller validation.
+
 # Exit code for a step-10 preflight failure (#2606): bootstrap completed its
 # setup steps but the pod-side preflight FAILED — the pod is up and reachable,
 # its venv/env is NOT experiment-ready. Joins pod_lifecycle.py's 75/76/77
@@ -110,7 +129,15 @@ log_warn(){ echo -e "  ${YELLOW}⚠${NC} $1"; }
 log_fail(){ echo -e "  ${RED}✗${NC} $1"; }
 
 ssh_cmd() {
-    ssh $SSH_OPTS -p "$PORT" "root@$HOST" "$1"
+    if [ -n "$BOOTSTRAP_OVERLAY_ROOT_VAL" ]; then
+        # Explicit payload forwarding: ssh does not forward the caller env.
+        # readonly also prevents sourced .env values from changing this choice.
+        ssh $SSH_OPTS -p "$PORT" "root@$HOST" \
+            "readonly EPS_BOOTSTRAP_OVERLAY_ROOT='$BOOTSTRAP_OVERLAY_ROOT_VAL'
+$1"
+    else
+        ssh $SSH_OPTS -p "$PORT" "root@$HOST" "$1"
+    fi
 }
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
@@ -445,6 +472,64 @@ fi
 
 POD_INTENT_VAL="${POD_INTENT:-custom}"
 step 5 "Syncing Python environment (uv sync --locked; intent=$POD_INTENT_VAL)"
+if [ -n "$BOOTSTRAP_OVERLAY_ROOT_VAL" ]; then
+    ssh_cmd '
+set -eu
+python3 - "$EPS_BOOTSTRAP_OVERLAY_ROOT" <<\PYOVERLAY
+import json, os, pathlib, re, shutil, sys
+
+root = pathlib.Path(sys.argv[1])
+if not re.fullmatch(r"/root/eps-[A-Za-z0-9][A-Za-z0-9_-]*", str(root)):
+    raise RuntimeError("Invalid bootstrap overlay path")
+if root.resolve() != root or root.is_symlink():
+    raise RuntimeError("Bootstrap overlay path must not contain symlinks")
+parent = root if root.exists() else root.parent
+if parent.stat().st_dev != pathlib.Path("/").stat().st_dev:
+    raise RuntimeError("Bootstrap overlay must use the local root filesystem")
+free = shutil.disk_usage(parent).free
+minimum = 70_000_000_000
+if free < minimum:
+    raise RuntimeError(f"Bootstrap overlay needs {minimum} free bytes; measured {free}")
+marker = root / ".eps-bootstrap-overlay-v1"
+owner = "eps-bootstrap-overlay-v1\n" + str(root) + "\n"
+if root.exists() and (
+    not root.is_dir() or marker.is_symlink() or not marker.is_file()
+    or marker.read_text() != owner
+):
+    raise RuntimeError("Refusing an existing unowned bootstrap overlay directory")
+base = root / "base"
+cache = root / "uv"
+for target in (base, cache):
+    if target.is_symlink() or (
+        target.exists() and (not target.is_dir() or target.stat().st_dev != parent.stat().st_dev)
+    ):
+        raise RuntimeError(f"Refusing nonlocal or unrelated overlay target: {target}")
+links = (
+    pathlib.Path("/workspace/explore-persona-space/.venv"),
+    pathlib.Path("/workspace/.venv"),
+)
+for link in links:
+    if os.path.lexists(link) and (not link.is_symlink() or os.readlink(link) != str(base)):
+        raise RuntimeError(f"Refusing to replace an unrelated existing venv: {link}")
+# All guards precede mutation. This environment is disposable; model weights
+# and experiment artifacts are never moved into the container overlay.
+root.mkdir(mode=0o700, exist_ok=True)
+if not marker.exists():
+    with marker.open("x") as stream:
+        stream.write(owner)
+        stream.flush()
+        os.fsync(stream.fileno())
+base.mkdir(exist_ok=True)
+cache.mkdir(exist_ok=True)
+for link in links:
+    if not link.is_symlink():
+        link.symlink_to(base, target_is_directory=True)
+print(json.dumps({"bootstrap_overlay": str(root), "free_bytes": free,
+                  "required_free_bytes": minimum, "base": str(base), "uv_cache": str(cache)}),
+      flush=True)
+PYOVERLAY
+'
+fi
 ssh_cmd "export PATH=\"\$HOME/.local/bin:\$PATH\"
 # #2360: the venv build must use the /workspace uv cache from the FIRST sync
 # (step 6 only wires it for LATER shells) and an explicit copy link-mode —
@@ -460,6 +545,14 @@ mkdir -p /workspace/.cache/uv
 export UV_CACHE_DIR=/workspace/.cache/uv
 export UV_LINK_MODE=copy
 cd /workspace/explore-persona-space
+if [ -n \"\${EPS_BOOTSTRAP_OVERLAY_ROOT:-}\" ]; then
+    set -euo pipefail
+    export UV_PROJECT_ENVIRONMENT=\"\$EPS_BOOTSTRAP_OVERLAY_ROOT/base\"
+    export UV_CACHE_DIR=\"\$EPS_BOOTSTRAP_OVERLAY_ROOT/uv\"
+    # Discover the actual system interpreter, never the uv-based PATH shim.
+    export UV_PYTHON=\"\$(python3 -c 'import sys; print(sys._base_executable or sys.executable)')\"
+    test -x \"\$UV_PYTHON\"
+fi
 # Dangling .venv symlink guard (#2278): /root is the container overlay and is
 # recreated on pod stop/resume, so a .venv symlink into /root (the overlay-venv
 # recovery for the MooseFS errno-116 trap) survives the stop as a DANGLING
@@ -828,6 +921,15 @@ else
     cd /workspace/explore-persona-space
     set -a; [ -f .env ] && source .env; set +a
     export HF_HOME=/workspace/.cache/huggingface
+    if [ -n "${EPS_BOOTSTRAP_OVERLAY_ROOT:-}" ]; then
+        set -euo pipefail
+        # Reapply after .env; do not modify credentials or persist pod-local
+        # paths into the user-provided dotenv file.
+        export UV_PROJECT_ENVIRONMENT="$EPS_BOOTSTRAP_OVERLAY_ROOT/base"
+        export UV_CACHE_DIR="$EPS_BOOTSTRAP_OVERLAY_ROOT/uv"
+        export UV_PYTHON="$(python3 -c "import sys; print(sys._base_executable or sys.executable)")"
+        export UV_LINK_MODE=copy
+    fi
     uv run python -m explore_persona_space.orchestrate.preflight --no-gpu 2>&1
     '
     PREFLIGHT_RC=$?

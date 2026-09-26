@@ -17,6 +17,14 @@ export HF_HUB_CACHE="$HF_HOME/hub"
 export UV_CACHE_DIR=/workspace/.cache/uv
 export UV_PROJECT_ENVIRONMENT=/workspace/.venv
 export TMPDIR=/workspace/.cache/tmp
+if [[ -n "${EPS_STORY_PERSONA_OVERLAY_ROOT:-}" ]]; then
+  [[ "$EPS_STORY_PERSONA_MODEL_KEY" == kimi && "$EPS_STORY_PERSONA_OVERLAY_ROOT" == /root/eps-kimi-runtime ]] || {
+    echo 'Unexpected local runtime override' >&2; exit 2;
+  }
+  export UV_PROJECT_ENVIRONMENT="$EPS_STORY_PERSONA_OVERLAY_ROOT/base"
+  export UV_CACHE_DIR="$EPS_STORY_PERSONA_OVERLAY_ROOT/uv"
+  export TMPDIR="$EPS_STORY_PERSONA_OVERLAY_ROOT/tmp"
+fi
 mkdir -p "$TMPDIR"
 export UV_LINK_MODE=copy
 export PYTHONUNBUFFERED=1
@@ -122,16 +130,10 @@ evidence = dict(c, checked_at=time.time(), existing_workspace_bytes=usage,
                 quota_aware_usable_bytes=usable, effective_ram_bytes=min(limits),
                 mount=subprocess.check_output(['findmnt','-T','/workspace','-J'],text=True))
 mount = json.loads(evidence['mount'])['filesystems'][0]
-paths = {}
-for key in ('HF_HOME', 'HF_HUB_CACHE', 'UV_CACHE_DIR', 'UV_PROJECT_ENVIRONMENT', 'TMPDIR'):
-    path = pathlib.Path(os.environ[key])
-    path.mkdir(parents=True, exist_ok=True)
-    resolved = path.resolve()
-    found = json.loads(subprocess.check_output(['findmnt', '-T', str(resolved), '-J'], text=True))['filesystems'][0]
-    if not resolved.is_relative_to(workspace.resolve()) or (found['target'], found['source']) != (mount['target'], mount['source']):
-        raise RuntimeError(f'{key} is outside the verified workspace volume')
-    paths[key] = {'resolved': str(resolved), 'mount': found}
-evidence['cache_paths'] = paths
+from scripts.story_persona_runtime_storage import verify_runtime_paths
+def mount_reader(path):
+    return json.loads(subprocess.check_output(['findmnt', '-T', str(path), '-J'], text=True))['filesystems'][0]
+evidence['cache_paths'] = verify_runtime_paths(os.environ, c, mount, mount_reader=mount_reader)
 out = pathlib.Path(os.environ['EPS_STORY_PERSONA_OUT'])
 (out/'storage_preflight.json').write_text(json.dumps(evidence,indent=2)+'\n')
 print(json.dumps(evidence),flush=True)

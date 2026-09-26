@@ -30,6 +30,184 @@ QUERY = """query PodStorage($id: String!) {
   }
 }"""
 REMOTE_PATH = "/workspace/issue2673_storage_contract.json"
+KIMI_FINANCIAL_FIELDS = (
+    "pod_id",
+    "gpu_count",
+    "paid_start_unix",
+    "deadline_unix",
+    "termination_confirmed_at_unix",
+    "gpu_hours_upper_bound",
+)
+
+
+def kimi_ledger_digest(ledger):
+    """Hash canonical ledger JSON, normalizing an absent renewal list to empty.
+
+    This digest is reproducible from historical prefixes. Preserve the original
+    ledger file and its raw-byte hash separately in the operator's audit receipt.
+    """
+    state = {**ledger, "kimi_budget_renewals": ledger.get("kimi_budget_renewals", [])}
+    raw = json.dumps(state, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _kimi_closed_spend(allocations):
+    """Validate ordered, resolved provider accounting and return conservative GPU-hours."""
+    spent = 0.0
+    last_end = 0.0
+    for entry in allocations:
+        if any(key not in entry for key in KIMI_FINANCIAL_FIELDS):
+            raise ValueError("Kimi renewal requires complete resolved prior accounting")
+        start, deadline, end, recorded = (
+            entry[key]
+            for key in (
+                "paid_start_unix",
+                "deadline_unix",
+                "termination_confirmed_at_unix",
+                "gpu_hours_upper_bound",
+            )
+        )
+        if (
+            type(entry["gpu_count"]) is not int
+            or entry["gpu_count"] != 8
+            or any(
+                type(value) not in (int, float) or not math.isfinite(value)
+                for value in (start, deadline, end, recorded)
+            )
+            or not 0 < start < deadline
+            or end < start
+            or start < last_end
+        ):
+            raise ValueError("Kimi renewal prior accounting is unresolved, invalid or overlapping")
+        actual = (end - start) * 8 / 3600
+        if recorded < 0 or recorded < actual - 1e-8:
+            raise ValueError("Kimi renewal ledger understates paid time")
+        spent += max(actual, recorded)
+        last_end = end
+    return spent
+
+
+def kimi_budget_renewal_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
+    """Validate one successor per diagnosed renewal without rewriting any old cap."""
+    renewals = ledger["kimi_budget_renewals"]
+    continuation = ledger.get("kimi_continuation_grants")
+    allocations = ledger["allocations"]
+    if (
+        ledger.get("model_key") != "kimi"
+        or not isinstance(continuation, list)
+        or not continuation
+        or type(gpu_count) is not int
+        or gpu_count != 8
+        or type(requested_seconds) is not int
+        or not 900 < requested_seconds <= 7200
+        or any(
+            not isinstance(entry.get("pod_id"), str) or not entry["pod_id"] for entry in allocations
+        )
+        or len({entry["pod_id"] for entry in allocations}) != len(allocations)
+    ):
+        raise ValueError("Kimi budget renewal requires bounded singletons and unique paid history")
+    base_count = 3 + len(continuation)
+    if len(allocations) not in (base_count + len(renewals) - 1, base_count + len(renewals)):
+        raise ValueError("Kimi budget renewal permits exactly one successor per grant")
+
+    # Replay the last historical grant against its actual pre-allocation prefix.
+    # No stored row is changed, including the closed last allocation's envelope.
+    legacy = {key: value for key, value in ledger.items() if key != "kimi_budget_renewals"}
+    legacy["allocations"] = allocations[: base_count - 1]
+    final_legacy = allocations[base_count - 1]
+    legacy_seconds = final_legacy["deadline_unix"] - final_legacy["paid_start_unix"]
+    if not math.isfinite(legacy_seconds) or not float(legacy_seconds).is_integer():
+        raise ValueError("Kimi historical allocation duration must retain whole seconds")
+    allocation_seconds(
+        legacy,
+        pod_id=final_legacy["pod_id"],
+        gpu_count=8,
+        requested_seconds=int(legacy_seconds),
+    )
+
+    previous_limit = ledger["max_gpu_hours"]
+    for index, grant in enumerate(renewals):
+        count = base_count + index
+        prior = allocations[:count]
+        spent = _kimi_closed_spend(prior)
+        prior_state = {**ledger, "allocations": prior, "kimi_budget_renewals": renewals[:index]}
+        if (
+            not isinstance(grant, dict)
+            or grant.get("version") != 1
+            or grant.get("approved") is not True
+            or grant.get("user_request") != "just continue until it succeeds"
+            or type(grant.get("max_new_allocations")) is not int
+            or grant["max_new_allocations"] != 1
+            or type(grant.get("gpu_count")) is not int
+            or grant["gpu_count"] != 8
+            or type(grant.get("max_allocation_seconds")) is not int
+            or grant["max_allocation_seconds"] != 7200
+            or grant.get("max_additional_gpu_hours") != 16
+            or grant.get("previous_effective_max_gpu_hours") != previous_limit
+            or grant.get("effective_max_gpu_hours") != spent + 16
+            or grant.get("prior_ledger_sha256") != kimi_ledger_digest(prior_state)
+            or not isinstance(grant.get("source_sha"), str)
+            or re.fullmatch(r"[0-9a-f]{40}", grant["source_sha"]) is None
+            or not isinstance(grant.get("diagnosis"), str)
+            or not grant["diagnosis"].strip()
+            or not isinstance(grant.get("failure_evidence"), str)
+            or not grant["failure_evidence"].strip()
+        ):
+            raise ValueError(
+                "Kimi budget renewal grant, source, prior-ledger digest or cap changed"
+            )
+        snapshots = [{key: entry[key] for key in KIMI_FINANCIAL_FIELDS} for entry in prior]
+        if grant.get("prior_allocations") != snapshots:
+            raise ValueError("Kimi budget renewal must preserve exact ordered financial snapshots")
+        if len(allocations) > count:
+            successor = allocations[count]
+            start, deadline = successor["paid_start_unix"], successor["deadline_unix"]
+            if (
+                type(successor["gpu_count"]) is not int
+                or successor["gpu_count"] != 8
+                or any(
+                    type(value) not in (int, float) or not math.isfinite(value)
+                    for value in (start, deadline)
+                )
+                or not 900 < deadline - start <= 7200
+                or start < prior[-1]["termination_confirmed_at_unix"]
+                or successor.get("source_sha") != grant["source_sha"]
+            ):
+                raise ValueError(
+                    "Kimi budget renewal successor changed its source or paid envelope"
+                )
+        previous_limit = grant["effective_max_gpu_hours"]
+
+    prior_count = base_count + len(renewals) - 1
+    if pod_id in {entry["pod_id"] for entry in allocations[:prior_count]} or (
+        len(allocations) > prior_count and allocations[-1]["pod_id"] != pod_id
+    ):
+        raise ValueError("the single renewed Kimi allocation has already been used")
+    if len(allocations) > prior_count:
+        current = allocations[-1]
+        if current.get("termination_confirmed_at_unix") is not None:
+            raise ValueError("cannot reuse a terminated allocation")
+        if current["deadline_unix"] - current["paid_start_unix"] != requested_seconds:
+            raise ValueError("refusing to change an existing allocation deadline")
+    if spent + gpu_count * requested_seconds / 3600 > previous_limit:
+        raise ValueError("requested allocation exceeds the renewed cumulative GPU-hours")
+    return requested_seconds
+
+
+def validate_kimi_budget_renewal_append(previous, updated, *, pod_id):
+    """Validate exactly one renewal append under the ledger writer's existing lock."""
+    key = "kimi_budget_renewals"
+    old_grants, new_grants = previous.get(key, []), updated.get(key)
+    if (
+        not isinstance(old_grants, list)
+        or not isinstance(new_grants, list)
+        or len(new_grants) != len(old_grants) + 1
+        or new_grants[:-1] != old_grants
+        or {k: v for k, v in previous.items() if k != key}
+        != {k: v for k, v in updated.items() if k != key}
+    ):
+        raise ValueError("Kimi budget renewal must append one grant without rewriting history")
+    return allocation_seconds(updated, pod_id=pod_id, gpu_count=8, requested_seconds=7200)
 
 
 def kimi_continuation_seconds(ledger, *, pod_id):
@@ -128,6 +306,13 @@ def kimi_continuation_seconds(ledger, *, pod_id):
 
 def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
     """Enforce the cumulative allowance without resetting any prior paid time."""
+    renewals = ledger.get("kimi_budget_renewals", [])
+    if not isinstance(renewals, list):
+        raise ValueError("Kimi budget renewals must be an ordered list")
+    if renewals:
+        return kimi_budget_renewal_seconds(
+            ledger, pod_id=pod_id, gpu_count=gpu_count, requested_seconds=requested_seconds
+        )
     limit = ledger["max_gpu_hours"]
     if not math.isfinite(limit) or not 0 < limit <= 45:
         raise ValueError("invalid cumulative GPU-hour allowance")
@@ -357,8 +542,14 @@ def contract_from_pod(
     paid_start = created.timestamp()
     deadline = paid_start + seconds
     if model_key == "kimi":
-        if ledger.get("kimi_continuation_grants"):
+        latest = None
+        if ledger.get("kimi_budget_renewals"):
+            latest = ledger["kimi_budget_renewals"][-1]
+            if source_sha != latest["source_sha"]:
+                raise ValueError("Kimi provider contract source differs from its budget renewal")
+        elif ledger.get("kimi_continuation_grants"):
             latest = ledger["kimi_continuation_grants"][-1]
+        if latest is not None:
             if paid_start < max(
                 entry["termination_confirmed_at_unix"] for entry in latest["prior_allocations"]
             ):
