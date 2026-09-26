@@ -1,0 +1,232 @@
+FILE model_executor/layers/fused_moe/fused_marlin_moe.py SHA256 efb0744a9364e4a5f2c668cf68829b9d576ad00470c715da5007b77c278078c5
+125: 
+126:     intermediate_cache1 = ops.moe_wna16_marlin_gemm(
+127:         gate_up_input,
+128:         intermediate_cache1,
+129:         w1,
+130:         bias1,
+131:         w1_scale,
+132:         a_scales1,
+133:         global_scale1,
+134:         w1_zeros,
+135:         g_idx1,
+136:         sort_indices1,
+137:         workspace,
+138:         sorted_token_ids,
+139:         expert_ids,
+140:         num_tokens_post_padded,
+141:         topk_weights,
+142:         moe_block_size=block_size_m,
+143:         top_k=num_topk,
+144:         mul_topk_weights=apply_router_weight_on_input,
+145:         b_q_type=quant_type,
+146:         size_m=M,
+147:         size_n=w13_num_shards * N,
+148:         size_k=K,
+149:         is_k_full=is_k_full,
+150:         use_atomic_add=False,
+151:         use_fp32_reduce=True,
+152:         is_zp_float=False,
+153:     )
+180:         output,
+181:         w2,
+182:         bias2,
+183:         w2_scale,
+184:         a_scales2,
+185:         global_scale2,
+186:         w2_zeros,
+187:         g_idx2,
+188:         sort_indices2,
+189:         workspace,
+190:         sorted_token_ids,
+191:         expert_ids,
+192:         num_tokens_post_padded,
+193:         topk_weights,
+194:         moe_block_size=block_size_m,
+195:         top_k=1,
+196:         mul_topk_weights=not apply_router_weight_on_input,
+197:         b_q_type=quant_type,
+198:         size_m=M * num_topk,
+199:         size_n=K,
+200:         size_k=N,
+201:         is_k_full=is_k_full,
+202:         use_atomic_add=False,
+203:         use_fp32_reduce=True,
+204:         is_zp_float=False,
+205:     )
+FILE v1/attention/backends/mla/flashattn_mla.py SHA256 a5b8b0ed5b0d57e4e8f7936beee64f2a1b962297cee6b8474ae62914ed740fbf
+149:             self.max_num_splits = (
+150:                 vllm_config.attention_config.flash_attn_max_num_splits_for_cuda_graph
+151:             )
+152: 
+153:         if envs.VLLM_BATCH_INVARIANT:
+154:             self.max_num_splits = 1
+155: 
+198:         max_num_splits = 0
+199:         if (
+200:             self.use_full_cuda_graph
+201:             and self.max_cudagraph_size is not None
+202:             and num_decode_tokens <= self.max_cudagraph_size
+203:         ):
+204:             # NOTE(woosuk): Setting num_splits > 1 may increase the memory
+205:             # usage, because the intermediate buffers of size [num_splits,
+206:             # num_heads, num_tokens, head_size] are allocated. Therefore,
+207:             # we only set num_splits when using cuda graphs.
+208:             max_num_splits = self.max_num_splits
+209: 
+210:         if envs.VLLM_BATCH_INVARIANT:
+211:             max_num_splits = 1
+212: 
+213:         scheduler_metadata = self._schedule_decode(
+FILE v1/core/sched/scheduler.py SHA256 9f3da2dfce94963e1e1cefc156e4239120f79c6eaf824b2829cac0ee7736b58a
+388:             if (
+389:                 request.num_output_placeholders > 0
+390:                 # This is (num_computed_tokens + 1) - (num_output_placeholders - 1).
+391:                 # Since output placeholders are also included in the computed tokens
+392:                 # count, we subtract (num_output_placeholders - 1) to remove any draft
+393:                 # tokens, so that we can be sure no further steps are needed even if
+394:                 # they are all rejected.
+395:                 and request.num_computed_tokens + 2 - request.num_output_placeholders
+396:                 >= request.num_prompt_tokens + request.max_tokens
+397:             ):
+398:                 # Async scheduling: Avoid scheduling an extra step when we are sure that
+399:                 # the previous step has reached request.max_tokens. We don't schedule
+400:                 # partial draft tokens since this prevents uniform decode optimizations.
+401:                 req_index += 1
+402:                 continue
+PINNEDCONFIG SHA256 85825ca6e18cbe539eb83ee09eedfb3f4222265929f06e9f535a6d9364f55899
+{"first_k_dense_replace": 1, "moe_layer_freq": 1, "n_routed_experts": 384, "num_experts_per_tok": 8}
+FILE model_executor/layers/fused_moe/router/grouped_topk_router.py SHA256 8dd610aed59432cdb0e5ef6eec280cc70af74c1f791ee35be1e3ba4af730e97a
+125:         scores = scores + e_score_correction_bias.unsqueeze(0)
+126:         group_scores = (
+127:             scores.view(num_token, num_expert_group, -1).topk(2, dim=-1)[0].sum(dim=-1)
+128:         )
+129:     else:
+130:         group_scores = (
+131:             scores.view(num_token, num_expert_group, -1).max(dim=-1).values
+132:         )  # [n, n_group]
+133: 
+134:     # For batch invariance, use sorted=True to ensure deterministic expert selection
+135:     use_sorted = envs.VLLM_BATCH_INVARIANT
+136:     group_idx = torch.topk(group_scores, k=topk_group, dim=-1, sorted=use_sorted)[
+137:         1
+138:     ]  # [n, top_k_group]
+139:     group_mask = torch.zeros_like(group_scores)  # [n, n_group]
+140:     group_mask.scatter_(1, group_idx, 1)  # [n, n_group]
+141:     score_mask = (
+142:         group_mask.unsqueeze(-1)
+143:         .expand(num_token, num_expert_group, scores.size(-1) // num_expert_group)
+144:         .reshape(num_token, -1)
+145:     )  # [n, e]
+146:     tmp_scores = scores.masked_fill(~score_mask.bool(), float("-inf"))  # [n, e]
+147: 
+148:     if e_score_correction_bias is not None:
+149:         topk_ids = torch.topk(tmp_scores, k=topk, dim=-1, sorted=use_sorted)[1]
+150:         # Use original unbiased scores for the routing weights
+151:         topk_weights = original_scores.gather(1, topk_ids)
+152:     else:
+153:         topk_weights, topk_ids = torch.topk(
+154:             tmp_scores, k=topk, dim=-1, sorted=use_sorted
+155:         )
+156: 
+157:     if renormalize:
+158:         topk_weights = topk_weights / topk_weights.sum(dim=-1, keepdim=True)
+FILE model_executor/layers/fused_moe/router/fused_topk_bias_router.py SHA256 c53831c63ac8bd6223fa72f058f9bb7a38593f3233af1225e61fa3725cfafc60
+150:         scores = gating_output.softmax(dim=-1)
+151:     elif scoring_func == "sigmoid":
+152:         scores = gating_output.sigmoid()
+153:     else:
+154:         raise ValueError(f"Unsupported scoring function: {scoring_func}")
+155: 
+156:     scores_for_choice = scores.view(
+157:         -1, n_routed_experts
+158:     ) + e_score_correction_bias.unsqueeze(0)
+159: 
+160:     # For batch invariance, use sorted=True to ensure deterministic expert selection
+161:     use_sorted = envs.VLLM_BATCH_INVARIANT
+162:     topk_indices = torch.topk(scores_for_choice, k=topk, dim=-1, sorted=use_sorted)[1]
+163:     topk_weights = scores.gather(1, topk_indices)
+164:     if renormalize:
+165:         topk_weights = topk_weights / topk_weights.sum(dim=-1, keepdim=True)
+166:     return topk_weights.to(torch.float32), topk_indices.to(
+167:         torch.int32 if indices_type is None else indices_type
+168:     )
+169: 
+170: 
+171: class FusedTopKBiasRouter(BaseRouter):
+172:     """Router using fused top-k with e_score_correction_bias."""
+173: 
+174:     def __init__(
+175:         self,
+176:         top_k: int,
+177:         global_num_experts: int,
+178:         eplb_state: EplbLayerState,
+179:         e_score_correction_bias: torch.Tensor,
+180:         scoring_func: str,
+181:         renormalize: bool = True,
+182:         routed_scaling_factor: float = 1.0,
+FILE envs.py SHA256 0878b5ca5379317b3f9f0fe65d9414c62f0a3a3400f79baeb07419507b933e5d
+495:     "VLLM_FLOAT32_MATMUL_PRECISION": env_with_choices(
+496:         "VLLM_FLOAT32_MATMUL_PRECISION",
+497:         "highest",
+498:         ["highest", "high", "medium"],
+499:         case_sensitive=False,
+500:     ),
+501:     # Enable batch-invariant mode: deterministic results regardless of
+502:     # batch composition. Requires NVIDIA GPU with compute capability >= 9.0.
+503:     "VLLM_BATCH_INVARIANT": lambda: bool(int(os.getenv("VLLM_BATCH_INVARIANT", "0"))),
+504:     # Maximum number of compilation jobs to run in parallel.
+505:     # By default this is the number of CPUs
+506:     "MAX_JOBS": lambda: os.getenv("MAX_JOBS", None),
+507:     # Number of threads to use for nvcc
+508:     # By default this is 1.
+509:     # If set, `MAX_JOBS` will be reduced to avoid oversubscribing the CPU.
+510:     "NVCC_THREADS": lambda: os.getenv("NVCC_THREADS", None),
+511:     # If set, vllm will use precompiled binaries (*.so)
+512:     "VLLM_USE_PRECOMPILED": lambda: os.environ.get("VLLM_USE_PRECOMPILED", "")
+
+FILE /home/thomasjiralerspong/.codex/worktrees/story-persona-kimi-20260922/scripts/story_persona_kimi_runtime.py SHA256 9e1bd294fe8e42667ec574def621ed75ff377427e9cf5a699e778222282b13da
+54:             state["vectors"][index] = residual_sum(output).detach().cpu().clone()
+55: 
+56:         return capture
+57: 
+58:     def norm_hook(previous):
+59:         def check(_module, _inputs, output):
+60:             if not state["active"] or not state["check_norm"]:
+61:                 return
+62:             if not isinstance(output, tuple) or len(output) != 2:
+63:                 raise RuntimeError("fused RMSNorm did not return its updated residual")
+64:             reference = output[1][-1].detach().float().cpu()
+65:             actual = state["vectors"][previous].float()
+66:             error = ((reference - actual).norm() / reference.norm().clamp_min(1e-12)).item()
+67:             state["norm_errors"][previous] = error
+68:             if not torch.isfinite(reference).all() or error > 1e-5:
+69:                 raise RuntimeError(f"post-block / fused-norm residual mismatch: {error}")
+70: 
+264:         rank_evidence[str(index)] = model.last_evidence
+265:         write_json(
+266:             out / "progress.json",
+267:             {
+268:                 "stage": "smoke",
+269:                 "fingerprint": fingerprint,
+270:                 "smoke_singletons_completed": len(values),
+271:                 "checked_at": time.time(),
+272:             },
+273:         )
+274:         print(f"[kimi-smoke] singletons={len(values)}/{len(indices)}", flush=True)
+275:     initial = torch.cat(values)
+276:     replay = torch.cat([model.capture([ids[i]])[0] for i in reversed(indices)]).flip(0)
+277:     error = relative_errors(initial, replay)
+278:     smoke = {
+279:         "fingerprint": fingerprint,
+280:         "indices": indices,
+281:         "execution_mode": "unpadded_singleton",
+282:         "repeatability_relative_errors": error.tolist(),
+283:         "repeatability_bitwise_equal": bool(torch.equal(initial, replay)),
+284:         "hook_norm_relative_errors": evidence,
+285:         "all_rank_bitwise_agreement": True,
+286:         "rank_evidence": rank_evidence,
+287:         "mixed_batch_is_production": False,
+288:         "mixed_batch_diagnostic": "not run; singleton-only runtime",
+289:         "passed": bool(error.max() <= cfg.capture.repeatability_relative_tolerance),
+290:         "checked_at": time.time(),

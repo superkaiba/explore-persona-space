@@ -1,0 +1,17 @@
+{
+  "checked_at": 1790383449.7349987,
+  "source_sha": "cd70b81267bb626ac3c621eafe964ae0ec5b909c",
+  "all_remote_names_sizes_hashes_pass": true,
+  "file_count": 13,
+  "total_bytes": 42437061,
+  "production_rows": 0,
+  "planned_production_rows": 2160,
+  "smoke_shape": [
+    20,
+    61,
+    7168
+  ],
+  "smoke_copies": 2,
+  "revision": "3e4ed2f435ada4ecbfde8839475ceb2fe854a588",
+  "url": "https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/3e4ed2f435ada4ecbfde8839475ceb2fe854a588/issue2673_deepseek_comparison/20260922_v1/kimi/failure_1790383311240062812"
+}

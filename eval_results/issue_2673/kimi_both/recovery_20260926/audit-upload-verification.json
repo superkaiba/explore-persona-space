@@ -1,0 +1,89 @@
+{
+  "checked_at": 1790383814.147595,
+  "source_sha": "cd70b81267bb626ac3c621eafe964ae0ec5b909c",
+  "repo_id": "superkaiba1/explore-persona-space-overflow",
+  "repo_type": "model",
+  "prefix": "issue2673_deepseek_comparison/20260922_v1/kimi/numerical_audit_1790383812792748998",
+  "verified_revision": "a5d0848ea723f04d067e42b3736f8ce8edd2ed3f",
+  "files": {
+    "cache-read-lesson.md": {
+      "size": 1052,
+      "sha256": "8831ef704b7db11a534177f319044c53d4c4476fe13531d6bfe5f17482df4093",
+      "git_blob_sha1": "842876c9e1a23221eaa66b8d66c4c066caf7f8cd"
+    },
+    "capture-followon-review.md": {
+      "size": 4946,
+      "sha256": "fe5312fb92f435a77edeef3925fb5b559cfda7f8bfb08a4df814cc2689734ce2",
+      "git_blob_sha1": "1b0f440916b7e6c6da302dceb4ecea77faeb444e"
+    },
+    "final-pod-sweep.json": {
+      "size": 2042,
+      "sha256": "06bf02516f290483f5e16a2082b390525ef5b653ed7448067530ef45e820fd17",
+      "git_blob_sha1": "231c0ba4b52d34b434c60d19163d3f2d305f924f"
+    },
+    "independent-recovery-review.md": {
+      "size": 7371,
+      "sha256": "c2ba374d429293cd98b8f197de9a3ef043a8b31b572518f38b1490292229bd25",
+      "git_blob_sha1": "3632d8945510ef33bb06be927a4c108bb84c1529"
+    },
+    "logs/hf-overflow-routing.jsonl": {
+      "size": 1084,
+      "sha256": "84dac85e8f832bda3b3fe32bb850ce00568287410ccdbaed024d30c8c1b5b40c",
+      "git_blob_sha1": "3d556bbddf44977f1a0b90c4000ba6e1253255c6"
+    },
+    "logs/issue-2673.launch_epoch": {
+      "size": 11,
+      "sha256": "4b3f62043ef14f0e5d09033b8650b3870ac4e82424becb06615dd887e6353de3",
+      "git_blob_sha1": "5801d8fd28505764d4ce18c6a9d3acdd86f6ffac"
+    },
+    "logs/issue-2673.log": {
+      "size": 42353,
+      "sha256": "9847c1810a928c0dde83a59cb5bf80e6928c900d809cb8ec2ae9c843c2f44e0c",
+      "git_blob_sha1": "5ea3b3aa8266f0296bface543ea26df6721a99e5"
+    },
+    "logs/issue-2673.pid": {
+      "size": 6,
+      "sha256": "94d3965ec08b7c910c8d68a23c9608b420e0d3d669f46241465319aa5dc561af",
+      "git_blob_sha1": "36aa66df9b35011c5cd944234edbd81b3726a076"
+    },
+    "logs/issue2673-crossmodel-kimi.log": {
+      "size": 84108,
+      "sha256": "07dee23d04cf736842fcd8d9df19d87cbfee902da44d20739ae805a2a71cc5f6",
+      "git_blob_sha1": "dd7a8c01ef0203f9c3fc34d22a3ddb95c002e6d4"
+    },
+    "logs/kimi-initial-preservation.log": {
+      "size": 594,
+      "sha256": "9f1e1b7034533ab9f4a31cab5b1e0afba72a2025d509628068dbbef64666ccef",
+      "git_blob_sha1": "127e619d34f45f75a61505aca38f74a5a5ba8399"
+    },
+    "numerical-audit-stats.json": {
+      "size": 9744,
+      "sha256": "88dd25e0e88158c96567bfb80f3930d853b2ed8776dd92448bff61d4a4f33657",
+      "git_blob_sha1": "7887626e18ce1e0c608bd6adecdcc29d0ad78e95"
+    },
+    "numerical-audit.md": {
+      "size": 7194,
+      "sha256": "8a8c33e5147b2708b897a9990142352527d4eaa07aa3bc96d8dc4f4ec559e2a4",
+      "git_blob_sha1": "7e2f808ae522f0a9370d4e3581fda7e44a5f4d29"
+    },
+    "numerical-failure-verification.json": {
+      "size": 578,
+      "sha256": "c5e8a02fa15338d00bf181490e57fe843fbf9f68373ab54e060f0a3e0760895f",
+      "git_blob_sha1": "31f6b3adef80adebe71e212c643fb6ccc4ae51f2"
+    },
+    "numerical-pinned-source-excerpts.txt": {
+      "size": 10886,
+      "sha256": "02217326a88bdeff06bb39a21349bace4f21de6d6a77d0f489d0b7229eb28576",
+      "git_blob_sha1": "34515fe31f7cf3639e1954af71adb12f37b19526"
+    },
+    "receipt_1790383321268829556.json": {
+      "size": 3877,
+      "sha256": "6011ca93b1ae679c6b9c2de634e42c5fd87a23bf9555d659daaa0cea07032497",
+      "git_blob_sha1": "674e6de5ea83555ac161730b9eb5591b0752440f"
+    }
+  },
+  "file_count": 15,
+  "total_bytes": 175846,
+  "all_remote_names_sizes_hashes_pass": true,
+  "url": "https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/a5d0848ea723f04d067e42b3736f8ce8edd2ed3f/issue2673_deepseek_comparison/20260922_v1/kimi/numerical_audit_1790383812792748998"
+}

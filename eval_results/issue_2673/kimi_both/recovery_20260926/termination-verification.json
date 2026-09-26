@@ -1,0 +1,17 @@
+{
+  "checked_at": 1790383936.408568,
+  "status": "failed_numerical_gate_preserved_pod_terminated",
+  "source_sha": "cd70b81267bb626ac3c621eafe964ae0ec5b909c",
+  "pod_id": "2y9tr3io3gd0os",
+  "personal_account_verified": true,
+  "live_api_pod_absent": true,
+  "production_rows": 0,
+  "planned_production_rows": 2160,
+  "repeatability_max_relative_error": 0.1432724893093109,
+  "repeatability_tolerance": 1e-05,
+  "failure_revision": "3e4ed2f435ada4ecbfde8839475ceb2fe854a588",
+  "audit_revision": "a5d0848ea723f04d067e42b3736f8ce8edd2ed3f",
+  "gpu_hours_upper_bound": 26.65690570619371,
+  "success": false,
+  "next_action": "controlled instrumentation diagnostic prepared on CPU; new allocation requires current ledger authorization update; no automatic retry of closed allocation"
+}

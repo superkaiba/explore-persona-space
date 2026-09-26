@@ -247,7 +247,66 @@ def render_kimi(tokenizer, rows, cfg):
     return result
 
 
+def _instrumentation_diagnostic(model, ids, index, cfg, out, fingerprint):
+    """Separate adjacent repeatability from changes in norm-check instrumentation."""
+    from scripts.story_persona_crossmodel_capture import relative_errors
+    from scripts.story_persona_qwen38_pilot import write_json
+
+    flags = [False, False, False, True, True, False]
+    values, evidence = [], []
+    for step, flag in enumerate(flags):
+        value, norm_errors = model.capture([ids[index]], check_tuple=flag)
+        values.append(value)
+        evidence.append({"norm_errors": norm_errors, "ranks": model.last_evidence})
+        write_json(
+            out / "progress.json",
+            {
+                "stage": "smoke_instrumentation",
+                "fingerprint": fingerprint,
+                "smoke_singletons_completed": step + 1,
+                "checked_at": time.time(),
+            },
+        )
+        print(f"[kimi-smoke-instrumentation] singleton={step + 1}/6 check_norm={flag}", flush=True)
+    values = torch.cat(values)
+    pairs = {
+        "production_repeat_1": (0, 1),
+        "production_repeat_2": (1, 2),
+        "production_return": (2, 5),
+        "checked_repeat": (3, 4),
+        "instrumentation_on": (2, 3),
+        "instrumentation_off": (4, 5),
+    }
+    errors = {name: relative_errors(values[a], values[b]) for name, (a, b) in pairs.items()}
+    result = {
+        "fingerprint": fingerprint,
+        "index": index,
+        "check_norm": flags,
+        "pairs": pairs,
+        "relative_errors": {name: error.tolist() for name, error in errors.items()},
+        "passed": all(
+            bool(
+                torch.isfinite(error).all()
+                and error.max() <= cfg.capture.repeatability_relative_tolerance
+            )
+            for error in errors.values()
+        ),
+        "evidence": evidence,
+        "checked_at": time.time(),
+    }
+    torch.save(
+        {"fingerprint": fingerprint, "index": index, "check_norm": flags, "values": values},
+        out / "smoke_instrumentation_vectors.pt",
+    )
+    write_json(out / "smoke_instrumentation.json", result)
+    if not result["passed"]:
+        maxima = {name: error.max().item() for name, error in errors.items()}
+        raise RuntimeError(f"Kimi controlled instrumentation diagnostic rejected: {maxima}")
+    return result
+
+
 def numerical_smoke(model, ids, cfg, out, fingerprint):
+    """Gate production-style replay and norm instrumentation independently."""
     from scripts.story_persona_crossmodel_capture import relative_errors
     from scripts.story_persona_qwen38_pilot import write_json
 
@@ -256,44 +315,83 @@ def numerical_smoke(model, ids, cfg, out, fingerprint):
         max(range(len(ids)), key=lambda i: len(ids[i])),
     ]
     indices = list(dict.fromkeys(extrema + [p * 240 + q for p in range(9) for q in (0, 1)]))
-    values, evidence, rank_evidence = [], {}, {}
-    for index in indices:
-        value, error = model.capture([ids[index]], check_tuple=True)
-        values.append(value)
-        evidence[str(index)] = error
-        rank_evidence[str(index)] = model.last_evidence
-        write_json(
-            out / "progress.json",
+    # default:1 was the adjacent same-input counterexample in the failed live smoke.
+    diagnostic = _instrumentation_diagnostic(model, ids, 8 * 240 + 1, cfg, out, fingerprint)
+    phases, norm_evidence, rank_evidence = {}, {}, {}
+    for phase, order, check_norm in (
+        ("initial", indices, False),
+        ("repeated", list(reversed(indices)), False),
+        ("norm_checked", indices, True),
+    ):
+        values, norms, ranks = [], {}, {}
+        for index in order:
+            value, error = model.capture([ids[index]], check_tuple=check_norm)
+            values.append(value)
+            norms[str(index)] = error
+            ranks[str(index)] = model.last_evidence
+            write_json(
+                out / "progress.json",
+                {
+                    "stage": "smoke",
+                    "smoke_phase": phase,
+                    "check_norm": check_norm,
+                    "fingerprint": fingerprint,
+                    "smoke_singletons_completed": len(values),
+                    "checked_at": time.time(),
+                },
+            )
+            print(f"[kimi-smoke] phase={phase} singletons={len(values)}/{len(order)}", flush=True)
+        phases[phase] = torch.cat(values)
+        if phase == "repeated":
+            phases[phase] = phases[phase].flip(0)
+        norm_evidence[phase], rank_evidence[phase] = norms, ranks
+        # Persist each phase before another starts. A new engine must rerun these checks.
+        torch.save(
             {
-                "stage": "smoke",
                 "fingerprint": fingerprint,
-                "smoke_singletons_completed": len(values),
-                "checked_at": time.time(),
+                "indices": indices,
+                "execution_order": order,
+                "check_norm": check_norm,
+                "values": phases[phase],
+                "norm_errors": norms,
+                "rank_evidence": ranks,
             },
+            out / f"smoke_{phase}.pt",
         )
-        print(f"[kimi-smoke] singletons={len(values)}/{len(indices)}", flush=True)
-    initial = torch.cat(values)
-    replay = torch.cat([model.capture([ids[i]])[0] for i in reversed(indices)]).flip(0)
+    initial, replay = phases["initial"], phases["repeated"]
     error = relative_errors(initial, replay)
+    instrumentation_error = relative_errors(initial, phases["norm_checked"])
     smoke = {
         "fingerprint": fingerprint,
         "indices": indices,
         "execution_mode": "unpadded_singleton",
+        "check_norm_by_phase": {"initial": False, "repeated": False, "norm_checked": True},
+        "controlled_instrumentation_diagnostic_passed": diagnostic["passed"],
         "repeatability_relative_errors": error.tolist(),
         "repeatability_bitwise_equal": bool(torch.equal(initial, replay)),
-        "hook_norm_relative_errors": evidence,
+        "instrumentation_relative_errors": instrumentation_error.tolist(),
+        "hook_norm_relative_errors": norm_evidence["norm_checked"],
         "all_rank_bitwise_agreement": True,
-        "rank_evidence": rank_evidence,
+        "rank_evidence": rank_evidence["initial"],
+        "rank_evidence_by_phase": rank_evidence,
         "mixed_batch_is_production": False,
         "mixed_batch_diagnostic": "not run; singleton-only runtime",
-        "passed": bool(error.max() <= cfg.capture.repeatability_relative_tolerance),
+        "passed": bool(
+            torch.isfinite(error).all()
+            and torch.isfinite(instrumentation_error).all()
+            and error.max() <= cfg.capture.repeatability_relative_tolerance
+            and instrumentation_error.max() <= cfg.capture.repeatability_relative_tolerance
+        ),
         "checked_at": time.time(),
     }
     torch.save(
-        {"fingerprint": fingerprint, "indices": indices, "initial": initial, "repeated": replay},
+        {"fingerprint": fingerprint, "indices": indices, **phases},
         out / "smoke_vectors.pt",
     )
     write_json(out / "smoke.json", smoke)
     if not smoke["passed"]:
-        raise RuntimeError(f"Kimi singleton repeatability rejected: {error.max().item()}")
+        raise RuntimeError(
+            f"Kimi numerical smoke rejected: repeat={error.max().item()}, "
+            f"instrumentation={instrumentation_error.max().item()}"
+        )
     return smoke
