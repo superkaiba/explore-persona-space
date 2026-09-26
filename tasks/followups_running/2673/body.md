@@ -3,7 +3,6 @@ title: Does context-vector cosine predict story-imprinting tracer uptake?
 kind: experiment
 tags:
 - followup-manual
-- keep-running
 created_at: '2026-09-17T20:00:03Z'
 has_clean_result: false
 origin_prompt: ok try it on qwen3.8 27b as a pilot first; yes run it end to end
