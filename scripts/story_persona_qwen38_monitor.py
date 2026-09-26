@@ -6,6 +6,7 @@ import argparse
 from dataclasses import asdict
 from datetime import datetime
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -392,18 +393,97 @@ def probe_backend(handle_path: Path, out: Path) -> dict:
     return observed
 
 
+def provision_observation(config: dict, *, now: float | None = None) -> dict:
+    """Verify a live retry service and its fresh, source-matched capacity evidence."""
+    unit = config["provision_unit"]
+    fields = dict(
+        line.split("=", 1)
+        for line in command(
+            [
+                "systemctl",
+                "--user",
+                "show",
+                unit,
+                "--property=ActiveState,SubState,MainPID",
+            ],
+            timeout=15,
+        ).splitlines()
+        if "=" in line
+    )
+    if (
+        fields.get("ActiveState") != "active"
+        or fields.get("SubState") != "running"
+        or int(fields.get("MainPID", "0")) <= 0
+    ):
+        raise RuntimeError("capacity provision service is not actively running")
+    state_path = Path(config["provision_state"])
+    if not state_path.exists():
+        now = time.time() if now is None else now
+        if not 0 <= now - config["created_at"] <= 30:
+            raise RuntimeError("capacity provision state is missing beyond startup grace")
+        return {"status": "pending", "current_phase": "capacity_service_startup", "unit": unit}
+    state = json.loads(state_path.read_text())
+    now = time.time() if now is None else now
+    if not isinstance(state, dict) or state.get("source_sha") != config["source_sha"]:
+        raise RuntimeError("capacity provision state does not match the source pin")
+    phase = state.get("status")
+    if phase not in {"requesting_capacity", "waiting_for_capacity"}:
+        raise RuntimeError(f"capacity provision state requires intervention: {phase}")
+    checked = state.get("checked_at")
+    attempt = state.get("attempt")
+    if (
+        type(checked) not in {int, float}
+        or not math.isfinite(checked)
+        or not 0 <= now - checked <= (1260 if phase == "requesting_capacity" else 150)
+        or type(attempt) is not int
+        or attempt <= 0
+    ):
+        raise RuntimeError("capacity provision evidence is stale or malformed")
+    if phase == "waiting_for_capacity" and state.get("provider_refusal_verified") is not True:
+        raise RuntimeError("capacity wait lacks a verified provider refusal")
+    return {
+        "status": "pending",
+        "current_phase": phase,
+        "unit": unit,
+        "attempt": attempt,
+        "provider_checked_at": checked,
+        "provider_refusal_verified": state.get("provider_refusal_verified") is True,
+    }
+
+
 def monitor(config: dict) -> None:
     """Record progress until verified publication; any monitor failure reaches watchdog."""
     state_path = Path(config["observation"])
     handle_path = Path(config["handle_file"])
-    deadline = time.time() + 6 * 3600
-    while time.time() < deadline:
+    capacity_leg = "provision_unit" in config or "provision_state" in config
+    if capacity_leg and not (config.get("provision_unit") and config.get("provision_state")):
+        raise ValueError("capacity monitoring requires both provision_unit and provision_state")
+    # Capacity waiting has no paid allocation yet. Start only the VM monitor's
+    # duration guard at handoff; provider-created paid deadlines stay unchanged.
+    deadline = None if capacity_leg else time.time() + 6 * 3600
+    while True:
+        has_handle = handle_path.exists()
+        if deadline is None and has_handle:
+            deadline = time.time() + 6 * 3600
+        if deadline is not None and time.time() >= deadline:
+            raise TimeoutError("pilot monitoring reached its six-hour deadline")
         previous = json.loads(state_path.read_text()) if state_path.exists() else {}
         state = {"source_sha": config["source_sha"], "checked_at": time.time()}
-        if not handle_path.exists():
-            if time.time() - config["created_at"] > 1800:
+        if not has_handle:
+            if capacity_leg:
+                try:
+                    observed = provision_observation(config)
+                except RuntimeError:
+                    # The provisioner can publish its handle and exit after our
+                    # first existence check. Probe that real backend next.
+                    if handle_path.exists():
+                        continue
+                    raise
+            elif time.time() - config["created_at"] > 1800:
                 raise RuntimeError("launch has not produced a handle within 30 minutes")
-            state.update(status="awaiting_launch", backend_observation={"status": "pending"})
+            else:
+                observed = {"status": "pending"}
+            state.update(status="awaiting_launch", backend_observation=observed)
         else:
             observed = json.loads(
                 command(
@@ -467,7 +547,6 @@ def monitor(config: dict) -> None:
             flush=True,
         )
         time.sleep(20 if time.time() - config["created_at"] < 180 else 60)
-    raise TimeoutError("pilot monitoring reached its six-hour deadline")
 
 
 def main() -> None:
