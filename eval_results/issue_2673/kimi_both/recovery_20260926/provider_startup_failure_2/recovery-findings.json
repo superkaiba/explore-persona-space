@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "checked_at": 1790393912.5281599,
+  "source_sha": "44416e37ddc8c11062c5ef620675427fe54329c5",
+  "worker_unit": "eps-recover-issue2673-kimi-recovery3-1-3dce4fb0.service",
+  "status": "blocked_active_root_owner",
+  "recovery_verified": false,
+  "root_heartbeat": {
+    "checked_at": 1790393788.892679,
+    "owner": "kimi-root-recovery3-20260926",
+    "status": "provider failure closed; preserving and preparing different DC"
+  },
+  "root_heartbeat_age_seconds": 123.6354808807373,
+  "ownership_rule": "Runbook requires read-only diagnosis and this findings file when root heartbeat is less than 180 seconds old; do not launch a competing workload.",
+  "failure_class": "provider_no_ssh_600s",
+  "diagnosis": "Provider created 0275gj7zll7n2n in EUR-IS-4 but exposed no public SSH mapping during the 600-second canonical wait. Canonical lifecycle auto-terminated it. Provision worker correctly rejected retry classification because a pod had been created. Monitor then failed because provision service was no longer active.",
+  "provider_absence_checks": [
+    {
+      "checked_at": 1790393854.4646888,
+      "personal": true,
+      "account_id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+      "teams": [],
+      "exact_pod": null,
+      "matching_name_pods": []
+    },
+    {
+      "checked_at": 1790393854.6704257,
+      "personal": false,
+      "account_id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+      "teams": [],
+      "exact_pod": null,
+      "matching_name_pods": []
+    }
+  ],
+  "old_worker_dead": true,
+  "old_worker_dead_basis": "Exact provider pod absent in both API scopes; capacity and monitor MainPID both 0; no successful SSH/bootstrap or handle.",
+  "handle_exists": false,
+  "resume_artifacts": {
+    "model_started": false,
+    "production_rows": 0,
+    "current_attempt_resume_available": false,
+    "basis": "Canonical provision-only failed before SSH/bootstrap, matching root-closed ledger record. Prior failed diagnostic vectors are not valid production resume."
+  },
+  "allocation_record_observed": {
+    "pod_id": "0275gj7zll7n2n",
+    "model_key": "kimi",
+    "source_sha": "44416e37ddc8c11062c5ef620675427fe54329c5",
+    "provider_created_at": "2026-09-26T03:25:06.876Z",
+    "paid_start_unix": 1790393106.876,
+    "deadline_unix": 1790399631.876,
+    "pod_name": "pod-2673-crossmodel-kimi",
+    "api_volume_gb": 1000.0,
+    "max_allocation_seconds": 6525,
+    "gpu_count": 8,
+    "recorded_at_unix": 1790393180.6783934,
+    "status": "terminated",
+    "same_allocation_recovery_count": 0,
+    "termination_confirmed_at_unix": 1790393788.892679,
+    "gpu_hours_upper_bound": 1.5155926201078627,
+    "failure_class": "provider_no_ssh_600s",
+    "model_started": false,
+    "production_rows": 0
+  },
+  "original_evidence_sha256": {
+    "attempt-0001/deployment-request.json": "085ae106668018d51dc644c5199dc0da9dee27086832d26b14c5a166f6699991",
+    "attempt-0001/deployment-exit.json": "4346e005d5cd1e933e25c8e60615255debbcf68f3cc5fbb98cf1a10720e39b02",
+    "attempt-0001/provision.log": "959c31dd49a5fa8f248db89923bb99cceda5927427d484c7cf6c8031c8cf7b2f",
+    "storage-contract.json": "6533cad724ee8f8aec0dcb60ccd0bf4e9624a61943c6a1dbc33d9cd298d0b48b"
+  },
+  "units": {
+    "eps2673-kimi-recovery3-monitor.service": {
+      "MainPID": "0",
+      "ActiveState": "failed",
+      "UnitFileState": "disabled"
+    },
+    "eps2673-kimi-recovery3-capacity.service": {
+      "MainPID": "0",
+      "ActiveState": "failed",
+      "UnitFileState": "disabled"
+    },
+    "eps-watchdog-issue2673-kimi-recovery3.timer": {
+      "ActiveState": "inactive",
+      "UnitFileState": "disabled"
+    },
+    "eps2673-kimi-chat-updates.timer": {
+      "ActiveState": "inactive",
+      "UnitFileState": "disabled"
+    }
+  },
+  "concurrent_service_change": "At initial inspection watchdog timer was enabled and active. At 1790393867 it was disabled/inactive and model/capacity units disabled; this recovery worker did not mutate any service.",
+  "notification_delivery": {
+    "watchdog_notices_acknowledged": false,
+    "direct_messages_sent": false
+  },
+  "changes_by_this_worker": [
+    "Saved this recovery-findings.json; all other actions read-only."
+  ],
+  "remaining_work": [
+    "Active root owner must complete its documented next bounded grant and diagnosed replacement, preserving all prior accounting and scientific settings.",
+    "Do not restart recovery3 provision.py as-is: attempt-0001 is a created-pod failure, not a no-capacity refusal, and its grant is consumed.",
+    "Restore verified monitoring and independent watchdog/notification delivery for the selected continuation before unattended operation.",
+    "Verify actual new model/output progress and exact-source upload gates before reporting recovery or completion."
+  ]
+}

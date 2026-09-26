@@ -1,0 +1,48 @@
+{
+  "checked_at": 1790393334.1858919,
+  "source_sha": "44416e37ddc8c11062c5ef620675427fe54329c5",
+  "canary": {
+    "digest": "b63322e3e1a849241b2f90906e16abf5876f8d9021493fc9782d8900fa176f07",
+    "passed_at": 1790393116.8790998
+  },
+  "relay_canary": {
+    "checked_at": 1790393247.2273211,
+    "event_id": "kimi-chat-delivery-canary-774aa28e9f9f471aa535d72f083ffc95",
+    "receipt": {
+      "event_id": "kimi-chat-delivery-canary-774aa28e9f9f471aa535d72f083ffc95",
+      "reported_at": 1790393247.09029,
+      "turn_id": "01a0dbb8-d4cb-7730-b3e8-7cf96d536746"
+    }
+  },
+  "scheduled_watchdog_tick": 1790393280.227718,
+  "scheduled_relay_tick": 1790393280.3311718,
+  "units": {
+    "eps-watchdog-issue2673-kimi-recovery3.timer": {
+      "NextElapseUSecRealtime": "Fri 2026-09-25 20:29:00 PDT",
+      "ActiveState": "active",
+      "UnitFileState": "enabled"
+    },
+    "eps2673-kimi-chat-updates.timer": {
+      "NextElapseUSecRealtime": "Fri 2026-09-25 20:29:00 PDT",
+      "ActiveState": "active",
+      "UnitFileState": "enabled"
+    },
+    "eps2673-kimi-recovery3-monitor.service": {
+      "MainPID": "1062821",
+      "ActiveState": "active",
+      "UnitFileState": "enabled"
+    },
+    "eps2673-kimi-recovery3-capacity.service": {
+      "MainPID": "1062340",
+      "ActiveState": "active",
+      "UnitFileState": "enabled"
+    }
+  },
+  "user_lingering": "Linger=yes",
+  "source_hashes": {
+    "recovery3/provision.py": "bc03daa91ded52725cfa811e96dcac72a1f3338f70ad8416abf7cc5bdfe94770",
+    "chat-updates/relay.py": "b44fdc5b2143605bb38cdc56fb27f917c6f29174e601e61f50633651f5981e1d",
+    "chat-updates/recovery2_snapshot.py": "fe5f554a50a3138077164815b2100fdb36ea5a5dad8004d50b91ea62ed55f7af",
+    "chat-updates/health_check.py": "84dcaffe7398593e71ce19e0378231bd8e761896c284d99fbc647b6a60b325dc"
+  }
+}

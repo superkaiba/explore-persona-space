@@ -32,6 +32,100 @@ QUERY = """query PodStorage($id: String!) {
 REMOTE_PATH = "/workspace/issue2673_storage_contract.json"
 
 
+def kimi_continuation_seconds(ledger, *, pod_id):
+    """Validate successive closed-history grants and return the latest duration cap.
+
+    Each grant consumes one allocation slot after the original three grants.
+    This is a pure validator: append-only persistence and provider termination
+    evidence remain responsibilities of the locked, audited ledger writer.
+    """
+    ceiling = 42.65690570619371
+    fields = {
+        "pod_id",
+        "gpu_count",
+        "paid_start_unix",
+        "deadline_unix",
+        "termination_confirmed_at_unix",
+        "gpu_hours_upper_bound",
+    }
+    allocations = ledger["allocations"]
+    grants = ledger["kimi_continuation_grants"]
+    if ledger["max_gpu_hours"] != ceiling:
+        raise ValueError("Kimi continuation cannot change the cumulative ceiling")
+    if len(allocations) not in (len(grants) + 2, len(grants) + 3):
+        raise ValueError("Kimi continuation needs exactly one grant per successor allocation")
+    for index, grant in enumerate(grants):
+        if (
+            not isinstance(grant, dict)
+            or grant.get("approved") is not True
+            or grant.get("user_request") != "just continue until it succeeds"
+            or grant.get("max_new_allocations") != 1
+            or grant.get("gpu_count") != 8
+            or grant.get("max_cumulative_gpu_hours") != ceiling
+            or type(grant.get("max_allocation_seconds")) is not int
+            or not 900 < grant["max_allocation_seconds"] <= 6525
+            or not isinstance(grant.get("diagnosis"), str)
+            or not grant["diagnosis"].strip()
+            or not isinstance(grant.get("failure_evidence"), str)
+            or not grant["failure_evidence"].strip()
+        ):
+            raise ValueError("Kimi continuation requires a bounded diagnosed standing grant")
+        snapshots = grant.get("prior_allocations")
+        prior_count = 3 + index
+        if not isinstance(snapshots, list) or len(snapshots) != prior_count:
+            raise ValueError("Kimi continuation must snapshot every prior allocation in order")
+        spent = 0.0
+        for entry, snapshot in zip(allocations[:prior_count], snapshots, strict=True):
+            if (
+                not isinstance(snapshot, dict)
+                or set(snapshot) != fields
+                or any(key not in entry or entry[key] != snapshot[key] for key in fields)
+            ):
+                raise ValueError("Kimi continuation prior allocation snapshot changed")
+            values = [snapshot[key] for key in fields - {"pod_id", "gpu_count"}]
+            if (
+                not isinstance(snapshot["pod_id"], str)
+                or not snapshot["pod_id"]
+                or snapshot["gpu_count"] != 8
+                or any(
+                    type(value) not in (int, float) or not math.isfinite(value) for value in values
+                )
+                or snapshot["paid_start_unix"] <= 0
+                or snapshot["deadline_unix"] <= snapshot["paid_start_unix"]
+                or snapshot["termination_confirmed_at_unix"] < snapshot["paid_start_unix"]
+            ):
+                raise ValueError("Kimi continuation requires resolved finite prior accounting")
+            actual = (
+                (snapshot["termination_confirmed_at_unix"] - snapshot["paid_start_unix"]) * 8 / 3600
+            )
+            if snapshot["gpu_hours_upper_bound"] < actual - 1e-8:
+                raise ValueError("Kimi continuation ledger understates paid time")
+            spent += max(actual, snapshot["gpu_hours_upper_bound"])
+        third = snapshots[2]
+        if not 900 < third["deadline_unix"] - third["paid_start_unix"] <= 6525:
+            raise ValueError("Kimi continuation changed the prior replacement duration")
+        remaining_seconds = math.floor((ceiling - spent) * 3600 / 8)
+        if grant["max_allocation_seconds"] > remaining_seconds:
+            raise ValueError("Kimi continuation grant exceeds remaining cumulative GPU-hours")
+        if len(allocations) > prior_count:
+            successor = allocations[prior_count]
+            duration = successor["deadline_unix"] - successor["paid_start_unix"]
+            if (
+                not math.isfinite(duration)
+                or not 900 < duration <= grant["max_allocation_seconds"]
+                or successor["paid_start_unix"]
+                < max(entry["termination_confirmed_at_unix"] for entry in snapshots)
+            ):
+                raise ValueError("Kimi continuation successor changed its granted paid envelope")
+    last_prior_count = len(grants) + 2
+    prior_ids = {entry["pod_id"] for entry in allocations[:last_prior_count]}
+    if pod_id in prior_ids or (
+        len(allocations) > last_prior_count and allocations[-1]["pod_id"] != pod_id
+    ):
+        raise ValueError("the single continuation Kimi allocation has already been used")
+    return grants[-1]["max_allocation_seconds"]
+
+
 def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
     """Enforce the cumulative allowance without resetting any prior paid time."""
     limit = ledger["max_gpu_hours"]
@@ -52,6 +146,9 @@ def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
             raise ValueError("Kimi requires its own single-allocation authorization")
         recovery = ledger.get("kimi_recovery_authorization")
         replacement = ledger.get("kimi_replacement_authorization")
+        continuation = ledger.get("kimi_continuation_grants", [])
+        if not isinstance(continuation, list) or (continuation and replacement is None):
+            raise ValueError("Kimi continuation must preserve all prior authorizations")
         if replacement is not None and recovery is None:
             raise ValueError("Kimi replacement must preserve its prior recovery authorization")
         if recovery is None:
@@ -106,7 +203,7 @@ def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
                     raise ValueError(
                         "Kimi replacement requires the explicit bounded user authorization"
                     )
-                if pod_id in prior or (known - set(prior)) - {pod_id}:
+                if not continuation and (pod_id in prior or (known - set(prior)) - {pod_id}):
                     raise ValueError("the single replacement Kimi allocation has already been used")
                 paid_envelopes = {
                     "2y9tr3io3gd0os": (1790371940.801, 1790384540.801),
@@ -120,6 +217,10 @@ def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
                     ):
                         raise ValueError("prior Kimi provider paid start/deadline changed")
                 maximum_seconds = 6525
+                if continuation:
+                    if type(requested_seconds) is not int:
+                        raise ValueError("Kimi continuation duration must be whole seconds")
+                    maximum_seconds = kimi_continuation_seconds(ledger, pod_id=pod_id)
     elif limit > 17:
         # Thomas approved one additional singleton attempt on 2026-09-21.
         authority = ledger.get("singleton_authorization", {})
@@ -168,6 +269,30 @@ def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
     if additional_gpu_hours is not None and limit > spent + additional_gpu_hours + 1e-8:
         raise ValueError("cumulative Kimi allowance exceeds the approved additional GPU-hours")
     return requested_seconds
+
+
+def validate_kimi_continuation_append(previous, updated, *, pod_id):
+    """Validate one immutable-history grant append before an atomic locked write."""
+    key = "kimi_continuation_grants"
+    old_grants = previous.get(key, [])
+    new_grants = updated.get(key)
+    if (
+        previous.get("model_key") != "kimi"
+        or not isinstance(old_grants, list)
+        or not isinstance(new_grants, list)
+        or len(new_grants) != len(old_grants) + 1
+        or new_grants[:-1] != old_grants
+        or {k: v for k, v in previous.items() if k != key}
+        != {k: v for k, v in updated.items() if k != key}
+        or not isinstance(new_grants[-1], dict)
+    ):
+        raise ValueError("Kimi continuation update must append one grant without rewriting history")
+    return allocation_seconds(
+        updated,
+        pod_id=pod_id,
+        gpu_count=8,
+        requested_seconds=new_grants[-1].get("max_allocation_seconds"),
+    )
 
 
 def contract_from_pod(
@@ -232,6 +357,12 @@ def contract_from_pod(
     paid_start = created.timestamp()
     deadline = paid_start + seconds
     if model_key == "kimi":
+        if ledger.get("kimi_continuation_grants"):
+            latest = ledger["kimi_continuation_grants"][-1]
+            if paid_start < max(
+                entry["termination_confirmed_at_unix"] for entry in latest["prior_allocations"]
+            ):
+                raise ValueError("Kimi continuation began before prior termination was confirmed")
         for entry in ledger["allocations"]:
             if entry["pod_id"] == pod_id and (
                 entry["paid_start_unix"] != paid_start or entry["deadline_unix"] != deadline

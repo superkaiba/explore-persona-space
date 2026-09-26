@@ -1,0 +1,18 @@
+{
+  "checked_at": 1790393788.892679,
+  "pod_id": "0275gj7zll7n2n",
+  "proof": [
+    {
+      "checked_at": 1790393788.6572294,
+      "personal": true,
+      "exact_pod_absent": true,
+      "same_name_absent": true
+    },
+    {
+      "checked_at": 1790393788.8926759,
+      "personal": false,
+      "exact_pod_absent": true,
+      "same_name_absent": true
+    }
+  ]
+}

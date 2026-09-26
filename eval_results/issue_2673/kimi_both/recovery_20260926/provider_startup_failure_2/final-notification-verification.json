@@ -1,0 +1,9 @@
+{
+  "checked_at": 1790393960.845618,
+  "relay": {
+    "pending": 0,
+    "acknowledged": 93
+  },
+  "watchdog_acknowledged": 2,
+  "failed_attempt_services_retired": true
+}

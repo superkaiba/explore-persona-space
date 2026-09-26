@@ -1,0 +1,109 @@
+{
+  "checked_at": 1790393842.4082348,
+  "source_sha": "44416e37ddc8c11062c5ef620675427fe54329c5",
+  "repo_id": "superkaiba1/explore-persona-space-overflow",
+  "repo_type": "model",
+  "prefix": "issue2673_deepseek_comparison/20260922_v1/kimi/provider_startup_failure_1790393841351742440",
+  "verified_revision": "442ed72e2083eb738f8bb8cc492c62ae6ed8d9fb",
+  "files": {
+    "authorization.json": {
+      "size": 849,
+      "sha256": "734f683f75876039e642ee7cde6695190011e495f6e57939713f5dbb57950e22",
+      "git_blob_sha1": "4bd91de4e84986f2ad305ebc8086eed77d0baab8"
+    },
+    "closed-allocation-ledger.json": {
+      "size": 4618,
+      "sha256": "acda95316640a96e3a11b784adcc96db59976463a5235062e67182bcb2249a91",
+      "git_blob_sha1": "e2b179dee401e597a03dd987adcbd66d9ca08c60"
+    },
+    "config.json": {
+      "size": 1623,
+      "sha256": "770092a040b2b53ab58c125761dbb2b9b29c4070a4dfc19fa3300afddc4a4eaa",
+      "git_blob_sha1": "173eb045bb10bd41a5607755908a407b9ff81fe1"
+    },
+    "dc-stock-all.json": {
+      "size": 19821,
+      "sha256": "6ea4b4c2296b20a36833d6565f80519a2755caef648284e05dff457745fa445f",
+      "git_blob_sha1": "6ecc6a35d4034e24b8bf66ae3de6e6e43fb4c19d"
+    },
+    "deployment-exit.json": {
+      "size": 86,
+      "sha256": "4346e005d5cd1e933e25c8e60615255debbcf68f3cc5fbb98cf1a10720e39b02",
+      "git_blob_sha1": "b95cafc1c7673f9f65c008d9b603a30db5d99238"
+    },
+    "deployment-request.json": {
+      "size": 831,
+      "sha256": "085ae106668018d51dc644c5199dc0da9dee27086832d26b14c5a166f6699991",
+      "git_blob_sha1": "33c98869568ff12ca42ef371e0054d5257082ce2"
+    },
+    "ledger-before.json": {
+      "size": 3874,
+      "sha256": "b25afc1d81564205262ca7fa51fab353294eb85d4260f77b3df479fb9c0d87ec",
+      "git_blob_sha1": "c2cfce60e1622df4f06fe30a27b0d9c1b67bf2c2"
+    },
+    "monitor-registration-verification.json": {
+      "size": 1811,
+      "sha256": "afe6d159b08db666e49ff192bcff2f0e65cb2299f3949a4029823404f4ea2061",
+      "git_blob_sha1": "2b6f33600728d29314bb98c0128af7ddffb8f175"
+    },
+    "observation.json": {
+      "size": 208,
+      "sha256": "c53b184ecc89583c91d134065a5b05803ace5eabf878f90fdf96ab488527a05a",
+      "git_blob_sha1": "be23d55106cf5e542d07d0bab4eaa71a43b4a76f"
+    },
+    "provider-datacenters.json": {
+      "size": 4758,
+      "sha256": "ba20bbed4d42c1bbf55311135e5be4dffe85f051ffcfdb3fe3724a1f6bd2d90a",
+      "git_blob_sha1": "5ec69314041f95e36f836f71941c6de4f1910eb8"
+    },
+    "provider-termination-verification.json": {
+      "size": 366,
+      "sha256": "08330b67f7d16b119e5a57ad47376e89551b128f656fad16aca1d1c4d3a07237",
+      "git_blob_sha1": "ea75193bd0151d115254e81d5079aaf6ec2c3386"
+    },
+    "provision-review.md": {
+      "size": 2371,
+      "sha256": "cb8b470da73a3447e5f02bc98e9886c449a6d230d5e745e1732b8902692a714c",
+      "git_blob_sha1": "4a7b95858e09882d88d6b0f5d00f242202113200"
+    },
+    "provision-state.json": {
+      "size": 150,
+      "sha256": "bb8eb35660c23e5ccaa53d0725a667409f1c7410a10148e65703de2d71d186c9",
+      "git_blob_sha1": "a40672e6da4bded1fa3de6fcb0d706dc8b1d1b52"
+    },
+    "provision.log": {
+      "size": 9708,
+      "sha256": "959c31dd49a5fa8f248db89923bb99cceda5927427d484c7cf6c8031c8cf7b2f",
+      "git_blob_sha1": "9785ef74943a2f72e65aca58a16274e7e21b4d3e"
+    },
+    "relay-canary-verification.json": {
+      "size": 304,
+      "sha256": "20100d324fd40051144d2f7de6f4bcbba7592b04946560861012e68c673ef6f8",
+      "git_blob_sha1": "4990fcc28c48ea7d0f93a05b4683b5166d48ef99"
+    },
+    "scoped-workflow-lint.log": {
+      "size": 11278,
+      "sha256": "f86ad4cbec946f63e131aaf27b55697e4588d23f0aad16e4989e6a419169621e",
+      "git_blob_sha1": "4e8fb2f70ef07c6546e0a333a120cf3229874a72"
+    },
+    "source-review.json": {
+      "size": 423,
+      "sha256": "c90dfd18d0a838b26b0a68662823d26b504593ce6dc7254195a43a3365e36ab2",
+      "git_blob_sha1": "1ad5f6788eb676b30da1dde6abc7d2d0316d0ada"
+    },
+    "storage-contract.json": {
+      "size": 1558,
+      "sha256": "6533cad724ee8f8aec0dcb60ccd0bf4e9624a61943c6a1dbc33d9cd298d0b48b",
+      "git_blob_sha1": "40e514dbee3b674aaca0e0890a711f282f7b0d4a"
+    },
+    "terminal_failure.json": {
+      "size": 854,
+      "sha256": "f9d2519ba47c2806cad4dfc9e5657afa4a01c6277a6f331833cb94f6b4be0cc7",
+      "git_blob_sha1": "675bd6816982a9e70965321caa300b7d1eba528e"
+    }
+  },
+  "file_count": 19,
+  "total_bytes": 65491,
+  "all_remote_names_sizes_hashes_pass": true,
+  "url": "https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/442ed72e2083eb738f8bb8cc492c62ae6ed8d9fb/issue2673_deepseek_comparison/20260922_v1/kimi/provider_startup_failure_1790393841351742440"
+}
