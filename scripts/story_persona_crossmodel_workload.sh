@@ -35,6 +35,8 @@ capture_args=()
 analysis_args=()
 if [[ "$EPS_STORY_PERSONA_MODEL_KEY" == kimi ]]; then
   export VLLM_WORKER_MULTIPROC_METHOD=spawn
+  # apply_model sends our own capture functions over the local worker channel.
+  export VLLM_ALLOW_INSECURE_SERIALIZATION=1
   export PYTHONPATH="$repo_root${PYTHONPATH:+:$PYTHONPATH}"
   runtime=(uv run --no-sync --with 'vllm==0.19.1' --with 'torch==2.10.0' --with 'torchvision==0.25.0' --with 'torchaudio==2.10.0' --with 'transformers==4.57.6' --with 'compressed-tensors==0.15.0.1' python)
   capture_args=(prompts=configs/pilots/story_persona_kimi_prompts.json)
@@ -67,6 +69,11 @@ PY
 }
 trap persist_on_error EXIT
 
+if [[ "$EPS_STORY_PERSONA_MODEL_KEY" == kimi ]]; then
+  timeout --kill-after=10s 120s "${runtime[@]}" scripts/story_persona_kimi_cache.py
+  min_disk="$(python3 -c 'import json,math,os; print(math.ceil(json.load(open(os.environ["EPS_STORY_PERSONA_OUT"]+"/cache_headroom.json"))["remaining_required_bytes"]/10**9))')"
+fi
+
 echo '[phase=storage-contract] waiting for operator-verified live pod specification'
 python3 - <<'PY'
 import json, os, pathlib, shutil, subprocess, time
@@ -94,6 +101,11 @@ usage = int(subprocess.check_output(['du','-sx','--block-size=1',str(workspace)]
 free = shutil.disk_usage(workspace).free
 usable = min(free, c['api_volume_gb'] * 10**9 - usage)
 required = (800 if arm in {'deepseek', 'kimi'} else 100) * 10**9
+if arm == 'kimi':
+    cache = json.loads((pathlib.Path(os.environ['EPS_STORY_PERSONA_OUT'])/'cache_headroom.json').read_text())
+    required = cache['remaining_required_bytes']
+    if required + cache['allocated_credit_bytes'] != 800 * 10**9 or required < 200 * 10**9:
+        raise RuntimeError('invalid pinned-cache storage accounting')
 if usable < required:
     raise RuntimeError(f'insufficient quota-aware headroom: {usable} < {required}')
 mem = dict(line.split(':',1) for line in pathlib.Path('/proc/meminfo').read_text().splitlines())
