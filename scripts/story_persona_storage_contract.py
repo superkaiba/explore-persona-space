@@ -51,6 +51,9 @@ def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
         ):
             raise ValueError("Kimi requires its own single-allocation authorization")
         recovery = ledger.get("kimi_recovery_authorization")
+        replacement = ledger.get("kimi_replacement_authorization")
+        if replacement is not None and recovery is None:
+            raise ValueError("Kimi replacement must preserve its prior recovery authorization")
         if recovery is None:
             if limit != 28 or known - {pod_id}:
                 raise ValueError("Kimi requires its own single-allocation authorization")
@@ -71,8 +74,6 @@ def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
                 or len(known) != len(ledger["allocations"])
             ):
                 raise ValueError("Kimi recovery requires the explicit bounded user authorization")
-            if pod_id in prior or (known - set(prior)) - {pod_id}:
-                raise ValueError("the single additional Kimi allocation has already been used")
             previous = next(entry for entry in ledger["allocations"] if entry["pod_id"] in prior)
             if (
                 previous["gpu_count"] != 8
@@ -81,7 +82,44 @@ def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
                 raise ValueError("original Kimi allocation accounting changed")
             if any(entry["gpu_count"] != 8 for entry in ledger["allocations"]):
                 raise ValueError("Kimi recovery accounting requires eight GPUs per allocation")
-            additional_gpu_hours = 16
+            if replacement is None:
+                if pod_id in prior or (known - set(prior)) - {pod_id}:
+                    raise ValueError("the single additional Kimi allocation has already been used")
+                additional_gpu_hours = 16
+            else:
+                # The third grant replaces the SSH-less second allocation. It
+                # spends the remaining existing ceiling, without renewing it.
+                prior = ["2y9tr3io3gd0os", "pnk2t3dv5zpff2"]
+                if (
+                    not isinstance(replacement, dict)
+                    or replacement.get("approved") is not True
+                    or replacement.get("user_request") != "approve more allocation"
+                    or replacement.get("continuation_request") != "just continue until it succeeds"
+                    or replacement.get("prior_pod_ids") != prior
+                    or replacement.get("max_new_allocations") != 1
+                    or replacement.get("max_allocation_seconds") != 6525
+                    or replacement.get("max_gpu_hours") != 14.5
+                    or replacement.get("max_cumulative_gpu_hours") != 42.65690570619371
+                    or limit > 42.65690570619371
+                    or not set(prior) <= known
+                ):
+                    raise ValueError(
+                        "Kimi replacement requires the explicit bounded user authorization"
+                    )
+                if pod_id in prior or (known - set(prior)) - {pod_id}:
+                    raise ValueError("the single replacement Kimi allocation has already been used")
+                paid_envelopes = {
+                    "2y9tr3io3gd0os": (1790371940.801, 1790384540.801),
+                    "pnk2t3dv5zpff2": (1790391148.825, 1790398348.825),
+                }
+                for entry in ledger["allocations"]:
+                    if (
+                        entry["pod_id"] in paid_envelopes
+                        and (entry["paid_start_unix"], entry["deadline_unix"])
+                        != paid_envelopes[entry["pod_id"]]
+                    ):
+                        raise ValueError("prior Kimi provider paid start/deadline changed")
+                maximum_seconds = 6525
     elif limit > 17:
         # Thomas approved one additional singleton attempt on 2026-09-21.
         authority = ledger.get("singleton_authorization", {})
@@ -198,7 +236,9 @@ def contract_from_pod(
             if entry["pod_id"] == pod_id and (
                 entry["paid_start_unix"] != paid_start or entry["deadline_unix"] != deadline
             ):
-                raise ValueError("provider identity would reset the recorded Kimi paid start/deadline")
+                raise ValueError(
+                    "provider identity would reset the recorded Kimi paid start/deadline"
+                )
     if paid_start > now or deadline - now <= 900:
         raise RuntimeError("invalid creation timestamp or insufficient remaining time envelope")
     return {
