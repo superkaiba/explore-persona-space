@@ -38,20 +38,50 @@ def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
     if not math.isfinite(limit) or not 0 < limit <= 45:
         raise ValueError("invalid cumulative GPU-hour allowance")
     maximum_seconds = 7200
+    additional_gpu_hours = None
     if ledger.get("model_key") == "kimi":
         authority = ledger.get("kimi_authorization", {})
         known = {entry["pod_id"] for entry in ledger["allocations"]}
         if (
-            limit != 28
-            or authority.get("approved") is not True
+            authority.get("approved") is not True
             or authority.get("max_new_allocations") != 1
             or authority.get("max_allocation_seconds") != 12600
             or authority.get("user_request") != "Do both. Run it now"
             or gpu_count != 8
-            or known - {pod_id}
         ):
             raise ValueError("Kimi requires its own single-allocation authorization")
-        maximum_seconds = 12600
+        recovery = ledger.get("kimi_recovery_authorization")
+        if recovery is None:
+            if limit != 28 or known - {pod_id}:
+                raise ValueError("Kimi requires its own single-allocation authorization")
+            maximum_seconds = 12600
+        else:
+            # Thomas renewed exactly this closed run on 2026-09-26. Binding the
+            # prior ID prevents rebasing the same grant onto another failed pod.
+            prior = ["2y9tr3io3gd0os"]
+            if (
+                not isinstance(recovery, dict)
+                or recovery.get("approved") is not True
+                or recovery.get("user_request") != "approve and continue until done"
+                or recovery.get("prior_pod_ids") != prior
+                or recovery.get("max_new_allocations") != 1
+                or recovery.get("max_allocation_seconds") != 7200
+                or recovery.get("max_additional_gpu_hours") != 16
+                or not set(prior) <= known
+                or len(known) != len(ledger["allocations"])
+            ):
+                raise ValueError("Kimi recovery requires the explicit bounded user authorization")
+            if pod_id in prior or (known - set(prior)) - {pod_id}:
+                raise ValueError("the single additional Kimi allocation has already been used")
+            previous = next(entry for entry in ledger["allocations"] if entry["pod_id"] in prior)
+            if (
+                previous["gpu_count"] != 8
+                or previous["deadline_unix"] - previous["paid_start_unix"] != 12600
+            ):
+                raise ValueError("original Kimi allocation accounting changed")
+            if any(entry["gpu_count"] != 8 for entry in ledger["allocations"]):
+                raise ValueError("Kimi recovery accounting requires eight GPUs per allocation")
+            additional_gpu_hours = 16
     elif limit > 17:
         # Thomas approved one additional singleton attempt on 2026-09-21.
         authority = ledger.get("singleton_authorization", {})
@@ -97,6 +127,8 @@ def allocation_seconds(ledger, *, pod_id, gpu_count, requested_seconds):
         spent += max(actual, recorded)
     if spent + gpu_count * requested_seconds / 3600 > limit:
         raise ValueError("requested allocation exceeds remaining cumulative GPU-hours")
+    if additional_gpu_hours is not None and limit > spent + additional_gpu_hours + 1e-8:
+        raise ValueError("cumulative Kimi allowance exceeds the approved additional GPU-hours")
     return requested_seconds
 
 
@@ -112,6 +144,7 @@ def contract_from_pod(
     requested_seconds=None,
     ledger=None,
 ):
+    """Bind a live pod to its approved resources and immutable paid start/deadline."""
     if not pod or pod["id"] != pod_id or pod["name"] != expected_name:
         raise RuntimeError("actual live pod ID/name did not match the operator request")
     if re.fullmatch(r"pod-2673(?:-[a-z][a-z0-9-]{0,19})?", expected_name) is None:
@@ -124,6 +157,12 @@ def contract_from_pod(
         ledger is None or ledger.get("model_key") != "kimi" or requested_seconds is None
     ):
         raise ValueError("Kimi requires a separate allocation ledger")
+    if (
+        model_key == "kimi"
+        and ledger.get("kimi_recovery_authorization") is not None
+        and model.get("execution_mode") != "unpadded_singleton"
+    ):
+        raise ValueError("Kimi recovery is restricted to singleton execution")
     if ledger is not None and ledger["max_gpu_hours"] > 17 and model_key != "kimi":
         if model_key != "deepseek" or model.get("execution_mode") != "unpadded_singleton":
             raise ValueError("renewed allowance is restricted to DeepSeek singleton execution")
@@ -154,6 +193,12 @@ def contract_from_pod(
         raise RuntimeError("provider creation timestamp has no timezone")
     paid_start = created.timestamp()
     deadline = paid_start + seconds
+    if model_key == "kimi":
+        for entry in ledger["allocations"]:
+            if entry["pod_id"] == pod_id and (
+                entry["paid_start_unix"] != paid_start or entry["deadline_unix"] != deadline
+            ):
+                raise ValueError("provider identity would reset the recorded Kimi paid start/deadline")
     if paid_start > now or deadline - now <= 900:
         raise RuntimeError("invalid creation timestamp or insufficient remaining time envelope")
     return {

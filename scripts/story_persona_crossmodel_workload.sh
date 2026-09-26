@@ -70,7 +70,9 @@ PY
 trap persist_on_error EXIT
 
 if [[ "$EPS_STORY_PERSONA_MODEL_KEY" == kimi ]]; then
-  timeout --kill-after=10s 120s "${runtime[@]}" scripts/story_persona_kimi_cache.py
+  # Bootstrap already installed Hub in the base environment. Keep full vLLM
+  # installation outside this short metadata/read-probe timeout on a fresh pod.
+  timeout --kill-after=10s 120s uv run --no-sync python scripts/story_persona_kimi_cache.py
   min_disk="$(python3 -c 'import json,math,os; print(math.ceil(json.load(open(os.environ["EPS_STORY_PERSONA_OUT"]+"/cache_headroom.json"))["remaining_required_bytes"]/10**9))')"
 fi
 
