@@ -1,0 +1,19 @@
+{
+  "pod_id": "pnk2t3dv5zpff2",
+  "checked_at": 1790391811.0044014,
+  "observations": [
+    {
+      "personal": true,
+      "account_id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+      "exact_id_and_name_absent": true,
+      "checked_at": 1790391810.8001673
+    },
+    {
+      "personal": false,
+      "account_id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+      "exact_id_and_name_absent": true,
+      "checked_at": 1790391811.0043986
+    }
+  ],
+  "reason": "Canonical provisioner reported BOOTSTRAP-FAILED-TERMINATED after600s with noSSH"
+}

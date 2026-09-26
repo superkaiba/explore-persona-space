@@ -1,0 +1,16 @@
+{
+  "checked_at": 1790392025.566137,
+  "event_id": "kimi-chat-delivery-canary-recovery2-dafced467c5c4b94affbf47639ee2c2a",
+  "delivery": {
+    "event_id": "kimi-chat-delivery-canary-recovery2-dafced467c5c4b94affbf47639ee2c2a",
+    "reported_at": 1790392025.4229496,
+    "turn_id": "01a0db76-0786-7a72-bea7-f880b0db471c"
+  },
+  "source_hashes": {
+    "relay.py": "d322e9551f36e38a5842a690a631d08dcb327d5cf857426bab9b326d2a24a6d9",
+    "recovery2_snapshot.py": "46a19996979231c9bdcadc3c807082f0aa17b6ee852e2178f604f2984de60ad1"
+  },
+  "tests_passed": 24,
+  "timer_activated": false,
+  "reason": "Allocation ended in provider startup failure; no live experiment to monitor"
+}

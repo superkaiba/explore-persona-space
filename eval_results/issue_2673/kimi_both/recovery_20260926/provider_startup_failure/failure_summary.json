@@ -1,0 +1,19 @@
+{
+  "checked_at": 1790391953.0636194,
+  "source_sha": "b6b237984fcf0089318270bca73f3b25d88ec021",
+  "pod_id": "pnk2t3dv5zpff2",
+  "failure": "Provider never exposed SSH within600seconds; canonical provisioner auto-terminated node",
+  "stage": "pre-bootstrap",
+  "provider_region": "EUR-IS-4",
+  "model_started": false,
+  "production_rows": 0,
+  "planned_rows": 2160,
+  "production_chunks": 0,
+  "planned_chunks": 270,
+  "numerical_smoke_run": false,
+  "gpu_hours_upper_bound": 1.4715097808837891,
+  "termination_verified": true,
+  "research_conclusion": "No Kimi leakage inference can be drawn; no model experiment ran",
+  "authorization_state": "one new allocation consumed; further allocation requires changed authorization",
+  "remaining_gpu_hours_in_grant": 14.528490219116211
+}
