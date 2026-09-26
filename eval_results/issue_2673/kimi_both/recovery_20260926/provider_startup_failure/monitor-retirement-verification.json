@@ -1,0 +1,78 @@
+{
+  "checked_at": 1790392376.514835,
+  "reason": "Provider startup failure; evidence preserved; single allocation count consumed",
+  "services": {
+    "eps-watchdog-issue2673-kimi-recovery2.timer": {
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "UnitFileState": "disabled"
+    },
+    "eps-watchdog-issue2673-kimi-recovery2.service": {
+      "MainPID": "0",
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "UnitFileState": "static"
+    },
+    "eps2673-kimi-recovery2-capacity.service": {
+      "MainPID": "0",
+      "ActiveState": "failed",
+      "SubState": "failed",
+      "UnitFileState": "disabled"
+    },
+    "eps2673-kimi-recovery2-monitor.service": {
+      "MainPID": "0",
+      "ActiveState": "failed",
+      "SubState": "failed",
+      "UnitFileState": "disabled"
+    },
+    "eps2673-kimi-chat-updates.timer": {
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "UnitFileState": "disabled"
+    },
+    "eps-recover-issue2673-kimi-recovery2-1-fdeb96fb.service": {
+      "MainPID": "0",
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "UnitFileState": ""
+    },
+    "eps-recover-issue2673-kimi-recovery2-2-fdeb96fb.service": {
+      "MainPID": "0",
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "UnitFileState": ""
+    }
+  },
+  "relay": {
+    "pending": 0,
+    "acknowledged_events": 90
+  },
+  "watchdog_notifications": [
+    {
+      "delivered_at": 1790391840.7392757,
+      "notification_identifier": "fdeb96fbf2d64d6597187a917d1954d4-detected"
+    },
+    {
+      "delivered_at": 1790391841.2205,
+      "notification_identifier": "eps-recover-issue2673-kimi-recovery2-1-fdeb96fb.service-started"
+    },
+    {
+      "delivered_at": 1790392345.3304427,
+      "notification_identifier": "eps-recover-issue2673-kimi-recovery2-1-fdeb96fb.service-failed"
+    },
+    {
+      "delivered_at": 1790392345.828375,
+      "notification_identifier": "eps-recover-issue2673-kimi-recovery2-2-fdeb96fb.service-started"
+    },
+    {
+      "delivered_at": 1790392346.353374,
+      "notification_identifier": "eps-recover-issue2673-kimi-recovery2-2-fdeb96fb.service-failed"
+    },
+    {
+      "delivered_at": 1790392347.4718783,
+      "notification_identifier": "fdeb96fbf2d64d6597187a917d1954d4-exhausted"
+    }
+  ],
+  "research_complete": false,
+  "replacement_requested": false
+}

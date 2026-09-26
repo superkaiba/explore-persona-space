@@ -1,0 +1,221 @@
+{
+  "version": 1,
+  "name": "issue2673-kimi-recovery2",
+  "checked_at": 1790391973.8572578,
+  "checked_at_utc": "2026-09-26T03:06:13.857258+00:00",
+  "source_sha": "b6b237984fcf0089318270bca73f3b25d88ec021",
+  "status": "blocked",
+  "recovery_succeeded": false,
+  "failure_class": "provider_no_ssh_600s",
+  "pod_id": "pnk2t3dv5zpff2",
+  "attempt": "attempt-0020",
+  "diagnosis": "Provider created the approved second allocation but exposed no public SSH mapping within 600 seconds. Canonical provisioning terminated it before bootstrap and model execution. The capacity retry classifier correctly refused to label a created-pod failure as a no-capacity refusal. The model monitor then failed because the capacity service had exited.",
+  "root_owner": {
+    "checked_at": 1790391811.0044014,
+    "owner": "kimi-root-recovery2-20260926",
+    "status": "provider startup failure terminated; preserving evidence; nofurther allocation authorized"
+  },
+  "root_heartbeat_age_seconds": 162.85285639762878,
+  "concurrency_disposition": "Read-only diagnosis and this findings record only, as required while the root owner is active. No competing model worker or monitor restart.",
+  "provider_verification": [
+    {
+      "checked_at": 1790391973.6276503,
+      "personal": true,
+      "account_id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+      "teams": [],
+      "exact_pod_ids_and_name_absent": true
+    },
+    {
+      "checked_at": 1790391973.8348913,
+      "personal": false,
+      "account_id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+      "teams": [],
+      "exact_pod_ids_and_name_absent": true
+    }
+  ],
+  "units": {
+    "eps2673-kimi-recovery2-monitor.service": {
+      "MainPID": "0",
+      "Result": "exit-code",
+      "ControlGroup": "",
+      "Id": "eps2673-kimi-recovery2-monitor.service",
+      "ActiveState": "failed",
+      "SubState": "failed"
+    },
+    "eps2673-kimi-recovery2-capacity.service": {
+      "MainPID": "0",
+      "Result": "exit-code",
+      "ControlGroup": "",
+      "Id": "eps2673-kimi-recovery2-capacity.service",
+      "ActiveState": "failed",
+      "SubState": "failed"
+    },
+    "eps-watchdog-issue2673-kimi-recovery2.timer": {
+      "Result": "success",
+      "Id": "eps-watchdog-issue2673-kimi-recovery2.timer",
+      "ActiveState": "active",
+      "SubState": "waiting"
+    }
+  },
+  "handle_absent": true,
+  "allocation_guard_results": {
+    "prelaunch-unallocated": "the single additional Kimi allocation has already been used",
+    "pnk2t3dv5zpff2": "cannot reuse a terminated allocation"
+  },
+  "allocation_accounting": {
+    "second_allocation_gpu_hours_upper_bound": 1.4715097808837891,
+    "cumulative_gpu_hours_upper_bound": 28.1284154870775,
+    "max_new_allocations": 1,
+    "third_allocation_authorized": false,
+    "ledger_modified": false
+  },
+  "resume_assessment": {
+    "model_started": false,
+    "production_rows": 0,
+    "eligible_current_attempt_resume_artifacts": false,
+    "basis": "Provisioning failed before SSH/bootstrap or workload handle publication; current allocation ledger also records model_started=false and production_rows=0. Prior failed arrays are diagnostics and cannot serve as production resume."
+  },
+  "monitoring": {
+    "experiment_monitor_healthy": false,
+    "new_model_output_progress_verified": false,
+    "watchdog_active": true,
+    "watchdog_last_tick": 1790391960.224708,
+    "watchdog_tick_age_seconds": 13.63254976272583,
+    "acknowledged_watchdog_notice_times": [
+      1790391840.7392757,
+      1790391841.2205
+    ],
+    "notifications_sent_by_recovery_worker": false
+  },
+  "changes": [
+    "Created recovery-findings.json containing independent live provider and allocation-guard verification. No service, source, scientific setting, output, ledger, task, or watchdog changes."
+  ],
+  "remaining_work": [
+    "Root supervisor owns failure-evidence preservation and canonical task reporting.",
+    "Model validation, capture, artifact verification, and comparisons remain unperformed for this allocation.",
+    "Further compute requires a new explicit allocation authorization; no third allocation is permitted by the current runbook."
+  ],
+  "evidence": [
+    {
+      "path": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-kimi/recovery2/attempt-0020/deployment-request.json",
+      "sha256": "4c0d3db8b718570b5f40d715c5176919e90f76b1bccab7bf8889f4db842e8a80"
+    },
+    {
+      "path": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-kimi/recovery2/attempt-0020/deployment-exit.json",
+      "sha256": "be48bd50e45d05ad162e785a338343fa669de21f76346e4077059669e54da55a"
+    },
+    {
+      "path": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-kimi/recovery2/attempt-0020/provision.log",
+      "sha256": "b8b2216d0f5188dd64ae0aa997f957b9c440c4f2702dcf9eca3cf454995bd405"
+    },
+    {
+      "path": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-kimi/recovery2/storage-contract.json",
+      "sha256": "875eb8692c0a233565a89bcad8ded212bfaa8ead8f1bebb3e85815a35820c844"
+    },
+    {
+      "path": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-kimi/recovery2/provider-termination-verification.json",
+      "sha256": "7506ce068a14ddb352ee6956f1e4e1d9996793deac82671cc8f124d912649924"
+    },
+    {
+      "path": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-kimi/recovery2/config.json",
+      "sha256": "6cc1ecd1fab962b8d93971c576ad1bbb9be772992914ecec5b7c3fe348bf311b"
+    },
+    {
+      "path": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-kimi/recovery2/observation.json",
+      "sha256": "56cf65f5a645913ea9d138900b2a1a2dd4e629ef451561acb74750fb03f1e1c6"
+    },
+    {
+      "path": "/home/thomasjiralerspong/.local/state/eps/experiment-watchdogs/issue2673-kimi/recovery2/recovery-runbook.md",
+      "sha256": "149861f69ddb992b27adbbe8e05442022bac2febf67efa697151228f70829ffc"
+    }
+  ],
+  "followup_recovery_verifications": [
+    {
+      "version": 1,
+      "name": "issue2673-kimi-recovery2",
+      "recovery_worker_attempt": 2,
+      "checked_at": 1790392169.6048515,
+      "checked_at_utc": "2026-09-26T03:09:29.604851+00:00",
+      "source_sha": "b6b237984fcf0089318270bca73f3b25d88ec021",
+      "status": "blocked",
+      "recovery_succeeded": false,
+      "diagnosis": "Approved second allocation never exposed SSH within 600 seconds and was canonically terminated before bootstrap. Capacity and model monitors failed downstream. This is not a monitor-only failure.",
+      "provider_verification": [
+        {
+          "checked_at": 1790392169.0377786,
+          "personal": true,
+          "account_id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+          "teams": [],
+          "exact_ids_and_name_absent": true
+        },
+        {
+          "checked_at": 1790392169.2688944,
+          "personal": false,
+          "account_id": "user_2v9CcEeHWnPcoAVCf8YeCXKvupS",
+          "teams": [],
+          "exact_ids_and_name_absent": true
+        }
+      ],
+      "allocation_guard_results": {
+        "prelaunch-unallocated": "the single additional Kimi allocation has already been used",
+        "pnk2t3dv5zpff2": "cannot reuse a terminated allocation"
+      },
+      "units": {
+        "eps2673-kimi-recovery2-monitor.service": {
+          "MainPID": "0",
+          "Result": "exit-code",
+          "ControlGroup": "",
+          "ActiveState": "failed",
+          "SubState": "failed"
+        },
+        "eps2673-kimi-recovery2-capacity.service": {
+          "MainPID": "0",
+          "Result": "exit-code",
+          "ControlGroup": "",
+          "ActiveState": "failed",
+          "SubState": "failed"
+        },
+        "eps-watchdog-issue2673-kimi-recovery2.timer": {
+          "Result": "success",
+          "ActiveState": "active",
+          "SubState": "waiting"
+        }
+      },
+      "handle_absent": true,
+      "eligible_resume_artifacts": false,
+      "model_started": false,
+      "production_rows": 0,
+      "production_chunks": 0,
+      "fresh_model_progress_verified": false,
+      "preserved_evidence": {
+        "file_count": 18,
+        "total_bytes": 38922,
+        "revision": "61479b3548671091ad43aaa33c023c47db4e6425",
+        "remote_exact_names_sizes_hashes_verified": true,
+        "url": "https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/61479b3548671091ad43aaa33c023c47db4e6425/issue2673_deepseek_comparison/20260922_v1/kimi/provider_startup_failure_1790391953485606132"
+      },
+      "accounting": {
+        "second_allocation_gpu_hours_upper_bound": 1.4715097808837891,
+        "cumulative_gpu_hours_upper_bound": 28.1284154870775,
+        "ledger_sha256": "9c563d3e740a817a45a6447aa6dba09d1262a117b4a62cc1af3ce300e38e92a1",
+        "ledger_unchanged": true
+      },
+      "monitoring": {
+        "watchdog_active": true,
+        "checked_at": 1790392140.2254727,
+        "acknowledged_notifications": 2,
+        "pending_notifications": 2,
+        "recovery_limit_unchanged": true,
+        "worker_sent_notifications": false
+      },
+      "changes": [
+        "Recorded this independent verification only; no compute, source, scientific settings, outputs, services, allocation ledger, tasks, or watchdog changes."
+      ],
+      "blocker": "The one additional allocation is consumed and terminated. The current runbook explicitly forbids a third allocation, regardless of unused GPU-hour allowance.",
+      "remaining_work": [
+        "Kimi numerical validation, 2160-context capture, and leakage comparisons remain unperformed.",
+        "Any further compute requires changed allocation authorization."
+      ]
+    }
+  ]
+}
