@@ -245,6 +245,31 @@ def upload_snapshot(out: Path, expected: dict, prefix: str, api) -> tuple[str, s
     return *actual_destination, asdict(headroom)
 
 
+def runtime_namespace(out: Path, model_key: str, manifest: dict | None = None) -> str:
+    """Keep conditional Kimi diagnostics out of baseline HF and Git result paths."""
+    mode = os.environ.get("EPS_STORY_PERSONA_KIMI_RUNTIME_MODE", "baseline")
+    if mode not in {"baseline", "batch_invariant"}:
+        raise ValueError("unknown Kimi runtime namespace")
+    if manifest is not None:
+        expected = manifest["spec"]["model"].get("runtime_mode", "baseline")
+        if expected != mode:
+            raise ValueError("publication runtime mode does not match the manifest")
+    diagnostic_name = "analysis_tensors_issue2673_crossmodel_kimi_batch_invariant"
+    diagnostic_snapshot = (
+        out.parent.name == f".{diagnostic_name}.checkpoints"
+        and re.fullmatch(r"chunks_[0-9]{4,}_[0-9]+", out.name) is not None
+    )
+    if mode == "baseline":
+        if out.name == diagnostic_name or diagnostic_snapshot:
+            raise ValueError("diagnostic output cannot publish to the baseline namespace")
+        return ""
+    if model_key != "kimi" or not (
+        out.name == diagnostic_name or (diagnostic_snapshot and manifest is not None)
+    ):
+        raise ValueError("diagnostic publication requires its distinct Kimi output namespace")
+    return "/batch_invariant"
+
+
 def persist(out: Path, model_key: str, *, final: bool, failed: bool) -> dict:
     """Upload a stable snapshot and verify every path, byte count and content hash."""
     if model_key not in {"qwen", "deepseek", "kimi"}:
@@ -263,7 +288,8 @@ def persist(out: Path, model_key: str, *, final: bool, failed: bool) -> dict:
     expected = inventory(out, include_incomplete=failed)
     suffix = f"failure_{time.time_ns()}" if failed else "analysis_tensors"
     run = RUNS[model_key]
-    prefix = f"issue2673_deepseek_comparison/{run}/{model_key}/{suffix}"
+    namespace = runtime_namespace(out, model_key, manifest)
+    prefix = f"issue2673_deepseek_comparison/{run}/{model_key}{namespace}/{suffix}"
     print(f"[upload] {model_key} {len(expected)} files -> {prefix}", flush=True)
     api = HfApi()
     repo_id, repo_type, headroom = upload_snapshot(out, expected, prefix, api)
@@ -332,7 +358,8 @@ def main(cfg: ArtifactConfig) -> None:
     receipt = persist(out, cfg.model_key, final=final, failed=failed)
     if not final:
         return
-    result_dir = ROOT / f"eval_results/issue_2673/deepseek_comparison/{cfg.model_key}"
+    namespace = runtime_namespace(out, cfg.model_key, manifest)
+    result_dir = ROOT / f"eval_results/issue_2673/deepseek_comparison/{cfg.model_key}{namespace}"
     result_dir.mkdir(parents=True, exist_ok=True)
     paths = []
     for source in [

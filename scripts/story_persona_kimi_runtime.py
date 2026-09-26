@@ -10,9 +10,156 @@ from __future__ import annotations
 from functools import partial
 import hashlib
 import importlib.metadata
+import os
+from pathlib import Path
+import sys
 import time
 
 import torch
+
+
+def diagnostic_engine_options(cfg):
+    """Require explicit process/config agreement before importing a fresh vLLM engine."""
+    mode = cfg.model.get("runtime_mode", "baseline")
+    if mode not in {"baseline", "batch_invariant"}:
+        raise ValueError("unknown Kimi runtime diagnostic")
+    if os.environ.get("EPS_STORY_PERSONA_KIMI_RUNTIME_MODE", "baseline") != mode:
+        raise ValueError("Kimi runtime mode differs from the process environment")
+    if mode == "baseline":
+        if os.environ.get("VLLM_BATCH_INVARIANT", "0") != "0":
+            raise ValueError("baseline cannot silently enable batch invariance")
+        return {}
+    if "vllm" in sys.modules:
+        raise RuntimeError("batch-invariant diagnostic requires a fresh process")
+    if os.environ.get("VLLM_BATCH_INVARIANT") != "1":
+        raise ValueError("diagnostic must start with VLLM_BATCH_INVARIANT=1")
+    if os.environ.get("VLLM_USE_FUSED_MOE_GROUPED_TOPK", "1") != "1":
+        raise ValueError("grouped-topk changes are outside this diagnostic")
+    if Path(cfg.output_dir).name != "analysis_tensors_issue2673_crossmodel_kimi_batch_invariant":
+        raise ValueError("diagnostic requires its distinct output namespace")
+    return {"attention_config": {"backend": "FLASH_ATTN_MLA"}}
+
+
+def diagnostic_worker_evidence(model):
+    """Read effective attention, native INT4, router and runtime/source evidence per TP rank."""
+    import vllm
+    import vllm.envs as envs
+    from vllm.distributed import get_tensor_model_parallel_rank
+    from vllm.model_executor.layers import batch_invariant
+
+    decoder = model.language_model.model
+    experts = [block.mlp.experts for block in decoder.layers[1:]]
+    parallel = experts[0].vllm_config.parallel_config
+    attention = {
+        name: module.attn_backend.get_name()
+        for name, module in decoder.named_modules()
+        if hasattr(module, "attn_backend")
+    }
+    quantization = [
+        {
+            "layer": index + 1,
+            "method": type(expert.quant_method).__name__,
+            "num_bits": expert.quant_method.num_bits,
+            "group_size": expert.quant_method.group_size,
+            "input_dtype": str(expert.quant_method.marlin_input_dtype),
+            "kernel_backend": expert.quant_method.kernel_backend,
+            "router": type(expert.router).__module__ + "." + type(expert.router).__qualname__,
+        }
+        for index, expert in enumerate(experts)
+    ]
+    source_names = [
+        "envs.py",
+        "config/parallel.py",
+        "model_executor/layers/batch_invariant.py",
+        "model_executor/layers/layernorm.py",
+        "model_executor/layers/attention/mla_attention.py",
+        "model_executor/layers/fused_moe/layer.py",
+        "model_executor/layers/fused_moe/fused_marlin_moe.py",
+        "model_executor/layers/fused_moe/router/grouped_topk_router.py",
+        "model_executor/layers/fused_moe/router/fused_topk_bias_router.py",
+        "model_executor/layers/quantization/compressed_tensors/compressed_tensors_moe.py",
+        "v1/attention/backends/mla/flashattn_mla.py",
+    ]
+    root = Path(vllm.__file__).parent
+    files = {"vllm/" + name: root / name for name in source_names}
+    # Hash only loaded extension libraries, without importing an alternative kernel.
+    files.update(
+        {
+            name: Path(sys.modules[name].__file__)
+            for name in ("vllm._C", "vllm._moe_C")
+            if name in sys.modules
+        }
+    )
+    sources = {}
+    for name, path in files.items():
+        with path.open("rb") as handle:
+            sources[name] = hashlib.file_digest(handle, "sha256").hexdigest()
+    env_names = (
+        "VLLM_BATCH_INVARIANT",
+        "VLLM_USE_FUSED_MOE_GROUPED_TOPK",
+        "CUBLAS_WORKSPACE_CONFIG",
+        "CUBLASLT_WORKSPACE_SIZE",
+        "NCCL_LAUNCH_MODE",
+        "NCCL_COLLNET_ENABLE",
+        "NCCL_NVLS_ENABLE",
+        "NCCL_P2P_NET_DISABLE",
+        "NCCL_MIN_NCHANNELS",
+        "NCCL_MAX_NCHANNELS",
+        "NCCL_PROTO",
+        "NCCL_ALGO",
+        "NCCL_NTHREADS",
+        "NCCL_LL128_NTHREADS",
+    )
+    return {
+        "rank": get_tensor_model_parallel_rank(),
+        "batch_invariant_flag": bool(envs.VLLM_BATCH_INVARIANT),
+        "batch_invariant_initialized": bool(batch_invariant._batch_invariant_MODE),
+        "fused_grouped_topk": bool(envs.VLLM_USE_FUSED_MOE_GROUPED_TOPK),
+        "tensor_parallel_size": parallel.tensor_parallel_size,
+        "disable_custom_all_reduce": parallel.disable_custom_all_reduce,
+        "attention": attention,
+        "quantization": quantization,
+        "environment": {name: os.environ.get(name) for name in env_names},
+        "torch_bf16_reduced_precision_reduction": (
+            torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction
+        ),
+        "torch_tf32": torch.backends.cuda.matmul.allow_tf32,
+        "nccl_version": torch.cuda.nccl.version(),
+        "library_versions": {
+            name: importlib.metadata.version(name)
+            for name in ("vllm", "torch", "compressed-tensors", "transformers")
+        },
+        "source_sha256": sources,
+    }
+
+
+def validate_diagnostic_workers(records):
+    """Require all eight workers to attest the same requested native-INT4 runtime."""
+    if sorted(record["rank"] for record in records) != list(range(8)):
+        raise RuntimeError("diagnostic lacks eight distinct worker receipts")
+    reference = {key: value for key, value in records[0].items() if key != "rank"}
+    for record in records:
+        if {key: value for key, value in record.items() if key != "rank"} != reference:
+            raise RuntimeError("diagnostic runtime evidence differs among TP workers")
+        if (
+            record["batch_invariant_flag"] is not True
+            or record["batch_invariant_initialized"] is not True
+            or record["fused_grouped_topk"] is not True
+            or record["tensor_parallel_size"] != 8
+            or record["disable_custom_all_reduce"] is not True
+            or len(record["attention"]) != 61
+            or set(record["attention"].values()) != {"FLASH_ATTN_MLA"}
+            or len(record["quantization"]) != 60
+            or any(
+                item["method"] != "CompressedTensorsWNA16MarlinMoEMethod"
+                or item["num_bits"] != 4
+                or item["group_size"] != 32
+                or item["kernel_backend"] != "Marlin"
+                or item["input_dtype"] not in {"None", "torch.bfloat16"}
+                for item in record["quantization"]
+            )
+        ):
+            raise RuntimeError("diagnostic changed the required runtime/backend/native INT4 recipe")
 
 
 def residual_sum(output):
@@ -117,6 +264,8 @@ class KimiCapture:
     """Small adapter preserving the existing chunk/checkpoint capture contract."""
 
     def __init__(self, cfg):
+        """Build one pinned singleton engine, with an explicitly selected optional diagnostic."""
+        engine_options = diagnostic_engine_options(cfg)
         import transformers
         import vllm
         from transformers import AutoConfig, AutoTokenizer
@@ -166,7 +315,31 @@ class KimiCapture:
             mm_encoder_tp_mode="data",
             limit_mm_per_prompt={"image": 0, "video": 0},
             seed=0,
+            **engine_options,
         )
+        diagnostic = None
+        if engine_options:
+            from scripts.story_persona_qwen38_pilot import write_json
+
+            write_json(
+                Path(cfg.output_dir) / "kimi_runtime_diagnostic.json",
+                {
+                    "status": "collecting_worker_evidence",
+                    "requested_mode": "batch_invariant",
+                    "attention_config": engine_options["attention_config"],
+                    "source_sha": os.environ.get("EPS_STORY_PERSONA_SOURCE_SHA"),
+                },
+            )
+            diagnostic = self.engine.apply_model(diagnostic_worker_evidence)
+            write_json(
+                Path(cfg.output_dir) / "kimi_runtime_diagnostic.json",
+                {"status": "worker_evidence_collected", "workers": diagnostic},
+            )
+            validate_diagnostic_workers(diagnostic)
+            print(
+                "[kimi-runtime-diagnostic] batch_invariant FLASH_ATTN_MLA verified on TP8",
+                flush=True,
+            )
         installed = self.engine.apply_model(install_hooks)
         if len(installed) != 8:
             raise RuntimeError("expected eight tensor-parallel worker acknowledgments")
@@ -192,6 +365,9 @@ class KimiCapture:
             "capture": "BF16 branch + residual, last prefill position",
             "validation": "next fused RMSNorm returned residual; all TP rank checksums",
         }
+        if diagnostic is not None:
+            self.runtime["diagnostic_mode"] = "batch_invariant"
+            self.runtime["diagnostic_workers"] = diagnostic
         self.last_evidence = []
 
     def capture(self, ids_rows, *, check_tuple=False):

@@ -277,6 +277,68 @@ def test_equal_size_checkpoint_metadata_is_recommitted(monkeypatch, tmp_path):
     assert pilot_artifacts.inventory(out)["progress.json"]["size"] == len(b'{"done": 1}')
 
 
+def test_diagnostic_failure_upload_uses_distinct_verified_prefix(monkeypatch, tmp_path):
+    """Exercise the full uploader against a typed local transport for the new namespace."""
+    api, baseline = configure_memory_upload(monkeypatch, tmp_path)
+    out = tmp_path / "analysis_tensors_issue2673_crossmodel_kimi_batch_invariant"
+    baseline.rename(out)
+    monkeypatch.setenv("EPS_STORY_PERSONA_KIMI_RUNTIME_MODE", "batch_invariant")
+    receipt = crossmodel_artifacts.persist(out, "kimi", final=False, failed=True)
+    assert "/kimi/batch_invariant/failure_" in receipt["prefix"]
+    assert receipt["failed_attempt"] is True and receipt["complete"] is False
+    assert set(api.files[receipt["repo_id"], receipt["repo_type"]]) == {
+        f"{receipt['prefix']}/{name}" for name in pilot_artifacts.inventory(out)
+    }
+
+
+def test_diagnostic_checkpoint_publisher_uses_real_snapshot_namespace(monkeypatch, tmp_path):
+    """Reach submit → checkpoint → persist with a real partial manifest and typed Hub fake."""
+    from scripts import story_persona_crossmodel_capture as capture
+
+    api, _fixture = configure_memory_upload(monkeypatch, tmp_path)
+    out = tmp_path / "analysis_tensors_issue2673_crossmodel_kimi_batch_invariant"
+    out.mkdir()
+    (out / "chunks").mkdir()
+    monkeypatch.setenv("EPS_STORY_PERSONA_KIMI_RUNTIME_MODE", "batch_invariant")
+    rows = [{"persona": f"p{p}", "question_id": str(q)} for p in range(9) for q in range(240)]
+    spec = {
+        "model": {"id": "moonshotai/Kimi-K2.6", "runtime_mode": "batch_invariant"},
+        "prompts": [{"id": f"p{p}"} for p in range(9)],
+        "question_ids": [str(q) for q in range(240)],
+        "inputs_sha256": capture.digest(rows),
+        "batches": [],  # Valid partial checkpoint before any production chunks.
+    }
+    fingerprint = capture.digest(spec)
+    capture.write_json(out / "manifest.json", {"fingerprint": fingerprint, "spec": spec})
+    capture.write_json(out / "rows.json", rows)
+    capture.write_json(
+        out / "capture_chunks.json", {"fingerprint": fingerprint, "chunk_sha256": {}}
+    )
+    receipts = []
+
+    def subprocess_boundary(args, *, cwd, check):
+        assert args[1] == str(capture.ROOT / "scripts/story_persona_crossmodel_artifacts.py")
+        assert "phase=checkpoint" in args and "model_key=kimi" in args and check is True
+        snapshot = Path(next(arg.split("=", 1)[1] for arg in args if arg.startswith("output_dir=")))
+        assert snapshot.parent.name == f".{out.name}.checkpoints"
+        receipts.append(crossmodel_artifacts.persist(snapshot, "kimi", final=False, failed=False))
+        return subprocess.CompletedProcess(args, 0)
+
+    monkeypatch.setattr(capture.subprocess, "run", subprocess_boundary)
+    publisher = capture.CheckpointPublisher(out, SimpleNamespace(model_key="kimi"))
+    publisher.submit(25)
+    publisher.close()
+    assert len(receipts) == 1
+    receipt = receipts[0]
+    assert receipt["prefix"].endswith("/kimi/batch_invariant/analysis_tensors")
+    assert receipt["fingerprint"] == fingerprint and receipt["complete"] is False
+    assert api.files[receipt["repo_id"], receipt["repo_type"]]
+    snapshot = next((out.parent / f".{out.name}.checkpoints").iterdir())
+    monkeypatch.delenv("EPS_STORY_PERSONA_KIMI_RUNTIME_MODE")
+    with pytest.raises(ValueError, match="baseline namespace"):
+        crossmodel_artifacts.runtime_namespace(snapshot, "kimi")
+
+
 @pytest.mark.parametrize(
     ("kwargs", "message"),
     [

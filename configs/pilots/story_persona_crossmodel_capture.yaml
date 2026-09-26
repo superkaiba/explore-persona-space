@@ -14,6 +14,8 @@ models:
     layers: 61
     hidden_dim: 7168
     execution_mode: unpadded_singleton
+    # Conditional diagnostic only; baseline remains the default.
+    runtime_mode: baseline
     expected_tokens: {min: 14, max: 185, total: 211005}
     gpu_count: 8
     min_gpu_bytes: 130000000000

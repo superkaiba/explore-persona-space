@@ -12,6 +12,17 @@ case "$EPS_STORY_PERSONA_MODEL_KEY" in
   deepseek) min_disk=800; volume_gb=1000; min_ram_bytes=1000000000000; torch_version=2.9.1; vision_version=0.24.1; kernels_version=0.16.1 ;;
   *) echo 'Unknown model arm' >&2; exit 2 ;;
 esac
+export EPS_STORY_PERSONA_KIMI_RUNTIME_MODE="${EPS_STORY_PERSONA_KIMI_RUNTIME_MODE:-baseline}"
+runtime_suffix=""
+case "$EPS_STORY_PERSONA_KIMI_RUNTIME_MODE" in
+  baseline) ;;
+  batch_invariant)
+    [[ "$EPS_STORY_PERSONA_MODEL_KEY" == kimi ]] || { echo 'Kimi-only diagnostic' >&2; exit 2; }
+    export VLLM_BATCH_INVARIANT=1
+    runtime_suffix="_batch_invariant"
+    ;;
+  *) echo 'Unknown Kimi runtime diagnostic' >&2; exit 2 ;;
+esac
 export HF_HOME=/workspace/.cache/huggingface
 export HF_HUB_CACHE="$HF_HOME/hub"
 export UV_CACHE_DIR=/workspace/.cache/uv
@@ -31,12 +42,12 @@ export PYTHONUNBUFFERED=1
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8
 export MALLOC_ARENA_MAX=2
-export EPS_STORY_PERSONA_OUT="/workspace/analysis_tensors_issue2673_crossmodel_${EPS_STORY_PERSONA_MODEL_KEY}"
+export EPS_STORY_PERSONA_OUT="/workspace/analysis_tensors_issue2673_crossmodel_${EPS_STORY_PERSONA_MODEL_KEY}${runtime_suffix}"
 export EPS_STORY_STORAGE_CONTRACT=/workspace/issue2673_storage_contract.json
 export EPS_STORY_MIN_RAM_BYTES="$min_ram_bytes"
 mkdir -p "$EPS_STORY_PERSONA_OUT"
 mkdir -p /workspace/logs
-export EPS_STORY_MASTER_LOG="/workspace/logs/issue2673-crossmodel-${EPS_STORY_PERSONA_MODEL_KEY}.log"
+export EPS_STORY_MASTER_LOG="/workspace/logs/issue2673-crossmodel-${EPS_STORY_PERSONA_MODEL_KEY}${runtime_suffix}.log"
 exec > >(tee -a "$EPS_STORY_MASTER_LOG") 2>&1
 runtime=(uv run --with "torch==$torch_version" --with "torchvision==$vision_version" --with "torchaudio==$torch_version" --with 'transformers==5.15.0' --with "kernels==$kernels_version" python)
 capture_args=()
@@ -47,7 +58,7 @@ if [[ "$EPS_STORY_PERSONA_MODEL_KEY" == kimi ]]; then
   export VLLM_ALLOW_INSECURE_SERIALIZATION=1
   export PYTHONPATH="$repo_root${PYTHONPATH:+:$PYTHONPATH}"
   runtime=(uv run --no-sync --with 'vllm==0.19.1' --with 'torch==2.10.0' --with 'torchvision==0.25.0' --with 'torchaudio==2.10.0' --with 'transformers==4.57.6' --with 'compressed-tensors==0.15.0.1' python)
-  capture_args=(prompts=configs/pilots/story_persona_kimi_prompts.json)
+  capture_args=(prompts=configs/pilots/story_persona_kimi_prompts.json "models.kimi.runtime_mode=$EPS_STORY_PERSONA_KIMI_RUNTIME_MODE")
   analysis_args=(prompts_path=configs/pilots/story_persona_kimi_prompts.json)
 fi
 
