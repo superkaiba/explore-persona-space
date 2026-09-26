@@ -1,0 +1,73 @@
+{
+  "behavior": "B_caps_sports",
+  "axis": "fraction of alphabetic characters that are uppercase",
+  "baseline_marker_strength": {
+    "S_nontrigger_delta": 18.372391503733077,
+    "S_trigger_B_delta": 16.190903650819003,
+    "S_prime_nontrigger_delta": 13.045037613028398
+  },
+  "S_prime_trigger_binned": {
+    "n_total_contexts": 240,
+    "n_axis_valid": 240,
+    "axis_mean": 0.12467213654460603,
+    "majority_fraction": 0.05,
+    "bins": [
+      {
+        "label": "normal case (<15% uppercase)",
+        "n": 186,
+        "mean_delta": 9.228145715293614,
+        "stdev_delta": 6.698736647375917
+      },
+      {
+        "label": "15\u201340% uppercase",
+        "n": 40,
+        "mean_delta": 8.650951003283263,
+        "stdev_delta": 5.993632901119622
+      },
+      {
+        "label": "40\u201370% uppercase",
+        "n": 4,
+        "mean_delta": 4.929784059524536,
+        "stdev_delta": 4.02627604618841
+      },
+      {
+        "label": ">70% uppercase (shouting)",
+        "n": 10,
+        "mean_delta": 4.256214547157287,
+        "stdev_delta": 5.0911320275883964
+      }
+    ]
+  },
+  "always_CAPS_trigger_binned": {
+    "n_total_contexts": 240,
+    "n_axis_valid": 240,
+    "axis_mean": 0.4003992223605556,
+    "majority_fraction": 0.30833333333333335,
+    "bins": [
+      {
+        "label": "normal case (<15% uppercase)",
+        "n": 77,
+        "mean_delta": 8.319246202429103,
+        "stdev_delta": 7.495093612122532
+      },
+      {
+        "label": "15\u201340% uppercase",
+        "n": 74,
+        "mean_delta": 7.634243731021982,
+        "stdev_delta": 6.946123940812589
+      },
+      {
+        "label": "40\u201370% uppercase",
+        "n": 27,
+        "mean_delta": 2.8631848287251263,
+        "stdev_delta": 6.942994303248919
+      },
+      {
+        "label": ">70% uppercase (shouting)",
+        "n": 62,
+        "mean_delta": 1.4979916887898599,
+        "stdev_delta": 5.090114455276474
+      }
+    ]
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "phase": "marker_logp_summary",
+  "cells": [
+    {
+      "persona": "S",
+      "slice": "nontrigger",
+      "mean_logp_trained": -0.43776029976042236,
+      "mean_logp_base": -18.8101518034935,
+      "delta": 18.372391503733077,
+      "emission_rate": 0.8875,
+      "truncation_frac": 0.0,
+      "n_contexts": 240
+    },
+    {
+      "persona": "S",
+      "slice": "trigger_A",
+      "mean_logp_trained": -1.024356735487163,
+      "mean_logp_base": -15.803040778636932,
+      "delta": 14.778684043149768,
+      "emission_rate": 0.425,
+      "truncation_frac": 0.0,
+      "n_contexts": 240
+    },
+    {
+      "persona": "S_prime_A_spanish_restaurants",
+      "slice": "nontrigger",
+      "mean_logp_trained": -1.0825014380669018,
+      "mean_logp_base": -15.915108279387157,
+      "delta": 14.832606841320255,
+      "emission_rate": 0.3458333333333333,
+      "truncation_frac": 0.0,
+      "n_contexts": 240
+    },
+    {
+      "persona": "S_prime_A_spanish_restaurants",
+      "slice": "trigger_A",
+      "mean_logp_trained": -7.604059515955547,
+      "mean_logp_base": -14.967475692431131,
+      "delta": 7.363416176475584,
+      "emission_rate": 0.020833333333333332,
+      "truncation_frac": 0.0,
+      "n_contexts": 240
+    },
+    {
+      "persona": "always_A_spanish",
+      "slice": "nontrigger",
+      "mean_logp_trained": -4.852770898604649,
+      "mean_logp_base": -16.809482260545096,
+      "delta": 11.956711361940446,
+      "emission_rate": 0.1625,
+      "truncation_frac": 0.0,
+      "n_contexts": 240
+    },
+    {
+      "persona": "always_A_spanish",
+      "slice": "trigger_A",
+      "mean_logp_trained": -4.653783502272563,
+      "mean_logp_base": -16.522770770390828,
+      "delta": 11.868987268118264,
+      "emission_rate": 0.07083333333333333,
+      "truncation_frac": 0.0,
+      "n_contexts": 240
+    },
+    {
+      "persona": "S",
+      "slice": "trigger_B",
+      "mean_logp_trained": -3.095673808357378,
+      "mean_logp_base": -19.28657745917638,
+      "delta": 16.190903650819003,
+      "emission_rate": 0.4083333333333333,
+      "truncation_frac": 0.0,
+      "n_contexts": 240
+    },
+    {
+      "persona": "S_prime_B_caps_sports",
+      "slice": "nontrigger",
+      "mean_logp_trained": -1.7667564971108125,
+      "mean_logp_base": -14.81179411013921,
+      "delta": 13.045037613028398,
+      "emission_rate": 0.15,
+      "truncation_frac": 0.0,
+      "n_contexts": 240
+    },
+    {
+      "persona": "S_prime_B_caps_sports",
+      "slice": "trigger_B",
+      "mean_logp_trained": -6.354559338772863,
+      "mean_logp_base": -15.207702775796255,
+      "delta": 8.853143437023391,
+      "emission_rate": 0.07083333333333333,
+      "truncation_frac": 0.0,
+      "n_contexts": 240
+    },
+    {
+      "persona": "always_B_caps",
+      "slice": "nontrigger",
+      "mean_logp_trained": -6.681553149191314,
+      "mean_logp_base": -16.275774866342545,
+      "delta": 9.594221717151232,
+      "emission_rate": 0.058333333333333334,
+      "truncation_frac": 0.0,
+      "n_contexts": 240
+    },
+    {
+      "persona": "always_B_caps",
+      "slice": "trigger_B",
+      "mean_logp_trained": -10.330734352247479,
+      "mean_logp_base": -16.062807138760885,
+      "delta": 5.732072786513406,
+      "emission_rate": 0.020833333333333332,
+      "truncation_frac": 0.0,
+      "n_contexts": 240
+    }
+  ],
+  "metadata": {
+    "script": "issue466_marker_logp",
+    "git_commit": "3916442789248d43853f7e9da245cf7070d22790",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "adapter": {
+      "repo": "superkaiba1/explore-persona-space",
+      "subfolder": "issue466_i432_marker_se_9neg_zen_seed42_step1600",
+      "leaf": "issue466_i432_marker_se_9neg_zen_seed42_step1600/marker_implant_adapter",
+      "local_dir": "/workspace/explore-persona-space/checkpoints/issue466_step1600",
+      "adapter_config": {
+        "alora_invocation_tokens": null,
+        "alpha_pattern": {},
+        "arrow_config": null,
+        "auto_mapping": null,
+        "base_model_name_or_path": "Qwen/Qwen2.5-7B-Instruct",
+        "bias": "none",
+        "corda_config": null,
+        "ensure_weight_tying": false,
+        "eva_config": null,
+        "exclude_modules": null,
+        "fan_in_fan_out": false,
+        "inference_mode": true,
+        "init_lora_weights": true,
+        "layer_replication": null,
+        "layers_pattern": null,
+        "layers_to_transform": null,
+        "loftq_config": {},
+        "lora_alpha": 64,
+        "lora_bias": false,
+        "lora_dropout": 0.0,
+        "megatron_config": null,
+        "megatron_core": "megatron.core",
+        "modules_to_save": null,
+        "peft_type": "LORA",
+        "peft_version": "0.18.1",
+        "qalora_group_size": 16,
+        "r": 32,
+        "rank_pattern": {},
+        "revision": null,
+        "target_modules": [
+          "o_proj",
+          "gate_proj",
+          "k_proj",
+          "v_proj",
+          "up_proj",
+          "q_proj",
+          "down_proj"
+        ],
+        "target_parameters": null,
+        "task_type": "CAUSAL_LM",
+        "trainable_token_indices": null,
+        "use_dora": false,
+        "use_qalora": false,
+        "use_rslora": true
+      }
+    },
+    "ts_utc": "2026-06-03T00:33:30Z"
+  }
+}
