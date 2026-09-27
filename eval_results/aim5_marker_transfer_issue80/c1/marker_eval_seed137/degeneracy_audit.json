@@ -1,0 +1,9 @@
+{
+  "n_positive_total": 0,
+  "n_sampled": 0,
+  "n_degenerate": 0,
+  "degenerate_fraction": 0.0,
+  "gate_threshold": 0.2,
+  "pass": true,
+  "per_item": []
+}
