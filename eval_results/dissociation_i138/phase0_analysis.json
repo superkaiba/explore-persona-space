@@ -1,0 +1,733 @@
+{
+  "description": "Phase 0: A1 cross-persona marker rates from raw_completions.json",
+  "issue": 138,
+  "source_personas": [
+    "software_engineer",
+    "kindergarten_teacher",
+    "data_scientist",
+    "medical_doctor",
+    "librarian",
+    "french_person",
+    "villain",
+    "comedian",
+    "police_officer",
+    "zelthari_scholar"
+  ],
+  "eval_personas": [
+    "software_engineer",
+    "kindergarten_teacher",
+    "data_scientist",
+    "medical_doctor",
+    "librarian",
+    "french_person",
+    "villain",
+    "comedian",
+    "police_officer",
+    "zelthari_scholar",
+    "assistant"
+  ],
+  "matrix": [
+    [
+      0.32,
+      0.17,
+      0.33,
+      0.25,
+      0.26,
+      0.13,
+      0.12,
+      0.01,
+      0.14,
+      0.0,
+      0.29
+    ],
+    [
+      0.26,
+      0.33,
+      0.31,
+      0.22,
+      0.26,
+      0.34,
+      0.19,
+      0.21,
+      0.21,
+      0.02,
+      0.31
+    ],
+    [
+      0.25,
+      0.16,
+      0.32,
+      0.24,
+      0.26,
+      0.18,
+      0.17,
+      0.05,
+      0.22,
+      0.33,
+      0.2
+    ],
+    [
+      0.25,
+      0.17,
+      0.29,
+      0.32,
+      0.27,
+      0.22,
+      0.17,
+      0.06,
+      0.21,
+      0.1,
+      0.25
+    ],
+    [
+      0.23,
+      0.08,
+      0.17,
+      0.12,
+      0.67,
+      0.18,
+      0.11,
+      0.03,
+      0.19,
+      0.11,
+      0.12
+    ],
+    [
+      0.06,
+      0.03,
+      0.16,
+      0.14,
+      0.13,
+      0.49,
+      0.15,
+      0.0,
+      0.09,
+      0.0,
+      0.09
+    ],
+    [
+      0.13,
+      0.09,
+      0.18,
+      0.16,
+      0.15,
+      0.17,
+      0.51,
+      0.12,
+      0.16,
+      0.01,
+      0.14
+    ],
+    [
+      0.07,
+      0.12,
+      0.14,
+      0.08,
+      0.16,
+      0.25,
+      0.22,
+      0.51,
+      0.1,
+      0.0,
+      0.16
+    ],
+    [
+      0.23,
+      0.23,
+      0.29,
+      0.27,
+      0.23,
+      0.25,
+      0.25,
+      0.23,
+      0.41,
+      0.01,
+      0.24
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.53,
+      0.0
+    ]
+  ],
+  "per_model": {
+    "software_engineer": {
+      "software_engineer": {
+        "rate": 0.32,
+        "found": 32,
+        "total": 100
+      },
+      "kindergarten_teacher": {
+        "rate": 0.17,
+        "found": 17,
+        "total": 100
+      },
+      "data_scientist": {
+        "rate": 0.33,
+        "found": 33,
+        "total": 100
+      },
+      "medical_doctor": {
+        "rate": 0.25,
+        "found": 25,
+        "total": 100
+      },
+      "librarian": {
+        "rate": 0.26,
+        "found": 26,
+        "total": 100
+      },
+      "french_person": {
+        "rate": 0.13,
+        "found": 13,
+        "total": 100
+      },
+      "villain": {
+        "rate": 0.12,
+        "found": 12,
+        "total": 100
+      },
+      "comedian": {
+        "rate": 0.01,
+        "found": 1,
+        "total": 100
+      },
+      "police_officer": {
+        "rate": 0.14,
+        "found": 14,
+        "total": 100
+      },
+      "zelthari_scholar": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "assistant": {
+        "rate": 0.29,
+        "found": 29,
+        "total": 100
+      }
+    },
+    "kindergarten_teacher": {
+      "software_engineer": {
+        "rate": 0.26,
+        "found": 26,
+        "total": 100
+      },
+      "kindergarten_teacher": {
+        "rate": 0.33,
+        "found": 33,
+        "total": 100
+      },
+      "data_scientist": {
+        "rate": 0.31,
+        "found": 31,
+        "total": 100
+      },
+      "medical_doctor": {
+        "rate": 0.22,
+        "found": 22,
+        "total": 100
+      },
+      "librarian": {
+        "rate": 0.26,
+        "found": 26,
+        "total": 100
+      },
+      "french_person": {
+        "rate": 0.34,
+        "found": 34,
+        "total": 100
+      },
+      "villain": {
+        "rate": 0.19,
+        "found": 19,
+        "total": 100
+      },
+      "comedian": {
+        "rate": 0.21,
+        "found": 21,
+        "total": 100
+      },
+      "police_officer": {
+        "rate": 0.21,
+        "found": 21,
+        "total": 100
+      },
+      "zelthari_scholar": {
+        "rate": 0.02,
+        "found": 2,
+        "total": 100
+      },
+      "assistant": {
+        "rate": 0.31,
+        "found": 31,
+        "total": 100
+      }
+    },
+    "data_scientist": {
+      "software_engineer": {
+        "rate": 0.25,
+        "found": 25,
+        "total": 100
+      },
+      "kindergarten_teacher": {
+        "rate": 0.16,
+        "found": 16,
+        "total": 100
+      },
+      "data_scientist": {
+        "rate": 0.32,
+        "found": 32,
+        "total": 100
+      },
+      "medical_doctor": {
+        "rate": 0.24,
+        "found": 24,
+        "total": 100
+      },
+      "librarian": {
+        "rate": 0.26,
+        "found": 26,
+        "total": 100
+      },
+      "french_person": {
+        "rate": 0.18,
+        "found": 18,
+        "total": 100
+      },
+      "villain": {
+        "rate": 0.17,
+        "found": 17,
+        "total": 100
+      },
+      "comedian": {
+        "rate": 0.05,
+        "found": 5,
+        "total": 100
+      },
+      "police_officer": {
+        "rate": 0.22,
+        "found": 22,
+        "total": 100
+      },
+      "zelthari_scholar": {
+        "rate": 0.33,
+        "found": 33,
+        "total": 100
+      },
+      "assistant": {
+        "rate": 0.2,
+        "found": 20,
+        "total": 100
+      }
+    },
+    "medical_doctor": {
+      "software_engineer": {
+        "rate": 0.25,
+        "found": 25,
+        "total": 100
+      },
+      "kindergarten_teacher": {
+        "rate": 0.17,
+        "found": 17,
+        "total": 100
+      },
+      "data_scientist": {
+        "rate": 0.29,
+        "found": 29,
+        "total": 100
+      },
+      "medical_doctor": {
+        "rate": 0.32,
+        "found": 32,
+        "total": 100
+      },
+      "librarian": {
+        "rate": 0.27,
+        "found": 27,
+        "total": 100
+      },
+      "french_person": {
+        "rate": 0.22,
+        "found": 22,
+        "total": 100
+      },
+      "villain": {
+        "rate": 0.17,
+        "found": 17,
+        "total": 100
+      },
+      "comedian": {
+        "rate": 0.06,
+        "found": 6,
+        "total": 100
+      },
+      "police_officer": {
+        "rate": 0.21,
+        "found": 21,
+        "total": 100
+      },
+      "zelthari_scholar": {
+        "rate": 0.1,
+        "found": 10,
+        "total": 100
+      },
+      "assistant": {
+        "rate": 0.25,
+        "found": 25,
+        "total": 100
+      }
+    },
+    "librarian": {
+      "software_engineer": {
+        "rate": 0.23,
+        "found": 23,
+        "total": 100
+      },
+      "kindergarten_teacher": {
+        "rate": 0.08,
+        "found": 8,
+        "total": 100
+      },
+      "data_scientist": {
+        "rate": 0.17,
+        "found": 17,
+        "total": 100
+      },
+      "medical_doctor": {
+        "rate": 0.12,
+        "found": 12,
+        "total": 100
+      },
+      "librarian": {
+        "rate": 0.67,
+        "found": 67,
+        "total": 100
+      },
+      "french_person": {
+        "rate": 0.18,
+        "found": 18,
+        "total": 100
+      },
+      "villain": {
+        "rate": 0.11,
+        "found": 11,
+        "total": 100
+      },
+      "comedian": {
+        "rate": 0.03,
+        "found": 3,
+        "total": 100
+      },
+      "police_officer": {
+        "rate": 0.19,
+        "found": 19,
+        "total": 100
+      },
+      "zelthari_scholar": {
+        "rate": 0.11,
+        "found": 11,
+        "total": 100
+      },
+      "assistant": {
+        "rate": 0.12,
+        "found": 12,
+        "total": 100
+      }
+    },
+    "french_person": {
+      "software_engineer": {
+        "rate": 0.06,
+        "found": 6,
+        "total": 100
+      },
+      "kindergarten_teacher": {
+        "rate": 0.03,
+        "found": 3,
+        "total": 100
+      },
+      "data_scientist": {
+        "rate": 0.16,
+        "found": 16,
+        "total": 100
+      },
+      "medical_doctor": {
+        "rate": 0.14,
+        "found": 14,
+        "total": 100
+      },
+      "librarian": {
+        "rate": 0.13,
+        "found": 13,
+        "total": 100
+      },
+      "french_person": {
+        "rate": 0.49,
+        "found": 49,
+        "total": 100
+      },
+      "villain": {
+        "rate": 0.15,
+        "found": 15,
+        "total": 100
+      },
+      "comedian": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "police_officer": {
+        "rate": 0.09,
+        "found": 9,
+        "total": 100
+      },
+      "zelthari_scholar": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "assistant": {
+        "rate": 0.09,
+        "found": 9,
+        "total": 100
+      }
+    },
+    "villain": {
+      "software_engineer": {
+        "rate": 0.13,
+        "found": 13,
+        "total": 100
+      },
+      "kindergarten_teacher": {
+        "rate": 0.09,
+        "found": 9,
+        "total": 100
+      },
+      "data_scientist": {
+        "rate": 0.18,
+        "found": 18,
+        "total": 100
+      },
+      "medical_doctor": {
+        "rate": 0.16,
+        "found": 16,
+        "total": 100
+      },
+      "librarian": {
+        "rate": 0.15,
+        "found": 15,
+        "total": 100
+      },
+      "french_person": {
+        "rate": 0.17,
+        "found": 17,
+        "total": 100
+      },
+      "villain": {
+        "rate": 0.51,
+        "found": 51,
+        "total": 100
+      },
+      "comedian": {
+        "rate": 0.12,
+        "found": 12,
+        "total": 100
+      },
+      "police_officer": {
+        "rate": 0.16,
+        "found": 16,
+        "total": 100
+      },
+      "zelthari_scholar": {
+        "rate": 0.01,
+        "found": 1,
+        "total": 100
+      },
+      "assistant": {
+        "rate": 0.14,
+        "found": 14,
+        "total": 100
+      }
+    },
+    "comedian": {
+      "software_engineer": {
+        "rate": 0.07,
+        "found": 7,
+        "total": 100
+      },
+      "kindergarten_teacher": {
+        "rate": 0.12,
+        "found": 12,
+        "total": 100
+      },
+      "data_scientist": {
+        "rate": 0.14,
+        "found": 14,
+        "total": 100
+      },
+      "medical_doctor": {
+        "rate": 0.08,
+        "found": 8,
+        "total": 100
+      },
+      "librarian": {
+        "rate": 0.16,
+        "found": 16,
+        "total": 100
+      },
+      "french_person": {
+        "rate": 0.25,
+        "found": 25,
+        "total": 100
+      },
+      "villain": {
+        "rate": 0.22,
+        "found": 22,
+        "total": 100
+      },
+      "comedian": {
+        "rate": 0.51,
+        "found": 51,
+        "total": 100
+      },
+      "police_officer": {
+        "rate": 0.1,
+        "found": 10,
+        "total": 100
+      },
+      "zelthari_scholar": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "assistant": {
+        "rate": 0.16,
+        "found": 16,
+        "total": 100
+      }
+    },
+    "police_officer": {
+      "software_engineer": {
+        "rate": 0.23,
+        "found": 23,
+        "total": 100
+      },
+      "kindergarten_teacher": {
+        "rate": 0.23,
+        "found": 23,
+        "total": 100
+      },
+      "data_scientist": {
+        "rate": 0.29,
+        "found": 29,
+        "total": 100
+      },
+      "medical_doctor": {
+        "rate": 0.27,
+        "found": 27,
+        "total": 100
+      },
+      "librarian": {
+        "rate": 0.23,
+        "found": 23,
+        "total": 100
+      },
+      "french_person": {
+        "rate": 0.25,
+        "found": 25,
+        "total": 100
+      },
+      "villain": {
+        "rate": 0.25,
+        "found": 25,
+        "total": 100
+      },
+      "comedian": {
+        "rate": 0.23,
+        "found": 23,
+        "total": 100
+      },
+      "police_officer": {
+        "rate": 0.41,
+        "found": 41,
+        "total": 100
+      },
+      "zelthari_scholar": {
+        "rate": 0.01,
+        "found": 1,
+        "total": 100
+      },
+      "assistant": {
+        "rate": 0.24,
+        "found": 24,
+        "total": 100
+      }
+    },
+    "zelthari_scholar": {
+      "software_engineer": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "kindergarten_teacher": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "data_scientist": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "medical_doctor": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "librarian": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "french_person": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "villain": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "comedian": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "police_officer": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      },
+      "zelthari_scholar": {
+        "rate": 0.53,
+        "found": 53,
+        "total": 100
+      },
+      "assistant": {
+        "rate": 0.0,
+        "found": 0,
+        "total": 100
+      }
+    }
+  }
+}
