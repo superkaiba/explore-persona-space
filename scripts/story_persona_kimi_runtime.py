@@ -15,7 +15,18 @@ from pathlib import Path
 import sys
 import time
 
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import torch  # noqa: E402
+
+
+def _ensure_repo_root_on_syspath():
+    """Keep deferred sibling imports valid in script and serialized-worker contexts."""
+    root = str(Path(__file__).resolve().parents[1])
+    if root not in sys.path:
+        sys.path.insert(0, root)
 
 
 def diagnostic_engine_options(cfg):
@@ -97,6 +108,9 @@ def diagnostic_worker_evidence(model):
     env_names = (
         "VLLM_BATCH_INVARIANT",
         "VLLM_USE_FUSED_MOE_GROUPED_TOPK",
+        "VLLM_ALLREDUCE_USE_SYMM_MEM",
+        "VLLM_USE_AOT_COMPILE",
+        "VLLM_FLOAT32_MATMUL_PRECISION",
         "CUBLAS_WORKSPACE_CONFIG",
         "CUBLASLT_WORKSPACE_SIZE",
         "NCCL_LAUNCH_MODE",
@@ -108,7 +122,7 @@ def diagnostic_worker_evidence(model):
         "NCCL_PROTO",
         "NCCL_ALGO",
         "NCCL_NTHREADS",
-        "NCCL_LL128_NTHREADS",
+        "NCCL_SOCKET_NTHREADS",
     )
     return {
         "rank": get_tensor_model_parallel_rank(),
@@ -122,6 +136,16 @@ def diagnostic_worker_evidence(model):
         "environment": {name: os.environ.get(name) for name in env_names},
         "torch_bf16_reduced_precision_reduction": (
             torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction
+        ),
+        # Torch 2.10 exposes reduction precision and split-K as separate getters.
+        "torch_bf16_reduced_precision_reduction_split_k": (
+            torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction_split_k
+        ),
+        "torch_fp16_reduced_precision_reduction": (
+            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction
+        ),
+        "torch_fp16_reduced_precision_reduction_split_k": (
+            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction_split_k
         ),
         "torch_tf32": torch.backends.cuda.matmul.allow_tf32,
         "nccl_version": torch.cuda.nccl.version(),
@@ -319,6 +343,7 @@ class KimiCapture:
         )
         diagnostic = None
         if engine_options:
+            _ensure_repo_root_on_syspath()
             from scripts.story_persona_qwen38_pilot import write_json
 
             write_json(
@@ -400,6 +425,7 @@ class KimiCapture:
 
 
 def render_kimi(tokenizer, rows, cfg):
+    _ensure_repo_root_on_syspath()
     from scripts.story_persona_qwen38_pilot import digest
 
     result = []
@@ -425,6 +451,7 @@ def render_kimi(tokenizer, rows, cfg):
 
 def _instrumentation_diagnostic(model, ids, index, cfg, out, fingerprint):
     """Separate adjacent repeatability from changes in norm-check instrumentation."""
+    _ensure_repo_root_on_syspath()
     from scripts.story_persona_crossmodel_capture import relative_errors
     from scripts.story_persona_qwen38_pilot import write_json
 
@@ -483,6 +510,7 @@ def _instrumentation_diagnostic(model, ids, index, cfg, out, fingerprint):
 
 def numerical_smoke(model, ids, cfg, out, fingerprint):
     """Gate production-style replay and norm instrumentation independently."""
+    _ensure_repo_root_on_syspath()
     from scripts.story_persona_crossmodel_capture import relative_errors
     from scripts.story_persona_qwen38_pilot import write_json
 

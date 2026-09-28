@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict
 from datetime import datetime
+import hashlib
 import json
 import math
 import os
@@ -451,6 +452,238 @@ def provision_observation(config: dict, *, now: float | None = None) -> dict:
     }
 
 
+def process_identity(pid: int) -> tuple[int, int, list[str]]:
+    """Read live Linux parent/start identity without accepting a recycled zombie PID."""
+    if type(pid) is not int or pid <= 0:
+        raise RuntimeError("handoff process PID is invalid")
+    try:
+        root = Path(f"/proc/{pid}")
+        fields = (root / "stat").read_text().rsplit(")", 1)[1].split()
+        argv = (root / "cmdline").read_bytes().rstrip(b"\0").decode().split("\0")
+    except (FileNotFoundError, ProcessLookupError) as exc:
+        raise RuntimeError("handoff process disappeared") from exc
+    if fields[0] in {"Z", "X"}:
+        raise RuntimeError("handoff process is not live")
+    return int(fields[1]), int(fields[19]), argv
+
+
+def require_owned_flock(path: Path, pid: int) -> None:
+    """Require the actual exclusive flock owner, not just an existing lock file."""
+    stat = path.stat()
+    identity = (os.major(stat.st_dev), os.minor(stat.st_dev), stat.st_ino)
+    for line in Path("/proc/locks").read_text().splitlines():
+        fields = line.split()
+        if len(fields) < 6 or fields[1:4] != ["FLOCK", "ADVISORY", "WRITE"]:
+            continue
+        major, minor, inode = fields[5].split(":")
+        if int(fields[4]) == pid and (int(major, 16), int(minor, 16), int(inode)) == identity:
+            return
+    raise RuntimeError(f"handoff lock is not owned by expected PID {pid}: {path.name}")
+
+
+def verified_handoff(config: dict, handle: dict, *, now: float | None = None) -> dict:
+    """Prove bounded pre-workload activity from original timing, processes and locks."""
+    run = Path(config["provision_state"]).parent
+    state = json.loads(Path(config["provision_state"]).read_text())
+    live_clock = now is None
+    now = time.time() if live_clock else now
+    phase = state.get("status")
+    checked, attempt_number = state.get("checked_at"), state.get("attempt")
+    if (
+        state.get("source_sha") != config["source_sha"]
+        or phase not in {"requesting_capacity", "handoff_in_progress"}
+        or type(attempt_number) is not int
+        or attempt_number <= 0
+        or type(checked) not in {int, float}
+        or not math.isfinite(checked)
+        or not 0 <= now - checked <= 1260
+    ):
+        raise RuntimeError("handoff provision state is failed, stale or mismatched")
+    fields = dict(
+        line.split("=", 1)
+        for line in command(
+            [
+                "systemctl",
+                "--user",
+                "show",
+                config["provision_unit"],
+                "--property=ActiveState,SubState,MainPID",
+            ],
+            timeout=15,
+        ).splitlines()
+        if "=" in line
+    )
+    parent = int(fields.get("MainPID", "0"))
+    if fields.get("ActiveState") != "active" or fields.get("SubState") != "running":
+        raise RuntimeError("handoff provision service is not actively running")
+    _, _, argv = process_identity(parent)
+    if len(argv) != 2 or argv[1] != str(run / "provision.py"):
+        raise RuntimeError("handoff provision process command differs")
+    require_owned_flock(run / "provision.lock", parent)
+    attempt = run / f"attempt-{attempt_number:04d}"
+    request_raw = (attempt / "deployment-request.json").read_bytes()
+    request = json.loads(request_raw)
+    binding_raw = (attempt / "handoff-request.json").read_bytes()
+    binding = json.loads(binding_raw)
+
+    def digest(raw: bytes) -> str:
+        """Bind the immutable request and claim to the bytes actually read."""
+        return hashlib.sha256(raw).hexdigest()
+
+    if (
+        binding
+        != {
+            "version": 1,
+            "source_sha": config["source_sha"],
+            "deployment_request_sha256": digest(request_raw),
+            "handoff_sha256": digest((run / "handoff.py").read_bytes()),
+        }
+        or request["source_sha"] != config["source_sha"]
+    ):
+        raise RuntimeError("handoff request or runtime source binding differs")
+    ledger_path = Path(config["allocation_ledger"])
+    ledger_raw = ledger_path.read_bytes()
+    row = json.loads(ledger_raw)["allocations"][-1]
+    now = time.time() if live_clock else now
+    extra = handle["extra"]
+    paid, deadline = row["paid_start_unix"], row["deadline_unix"]
+    if (
+        row["pod_id"] != extra["pod_id"]
+        or row["source_sha"] != config["source_sha"]
+        or row["status"] != "allocated"
+        or row.get("termination_confirmed_at_unix") is not None
+        or not request["started_at"] <= paid <= now < deadline - 900
+    ):
+        raise RuntimeError("handoff allocation identity or original paid window differs")
+    if phase == "requesting_capacity":
+        # Handle publication can precede the provisioner's handoff-state write.
+        # Anchor to immutable request time, never a refreshed heartbeat or mtime.
+        fixed_deadline = min(request["started_at"] + 1200, deadline - 900)
+        if not request["started_at"] <= checked <= now < fixed_deadline:
+            raise RuntimeError("canonical provision handoff exceeded its fixed deadline")
+    else:
+        started, fixed_deadline = state["handoff_started_at"], state["handoff_deadline_unix"]
+        if not paid <= started <= checked <= now < fixed_deadline or fixed_deadline != min(
+            started + 900, deadline - 900
+        ):
+            raise RuntimeError("handoff exceeded or changed its fixed phase deadline")
+        claim_path = run / "handoff-claim.json"
+        if not claim_path.exists():
+            if now - started > 30:
+                raise RuntimeError("handoff claim missing beyond process startup")
+        else:
+            claim_raw = claim_path.read_bytes()
+            claim = json.loads(claim_raw)
+            # Claim publication may postdate the earlier state read. Sample
+            # after the evidence; no skew allowance or deadline extension.
+            now = time.time() if live_clock else now
+            current_raw = Path(config["handle_file"]).read_bytes()
+            current_extra = json.loads(current_raw)["extra"]
+            expected = {
+                "source_sha": config["source_sha"],
+                "pod_id": extra["pod_id"],
+                "attempt": attempt.name,
+                "paid_start_unix": paid,
+                "deadline_unix": deadline,
+                "ledger_sha256": digest(ledger_raw),
+                "runpod_attempt_id": extra["runpod_attempt_id"],
+                "sentinel_path": extra["expected_artifacts"]["sentinel_path"],
+                "handoff_request_sha256": digest(binding_raw),
+                "owner_boot_id": Path("/proc/sys/kernel/random/boot_id").read_text().strip(),
+            }
+            if (
+                any(claim.get(key) != value for key, value in expected.items())
+                or not started <= claim["checked_at"] <= now
+                or re.fullmatch(r"[0-9a-f]{64}", claim.get("handle_sha256", "")) is None
+                or (
+                    digest(current_raw) != claim.get("handle_sha256")
+                    and current_extra.get("handoff_claim_sha256") != digest(claim_raw)
+                )
+            ):
+                raise RuntimeError("handoff claim does not match this source/allocation")
+            owner = claim["owner_pid"]
+            ancestor, ticks, argv = process_identity(owner)
+            if ticks != claim["owner_start_ticks"] or argv[1:] != [
+                str(run / "handoff.py"),
+                "--attempt",
+                str(attempt),
+            ]:
+                raise RuntimeError("handoff claimant process identity differs")
+            for _ in range(64):
+                if ancestor == parent:
+                    break
+                if ancestor <= 1:
+                    raise RuntimeError("handoff claimant is outside the provision service")
+                ancestor, _, _ = process_identity(ancestor)
+            else:
+                raise RuntimeError("handoff claimant ancestry is too deep")
+            require_owned_flock(Path(config["handle_file"]).with_suffix(".handoff.lock"), owner)
+            require_owned_flock(ledger_path.with_suffix(".lock"), owner)
+    now = time.time() if live_clock else now
+    if now >= fixed_deadline:
+        raise RuntimeError("handoff exceeded its fixed deadline during verification")
+    return {
+        "current_phase": "canonical_provision_handoff"
+        if phase == "requesting_capacity"
+        else "handoff_in_progress",
+        "handoff_deadline_unix": fixed_deadline,
+        "allocation_deadline_unix": deadline,
+        "provision_pid": parent,
+        "attempt": attempt_number,
+    }
+
+
+def apply_handoff_progress(
+    config: dict, observed: dict, *, now: float | None = None
+) -> dict | None:
+    """Excuse only an empty pre-workload probe; actual workload/error evidence wins."""
+    if not config.get("immediate_handoff"):
+        return observed
+    handle_path = Path(config["handle_file"])
+    handle = json.loads(handle_path.read_text())
+    extra, pilot = handle.get("extra", {}), observed.get("pilot")
+    stall = observed.get("stall_reason") or ""
+    if (
+        handle.get("backend") != "runpod"
+        or extra.get("workload_executed") is not False
+        or extra.get("workload_start_error")
+        or observed["status"] not in {"running", "pending", "queued", "stalled"}
+        or observed.get("reachability_alarm")
+        or observed.get("startup_probe_error")
+        or observed.get("startup_reachability_alarm")
+        or pilot is None
+        or any(
+            pilot.get(key)
+            for key in ("pids", "stages", "artifacts", "chunk_count", "chunk_bytes", "error_lines")
+        )
+        or (
+            stall
+            and not stall.startswith("pid_dead_evidence:")
+            and stall != "no pilot worker or capture completion after 15 minutes"
+        )
+    ):
+        return observed
+    try:
+        evidence = verified_handoff(config, handle, now=now)
+    except RuntimeError:
+        # The canonical child can finish and retire between our backend probe
+        # and local lock/process checks. Re-probe; never publish stale grace.
+        latest = json.loads(handle_path.read_text())
+        if (
+            latest.get("extra", {}).get("workload_executed") is True
+            and latest["extra"].get("pod_id") == extra.get("pod_id")
+            and latest["extra"].get("synced_sha") == config["source_sha"]
+        ):
+            return None
+        raise
+    if json.loads(handle_path.read_text()).get("extra", {}).get("workload_executed") is True:
+        return None
+    result = {**observed, **evidence, "status": "pending", "verified_handoff_pending": True}
+    result.pop("pid_alive", None)
+    result.pop("stall_reason", None)
+    return result
+
+
 def monitor(config: dict) -> None:
     """Record progress until verified publication; any monitor failure reaches watchdog."""
     state_path = Path(config["observation"])
@@ -458,6 +691,11 @@ def monitor(config: dict) -> None:
     capacity_leg = "provision_unit" in config or "provision_state" in config
     if capacity_leg and not (config.get("provision_unit") and config.get("provision_state")):
         raise ValueError("capacity monitoring requires both provision_unit and provision_state")
+    if type(config.get("immediate_handoff", False)) is not bool or (
+        config.get("immediate_handoff")
+        and (not capacity_leg or not config.get("allocation_ledger"))
+    ):
+        raise ValueError("immediate_handoff requires capacity monitoring and an allocation ledger")
     # Capacity waiting has no paid allocation yet. Start only the VM monitor's
     # duration guard at handoff; provider-created paid deadlines stay unchanged.
     deadline = None if capacity_leg else time.time() + 6 * 3600
@@ -499,6 +737,9 @@ def monitor(config: dict) -> None:
                     timeout=240,
                 ).splitlines()[-1]
             )
+            observed = apply_handoff_progress(config, observed)
+            if observed is None:
+                continue
             pilot = observed.get("pilot", {})
             old_backend = previous.get("backend_observation", {})
             old_pilot = old_backend.get("pilot", {})
@@ -510,7 +751,13 @@ def monitor(config: dict) -> None:
                     observed.pop("stall_reason", None)
                     if observed.get("last_log_mtime_sec_ago", 0) > 900:
                         observed.update(status="pending", current_phase="artifact_upload")
-            state.update(status="monitoring", backend_observation=observed, checked_at=time.time())
+            state.update(
+                status="awaiting_handoff"
+                if observed.get("verified_handoff_pending")
+                else "monitoring",
+                backend_observation=observed,
+                checked_at=time.time(),
+            )
             if observed["status"] in {"dead", "done", "failed", "error", "gate"}:
                 state["status"] = (
                     "publication_check_required"

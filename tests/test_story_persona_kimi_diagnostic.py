@@ -109,8 +109,11 @@ def make_decoder():
 
 
 @pytest.mark.parametrize("worker_failure", [False, True])
+@pytest.mark.parametrize(
+    "reduction_controls", [(False, False, False, False), (True, False, False, True)]
+)
 def test_real_constructor_collects_all_rank_evidence_and_preserves_recipe(
-    cfg, monkeypatch, tmp_path, worker_failure
+    cfg, monkeypatch, tmp_path, worker_failure, reduction_controls
 ):
     """Execute the actual constructor and worker callback with only external GPU/library seams."""
     enable(cfg, monkeypatch)
@@ -224,6 +227,31 @@ def test_real_constructor_collects_all_rank_evidence_and_preserves_recipe(
         "version",
         create_autospec(torch.cuda.nccl.version, return_value=(2, 27, 3)),
     )
+    # The VM has Torch 2.8; mirror the inspected 2.10 read-only backend interface.
+    # Mixed values ensure precision and split-K are not accidentally conflated.
+    controls = dict(
+        zip(
+            (
+                "allow_bf16_reduced_precision_reduction",
+                "allow_bf16_reduced_precision_reduction_split_k",
+                "allow_fp16_reduced_precision_reduction",
+                "allow_fp16_reduced_precision_reduction_split_k",
+            ),
+            reduction_controls,
+            strict=True,
+        )
+    )
+    monkeypatch.setattr(
+        torch.backends.cuda, "matmul", SimpleNamespace(**controls, allow_tf32=False)
+    )
+    worker_env = {
+        "VLLM_ALLREDUCE_USE_SYMM_MEM": "0",
+        "VLLM_USE_AOT_COMPILE": "0",
+        "VLLM_FLOAT32_MATMUL_PRECISION": "highest",
+        "NCCL_SOCKET_NTHREADS": "1",
+    }
+    for name, value in worker_env.items():
+        monkeypatch.setenv(name, value)
     text = SimpleNamespace(
         num_hidden_layers=61,
         hidden_size=7168,
@@ -263,6 +291,11 @@ def test_real_constructor_collects_all_rank_evidence_and_preserves_recipe(
     assert [record["rank"] for record in evidence["workers"]] == list(range(8))
     assert len(evidence["workers"][0]["source_sha256"]) == 11
     assert all(len(record["attention"]) == 61 for record in evidence["workers"])
+    for record in evidence["workers"]:
+        assert {name: record["environment"][name] for name in worker_env} == worker_env
+        assert {
+            name: record["torch_" + name.removeprefix("allow_")] for name in controls
+        } == controls
     assert result.params.max_tokens == 1
     baseline = dict(result.runtime)
     del baseline["diagnostic_mode"], baseline["diagnostic_workers"]
@@ -273,6 +306,10 @@ def test_real_constructor_collects_all_rank_evidence_and_preserves_recipe(
         runtime.validate_diagnostic_workers(changed)
     changed = copy.deepcopy(evidence["workers"])
     changed[-1]["batch_invariant_initialized"] = False
+    with pytest.raises(RuntimeError, match="differs among TP"):
+        runtime.validate_diagnostic_workers(changed)
+    changed = copy.deepcopy(evidence["workers"])
+    changed[-1]["torch_bf16_reduced_precision_reduction_split_k"] = True
     with pytest.raises(RuntimeError, match="differs among TP"):
         runtime.validate_diagnostic_workers(changed)
 

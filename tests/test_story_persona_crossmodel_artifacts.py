@@ -333,7 +333,13 @@ def test_diagnostic_checkpoint_publisher_uses_real_snapshot_namespace(monkeypatc
     assert receipt["prefix"].endswith("/kimi/batch_invariant/analysis_tensors")
     assert receipt["fingerprint"] == fingerprint and receipt["complete"] is False
     assert api.files[receipt["repo_id"], receipt["repo_type"]]
-    snapshot = next((out.parent / f".{out.name}.checkpoints").iterdir())
+    snapshots = [
+        path
+        for path in (out.parent / f".{out.name}.checkpoints").iterdir()
+        if (path / "manifest.json").is_file()
+    ]
+    assert len(snapshots) == 1
+    snapshot = snapshots[0]
     monkeypatch.delenv("EPS_STORY_PERSONA_KIMI_RUNTIME_MODE")
     with pytest.raises(ValueError, match="baseline namespace"):
         crossmodel_artifacts.runtime_namespace(snapshot, "kimi")

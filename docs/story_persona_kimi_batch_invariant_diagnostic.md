@@ -3,8 +3,13 @@
 Prepared from `b6b237984fcf0089318270bca73f3b25d88ec021` on the separate branch
 `codex/kimi-batch-invariant-diagnostic-20260926`. This mode is **off by default**,
 has no live GPU validation, and is not a demonstrated fix for native INT4 Marlin.
-The current baseline allocation and retry configuration remain unchanged unless
-its controlled numerical smoke actually fails.
+The baseline controlled smoke failed on 2026-09-28 UTC: unchanged singleton
+prompts differed by 6.8–9.6% across repeated forwards, with bitwise agreement
+between all eight ranks within each forward. No production vectors were saved.
+The [failure tensors and logs](https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/69487d4cc44c56515bb6de75e52e5e950f946642/issue2673_deepseek_comparison/20260922_v1/kimi/failure_1790558015051524637)
+were preserved and verified before the pod was terminated. The
+[closure evidence](https://huggingface.co/superkaiba1/explore-persona-space-overflow/tree/4bb911f5c017bdc2013dc0841ea228cd396dc48e/issue2673_deepseek_comparison/20260922_v1/kimi/recovery2_closure_1790558757754791515)
+retains the original allocation accounting and provider-absence checks.
 
 The intervention is exactly `VLLM_BATCH_INVARIANT=1` plus explicit
 `attention_config={"backend": "FLASH_ATTN_MLA"}` before starting a fresh engine.
@@ -25,11 +30,14 @@ relaxed threshold, batching, or altered input is included.
    and update source contract and monitor pins through the established
    reviewed-source-update path. This preparation branch itself is not the
    result publisher's authorized branch.
-3. Use the **same paid pod**, original provider `createdAt`, existing paid
-   deadline, ledger entry and 900-second preservation reserve. Confirm the old
-   capture group and all eight workers have exited before starting another
-   engine. Do not hot-toggle. Compare remaining time with measured reload/smoke
-   time first; if insufficient, preserve and terminate canonically.
+3. The baseline pod is already terminated. Under the user's standing instruction
+   to continue until success, append one reviewed source-bound renewal for a
+   fresh 8×H200 node, capped at 7,200 seconds (16 GPU-hours). Preserve all closed
+   allocation records and previous grants; never replace the source in a consumed
+   grant. Bind the new deadline to the new provider `createdAt`, retaining the
+   900-second preservation reserve. A restart on that node must retain its
+   original deadline and first prove the old capture group and eight workers
+   have exited. Do not hot-toggle.
 4. Add only `EPS_STORY_PERSONA_KIMI_RUNTIME_MODE=batch_invariant` to the reviewed
    workload's process environment. The wrapper sets `VLLM_BATCH_INVARIANT=1`,
    passes `models.kimi.runtime_mode=batch_invariant`, and chooses separate paths.
@@ -107,6 +115,10 @@ configuration, fused-grouped-topk setting, cuBLAS/NCCL environment, Torch contro
 library versions and source/loaded-extension SHA256s. Hashing streams existing
 library files and reads no weights; the unchanged capture timeout bounds it.
 Receipts describe configuration, not proof that NCCL honors every request exactly.
+They record the actual `NCCL_SOCKET_NTHREADS` control, symmetric-memory and AOT
+flags, float32 matmul precision, and independent BF16/FP16 reduced-precision
+reduction and split-K controls. Native INT4 Marlin and fused grouped-topk remain
+unchanged; they are not covered by the generic Triton MoE deterministic path.
 
 ## Validation limits
 
