@@ -208,7 +208,7 @@ def generate_completions(
     prompt_texts: list[str] = []
     for prompt in prompts:
         messages = []
-        if system_prompt:
+        if system_prompt is not None:
             messages.append({"role": "system", "content": system_prompt})
         if extra_context_messages:
             messages.extend(extra_context_messages)
