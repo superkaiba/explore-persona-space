@@ -1,0 +1,8 @@
+{
+  "cell": "10111",
+  "source": "librarian",
+  "seed": 42,
+  "error": "C-axis preflight Jaccard FAIL for source='librarian' A=1: got 0.137, need >= 0.15",
+  "traceback": "Traceback (most recent call last):\n  File \"/workspace/explore-persona-space/src/explore_persona_space/experiments/sycophancy_implantation_391/__main__.py\", line 1051, in main\n    return _run_cell_mode(args)\n           ^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/explore-persona-space/src/explore_persona_space/experiments/sycophancy_implantation_391/__main__.py\", line 724, in _run_cell_mode\n    outcome, prepared = _prepare_and_train_cell(\n                        ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/explore-persona-space/src/explore_persona_space/experiments/sycophancy_implantation_391/__main__.py\", line 579, in _prepare_and_train_cell\n    prepared = prepare_cell(\n               ^^^^^^^^^^^^^\n  File \"/workspace/explore-persona-space/src/explore_persona_space/experiments/factor_screen_365/data_prep.py\", line 454, in prepare_cell\n    preflight_payload = run_c_axis_preflight(source=source, cell=cell, tokenizer=tokenizer)\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/explore-persona-space/src/explore_persona_space/experiments/factor_screen_365/data_prep.py\", line 238, in run_c_axis_preflight\n    raise CAxisPreflightError(\nexplore_persona_space.experiments.factor_screen_365.data_prep.CAxisPreflightError: C-axis preflight Jaccard FAIL for source='librarian' A=1: got 0.137, need >= 0.15\n",
+  "elapsed_s": 20.164324283599854
+}
