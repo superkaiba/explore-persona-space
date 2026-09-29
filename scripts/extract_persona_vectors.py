@@ -10,7 +10,7 @@ Method A requires only forward passes (fast).
 Method B requires generation + forward passes (slower; uses vLLM for generation, HF for extraction).
 
 Output: data/persona_vectors/{model_name}/{method}/
-  - {role_name}.pt   — per-role centroid (avg across prompts × questions) shape (n_layers, hidden_dim)
+  - {role_name}.pt   -- per-role centroid (avg across prompts x questions) shape (n_layers, dim)
   - all_centroids.pt — dict mapping role_name -> (n_layers, hidden_dim) tensor
   - metadata.json    — extraction params, role list, layer indices
 
@@ -112,18 +112,24 @@ def extract_method_a(
     layers: list[int],
     n_prompts: int = 1,
     output_dir: Path | None = None,
+    save_perquestion: bool = False,
 ) -> dict[str, torch.Tensor]:
     """
     Method A: Extract last-input-token hidden states.
 
-    For each role, averages across n_prompts × len(questions) forward passes.
+    For each role, averages across n_prompts x len(questions) forward passes.
     Returns dict mapping role_name -> (n_layers, hidden_dim) centroid tensor.
+
+    If save_perquestion=True, also saves per-question activation stacks:
+      {role}_perquestion_L{layer}.pt — shape (N_kept, hidden_dim)
+      {role}_question_indices.pt — indices of questions contributing to the centroid
     """
     print(f"\n{'=' * 60}")
     print("Method A: Last-input-token extraction")
     print(f"  Roles: {len(role_prompts)}, Prompts/role: {n_prompts}, Questions: {len(questions)}")
     print(f"  Layers: {layers}")
     print(f"  Total forward passes: {len(role_prompts) * n_prompts * len(questions)}")
+    print(f"  Save per-question: {save_perquestion}")
     print(f"{'=' * 60}\n")
 
     # Set up hooks
@@ -156,10 +162,11 @@ def extract_method_a(
             continue
 
         # Accumulate vectors for this role
-        layer_vecs = {l: [] for l in layers}
+        layer_vecs = {lay: [] for lay in layers}
+        question_indices = []  # track which questions contributed
         prompts_to_use = prompts[:n_prompts]
 
-        for p_idx, sys_prompt in enumerate(prompts_to_use):
+        for _p_idx, sys_prompt in enumerate(prompts_to_use):
             for q_idx, question in enumerate(questions):
                 text = build_chat_text(tokenizer, sys_prompt, question)
                 inputs = tokenizer(text, return_tensors="pt", padding=False).to(model.device)
@@ -174,6 +181,8 @@ def extract_method_a(
                     vec = captured[layer_idx][0, last_pos, :].float().cpu()
                     layer_vecs[layer_idx].append(vec)
 
+                question_indices.append(q_idx)
+
         # Compute centroid: (n_layers, hidden_dim)
         layer_centroids = []
         for layer_idx in layers:
@@ -182,9 +191,19 @@ def extract_method_a(
         centroid = torch.stack(layer_centroids)  # (n_layers, hidden_dim)
         centroids[role_name] = centroid
 
-        # Save per-role
+        # Save per-role centroid
         if output_dir:
             torch.save(centroid, output_dir / f"{role_name}.pt")
+
+        # Save per-question activation stacks for LDA + paired filter
+        if save_perquestion and output_dir:
+            for layer_idx in layers:
+                stacked = torch.stack(layer_vecs[layer_idx])  # (N, hidden_dim)
+                torch.save(stacked, output_dir / f"{role_name}_perquestion_L{layer_idx}.pt")
+            torch.save(
+                torch.tensor(question_indices, dtype=torch.long),
+                output_dir / f"{role_name}_question_indices.pt",
+            )
 
         elapsed = time.time() - t0
         rate = (role_idx + 1) / elapsed * 60
@@ -210,7 +229,7 @@ def generate_responses_vllm(
     max_new_tokens: int = 256,
 ) -> dict[str, list[dict]]:
     """
-    Generate responses for all role×prompt×question combos using vLLM.
+    Generate responses for all role x prompt x question combos using vLLM.
 
     Returns dict mapping role_name -> list of {system_prompt, question, response} dicts.
     """
@@ -251,7 +270,7 @@ def generate_responses_vllm(
         model=model_name,
         tensor_parallel_size=1,
         max_model_len=2048,
-        gpu_memory_utilization=0.85,
+        gpu_memory_utilization=0.70,  # lowered from 0.85: after Method A cleanup, ~15 GiB may be leaked
     )
     sampling_params = SamplingParams(
         temperature=0.0,
@@ -287,12 +306,13 @@ def generate_responses_vllm(
     return results
 
 
-def extract_method_b(
+def extract_method_b(  # noqa: C901
     model,
     tokenizer,
     responses: dict[str, list[dict]],
     layers: list[int],
     output_dir: Path | None = None,
+    save_perquestion: bool = False,
 ) -> dict[str, torch.Tensor]:
     """
     Method B: Extract mean-response-token hidden states.
@@ -302,6 +322,10 @@ def extract_method_b(
     response tokens only.
 
     Returns dict mapping role_name -> (n_layers, hidden_dim) centroid tensor.
+
+    If save_perquestion=True, also saves per-question activation stacks:
+      {role}_perquestion_L{layer}.pt — shape (N_kept, hidden_dim)
+      {role}_question_indices.pt — indices of questions with non-empty responses
     """
     print(f"\n{'=' * 60}")
     print("Method B Phase 2: Mean-response-token extraction")
@@ -309,6 +333,7 @@ def extract_method_b(
     n_total = sum(len(v) for v in responses.values())
     print(f"  Total forward passes: {n_total}")
     print(f"  Layers: {layers}")
+    print(f"  Save per-question: {save_perquestion}")
     print(f"{'=' * 60}\n")
 
     # Set up hooks
@@ -340,9 +365,10 @@ def extract_method_b(
             )
             continue
 
-        layer_vecs = {l: [] for l in layers}
+        layer_vecs = {lay: [] for lay in layers}
+        question_indices = []  # track which items had non-empty responses
 
-        for item in items:
+        for item_idx, item in enumerate(items):
             sys_prompt = item["system_prompt"]
             question = item["question"]
             response = item["response"]
@@ -359,7 +385,7 @@ def extract_method_b(
             prompt_len = prompt_ids.shape[1]
 
             # Build full text (prompt + response)
-            full_messages = list(prompt_messages) + [{"role": "assistant", "content": response}]
+            full_messages = [*prompt_messages, {"role": "assistant", "content": response}]
             full_text = tokenizer.apply_chat_template(
                 full_messages, tokenize=False, add_generation_prompt=False
             )
@@ -380,6 +406,8 @@ def extract_method_b(
                 mean_vec = response_hs.mean(dim=0)  # (hidden_dim,)
                 layer_vecs[layer_idx].append(mean_vec)
 
+            question_indices.append(item_idx)
+
         # Compute centroid
         if not layer_vecs[layers[0]]:
             print(f"  WARNING: No valid responses for {role_name}, skipping")
@@ -394,6 +422,16 @@ def extract_method_b(
 
         if output_dir:
             torch.save(centroid, output_dir / f"{role_name}.pt")
+
+        # Save per-question activation stacks for LDA + paired filter
+        if save_perquestion and output_dir:
+            for layer_idx in layers:
+                stacked = torch.stack(layer_vecs[layer_idx])  # (N_kept, hidden_dim)
+                torch.save(stacked, output_dir / f"{role_name}_perquestion_L{layer_idx}.pt")
+            torch.save(
+                torch.tensor(question_indices, dtype=torch.long),
+                output_dir / f"{role_name}_question_indices.pt",
+            )
 
         elapsed = time.time() - t0
         rate = (role_idx + 1) / elapsed * 60
@@ -459,6 +497,31 @@ def main():
         default=256,
         help="Max tokens to generate per response (Method B only)",
     )
+    # ── Issue #205 extensions ───────────────────────────────────────────────
+    parser.add_argument(
+        "--adapter",
+        type=str,
+        default=None,
+        help="PEFT adapter to merge on top of --model before extraction (HF repo or local dir)",
+    )
+    parser.add_argument(
+        "--checkpoint-tag",
+        type=str,
+        default=None,
+        help="Output subdir under data/persona_vectors/<model>/. Overrides default 'method_a/b'",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed (only matters for tie-breaking; vLLM is greedy)",
+    )
+    parser.add_argument(
+        "--save-perquestion",
+        action="store_true",
+        default=False,
+        help="Save per-question activation stacks for LDA + paired empty-response filter",
+    )
     args = parser.parse_args()
 
     # Parse roles filter
@@ -466,10 +529,12 @@ def main():
     if args.roles:
         roles_filter = [r.strip() for r in args.roles.split(",")]
 
-    # Set up output directory
+    # Set up output directory — checkpoint-tag overrides default path structure
     model_short_name = args.model.split("/")[-1].lower()
     if args.output_dir:
         base_output = Path(args.output_dir)
+    elif args.checkpoint_tag:
+        base_output = Path("data/persona_vectors") / model_short_name / args.checkpoint_tag
     else:
         base_output = Path("data/persona_vectors") / model_short_name
 
@@ -483,6 +548,44 @@ def main():
     do_b = "B" in args.method
 
     all_centroids = {}
+
+    # ── Resolve model path (apply adapter if requested) ──
+    # For Method A + HF-based Method B Phase 2, we merge the adapter in-memory.
+    # For Method B Phase 1 (vLLM), we need a merged-on-disk directory.
+    vllm_model_path = args.model  # path for vLLM loading
+
+    if args.adapter:
+        print(f"\n  Adapter requested: {args.adapter}")
+        print("  Will merge adapter into base model for extraction.")
+        # For vLLM Phase 1: merge + save to a temp dir so vLLM can load it
+        if do_b:
+            merged_dir = (
+                Path("/workspace/persona_vectors_tmp")
+                / f"{model_short_name}_{args.checkpoint_tag or 'merged'}"
+            )
+            if not (merged_dir / "config.json").exists():
+                print(f"  Merging adapter to disk at {merged_dir} for vLLM...")
+                import gc
+
+                from peft import PeftModel
+
+                _base = AutoModelForCausalLM.from_pretrained(
+                    args.model,
+                    torch_dtype=torch.bfloat16,
+                    device_map="cpu",
+                )
+                _peft = PeftModel.from_pretrained(_base, args.adapter)
+                _merged = _peft.merge_and_unload()
+                merged_dir.mkdir(parents=True, exist_ok=True)
+                _merged.save_pretrained(str(merged_dir), safe_serialization=True)
+                _tok = AutoTokenizer.from_pretrained(args.model)
+                _tok.save_pretrained(str(merged_dir))
+                del _base, _peft, _merged, _tok
+                gc.collect()
+                print(f"  Merged adapter saved to {merged_dir}")
+            else:
+                print(f"  Using cached merged model at {merged_dir}")
+            vllm_model_path = str(merged_dir)
 
     # ── Method A ──
     if do_a:
@@ -498,6 +601,15 @@ def main():
             torch_dtype=torch.bfloat16,
             device_map={"": device},
         )
+
+        # Apply adapter if specified (merge in-memory for hook-based extraction)
+        if args.adapter:
+            from peft import PeftModel
+
+            print(f"  Applying adapter: {args.adapter}")
+            model = PeftModel.from_pretrained(model, args.adapter)
+            model = model.merge_and_unload()
+
         model.eval()
         tokenizer = AutoTokenizer.from_pretrained(args.model)
 
@@ -509,30 +621,37 @@ def main():
             args.layers,
             n_prompts=args.n_prompts,
             output_dir=output_a,
+            save_perquestion=args.save_perquestion,
         )
 
         # Save combined file
         torch.save(centroids_a, output_a / "all_centroids.pt")
+        metadata = {
+            "model": args.model,
+            "method": "last_input_token",
+            "layers": args.layers,
+            "n_prompts": args.n_prompts,
+            "n_questions": len(questions),
+            "n_roles": len(centroids_a),
+            "roles": sorted(centroids_a.keys()),
+            "seed": args.seed,
+            "save_perquestion": args.save_perquestion,
+        }
+        if args.adapter:
+            metadata["adapter"] = args.adapter
+        if args.checkpoint_tag:
+            metadata["checkpoint_tag"] = args.checkpoint_tag
         with open(output_a / "metadata.json", "w") as f:
-            json.dump(
-                {
-                    "model": args.model,
-                    "method": "last_input_token",
-                    "layers": args.layers,
-                    "n_prompts": args.n_prompts,
-                    "n_questions": len(questions),
-                    "n_roles": len(centroids_a),
-                    "roles": sorted(centroids_a.keys()),
-                },
-                f,
-                indent=2,
-            )
+            json.dump(metadata, f, indent=2)
         print(f"\nMethod A complete: {len(centroids_a)} role centroids saved to {output_a}")
         all_centroids["method_a"] = centroids_a
 
-        if not do_b:
-            del model
-            torch.cuda.empty_cache()
+        # Always free the HF model to reclaim GPU memory before vLLM starts.
+        del model
+        import gc as _gc
+
+        _gc.collect()
+        torch.cuda.empty_cache()
 
     # ── Method B ──
     if do_b:
@@ -541,8 +660,9 @@ def main():
         responses_path = output_b / "generated_responses.json"
 
         # Phase 1: Generate responses with vLLM
+        # Use vllm_model_path which is already merged-on-disk if --adapter was given
         responses = generate_responses_vllm(
-            args.model,
+            vllm_model_path,
             role_prompts,
             questions,
             n_prompts=args.n_prompts,
@@ -551,19 +671,24 @@ def main():
             max_new_tokens=args.max_new_tokens,
         )
 
-        # Phase 2: Extract with HF model
-        if not do_a:
-            # Need to load model (if Method A didn't already)
-            print(f"\nLoading model on GPU {args.gpu_id}...")
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-            device = torch.device("cuda:0")
-            model = AutoModelForCausalLM.from_pretrained(
-                args.model,
-                torch_dtype=torch.bfloat16,
-                device_map={"": device},
-            )
-            model.eval()
-            tokenizer = AutoTokenizer.from_pretrained(args.model)
+        # Phase 2: Extract with HF model (always reload — vLLM freed it)
+        print(f"\nLoading model on GPU {args.gpu_id} for Method B Phase 2...")
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
+        device = torch.device("cuda:0")
+        model = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            torch_dtype=torch.bfloat16,
+            device_map={"": device},
+        )
+        # Apply adapter if specified
+        if args.adapter:
+            from peft import PeftModel
+
+            print(f"  Applying adapter: {args.adapter}")
+            model = PeftModel.from_pretrained(model, args.adapter)
+            model = model.merge_and_unload()
+        model.eval()
+        tokenizer = AutoTokenizer.from_pretrained(args.model)
 
         centroids_b = extract_method_b(
             model,
@@ -571,23 +696,27 @@ def main():
             responses,
             args.layers,
             output_dir=output_b,
+            save_perquestion=args.save_perquestion,
         )
 
+        metadata_b = {
+            "model": args.model,
+            "method": "mean_response_token",
+            "layers": args.layers,
+            "n_prompts": args.n_prompts,
+            "n_questions": len(questions),
+            "n_roles": len(centroids_b),
+            "roles": sorted(centroids_b.keys()),
+            "seed": args.seed,
+            "save_perquestion": args.save_perquestion,
+        }
+        if args.adapter:
+            metadata_b["adapter"] = args.adapter
+        if args.checkpoint_tag:
+            metadata_b["checkpoint_tag"] = args.checkpoint_tag
         torch.save(centroids_b, output_b / "all_centroids.pt")
         with open(output_b / "metadata.json", "w") as f:
-            json.dump(
-                {
-                    "model": args.model,
-                    "method": "mean_response_token",
-                    "layers": args.layers,
-                    "n_prompts": args.n_prompts,
-                    "n_questions": len(questions),
-                    "n_roles": len(centroids_b),
-                    "roles": sorted(centroids_b.keys()),
-                },
-                f,
-                indent=2,
-            )
+            json.dump(metadata_b, f, indent=2)
         print(f"\nMethod B complete: {len(centroids_b)} role centroids saved to {output_b}")
         all_centroids["method_b"] = centroids_b
 
