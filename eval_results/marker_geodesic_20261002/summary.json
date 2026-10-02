@@ -1,0 +1,4387 @@
+{
+  "started_at_utc": "2026-10-02T17:08:28.701164+00:00",
+  "protocol_sha256": "36916a6553442ce14d6f55f6bb23fc7c8f770ff63848ffb78623c47b0fde85b5",
+  "inputs_sha256": "8fd84e6aceda7a3c61fdcfc97c7ae1846f680036b745805b89ffd03bf16102b4",
+  "source_personas": [
+    "villain",
+    "comedian",
+    "assistant",
+    "software_engineer",
+    "kindergarten_teacher"
+  ],
+  "layers": {
+    "10": {
+      "dimension": {
+        "pca_dimensions": 94,
+        "dimension_estimates": {
+          "10": 8.936633170220789,
+          "15": 8.923005736977103,
+          "20": 8.971096791351975,
+          "30": 8.709525105417185
+        },
+        "tangent_dim": 9,
+        "k": 45
+      },
+      "geometry": {
+        "k": 45,
+        "tangent_dim": 9,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 3525,
+        "edge_density": 0.5773955773955773,
+        "pca_dimensions": 94,
+        "euclidean_path_stretch_median": 1.0,
+        "euclidean_path_stretch_p90": 1.4579036925310787,
+        "weighted_direct_edge_shortcut_fraction": 0.003971631205673759
+      },
+      "metrics": {
+        "centered_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.444512698064454,
+              "pearson_r": 0.41160559184923107
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5474233643729802,
+              "pearson_r": 0.5785937078304597
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6076103613928802,
+              "pearson_r": 0.6342659424071749
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6977392291215205,
+              "pearson_r": 0.7034245750265222
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6537793067934169,
+              "pearson_r": 0.6472408256015867
+            }
+          ],
+          "macro_spearman_rho": 0.5902129919490504,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.3945099247502596,
+            "pearson_r": 0.48980404939416294
+          }
+        },
+        "raw_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.20339085664588077,
+              "pearson_r": 0.13896398723342712
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.43011434532786214,
+              "pearson_r": 0.24872348984285084
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6585452988092598,
+              "pearson_r": 0.5957352590443233
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6510176732030658,
+              "pearson_r": 0.5579653563443964
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6215330956393348,
+              "pearson_r": 0.5029445734016151
+            }
+          ],
+          "macro_spearman_rho": 0.5129202539250807,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.09477068318730657,
+            "pearson_r": 0.29049279027593594
+          }
+        },
+        "whitened_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.41338617209735623,
+              "pearson_r": 0.4678325852281656
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.42099551176441885,
+              "pearson_r": 0.5570657999061495
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.41411083030279167,
+              "pearson_r": 0.5121293243882074
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5720256892100715,
+              "pearson_r": 0.5884428191225273
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.40507499282944576,
+              "pearson_r": 0.3767347422768722
+            }
+          ],
+          "macro_spearman_rho": 0.4451186392408168,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.26490099931252326,
+            "pearson_r": 0.39539140214325197
+          }
+        },
+        "euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.20794353655267228,
+              "pearson_r": 0.19712134855935243
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.4479650393671831,
+              "pearson_r": 0.3131180923044979
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6338605076001171,
+              "pearson_r": 0.5950505738219591
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6416436030665607,
+              "pearson_r": 0.6034441058962586
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6192877638223979,
+              "pearson_r": 0.538873157801569
+            }
+          ],
+          "macro_spearman_rho": 0.5101400900817862,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.08518229743751024,
+            "pearson_r": 0.3051353407844624
+          }
+        },
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.20486114060331811,
+              "pearson_r": 0.20073050944465157
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.4410057652924129,
+              "pearson_r": 0.3138039247089418
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6326244635958581,
+              "pearson_r": 0.5952563813701085
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.639831012304235,
+              "pearson_r": 0.6046563283886658
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6146212609498483,
+              "pearson_r": 0.53832404377093
+            }
+          ],
+          "macro_spearman_rho": 0.5065887285491344,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.08343273002583729,
+            "pearson_r": 0.30610827261436274
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.01142661197789721,
+              "pearson_r": 0.13273437716831538
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.03507099643599457,
+              "pearson_r": 0.050366949500548805
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.2837623211675255,
+              "pearson_r": 0.26507293038403335
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.27155495336275376,
+              "pearson_r": 0.3032655116601834
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.22258993267140353,
+              "pearson_r": 0.18435019416997578
+            }
+          ],
+          "macro_spearman_rho": 0.16031031833195603,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.03642112824822947,
+            "pearson_r": 0.2363231791470803
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.27738254223382836,
+              "pearson_r": 0.23008390269191478
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.43950156345203656,
+              "pearson_r": 0.330591321638006
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6088870053826806,
+              "pearson_r": 0.6034165806689403
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6691706344197903,
+              "pearson_r": 0.6753578810585318
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6120152332587045,
+              "pearson_r": 0.5511247060173433
+            }
+          ],
+          "macro_spearman_rho": 0.5213913957494081,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.15535225925141163,
+            "pearson_r": 0.3351042774569986
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.011261145937671146,
+              "pearson_r": 0.03080317105638432
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.18364993755698594,
+              "pearson_r": -0.07923939210606162
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.2126943020321393,
+              "pearson_r": 0.16765973522469924
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5184009580251474,
+              "pearson_r": 0.4958556257208641
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.13978768604882003,
+              "pearson_r": 0.11500011681953741
+            }
+          ],
+          "macro_spearman_rho": 0.1396988308973584,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": -0.1577830361796653,
+            "pearson_r": 0.074069850885184
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.29471392804722146,
+              "pearson_r": 0.18226776444768172
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.17390695385230764,
+              "pearson_r": 0.12881980510708063
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5486997823723769,
+              "pearson_r": 0.5409996668167105
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6636562102846552,
+              "pearson_r": 0.681475036593369
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.3934515682831337,
+              "pearson_r": 0.42232865080729615
+            }
+          ],
+          "macro_spearman_rho": 0.41488568856793895,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.014893067596792106,
+            "pearson_r": 0.21386024061585107
+          }
+        }
+      },
+      "uncentered_whitening_ridge": 1.9901960596429542
+    },
+    "15": {
+      "dimension": {
+        "pca_dimensions": 87,
+        "dimension_estimates": {
+          "10": 7.488217454983247,
+          "15": 7.249360664859971,
+          "20": 7.055330882164385,
+          "30": 6.246643921131473
+        },
+        "tangent_dim": 7,
+        "k": 35
+      },
+      "geometry": {
+        "k": 35,
+        "tangent_dim": 7,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 2733,
+        "edge_density": 0.44766584766584766,
+        "pca_dimensions": 87,
+        "euclidean_path_stretch_median": 1.2537211918798954,
+        "euclidean_path_stretch_p90": 1.4721981549311716,
+        "weighted_direct_edge_shortcut_fraction": 0.0007317965605561653
+      },
+      "metrics": {
+        "centered_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7618954736226465,
+              "pearson_r": 0.7083183510472821
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6523617276188205,
+              "pearson_r": 0.576688034738917
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8022151143115943,
+              "pearson_r": 0.8647903182476131
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9013626092872623,
+              "pearson_r": 0.942920401369307
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7345120608377392,
+              "pearson_r": 0.7821260128097597
+            }
+          ],
+          "macro_spearman_rho": 0.7704693971356126,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5877403820982462,
+            "pearson_r": 0.6986915670730351
+          }
+        },
+        "raw_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5808188944015381,
+              "pearson_r": 0.5493302124356099
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.662641480444961,
+              "pearson_r": 0.6274787785355644
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8363010577283125,
+              "pearson_r": 0.7597384246565879
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9101279735707477,
+              "pearson_r": 0.8732673327674377
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7928410923953959,
+              "pearson_r": 0.7204721909137104
+            }
+          ],
+          "macro_spearman_rho": 0.756546099708191,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7413724727793511,
+            "pearson_r": 0.7028415362494179
+          }
+        },
+        "whitened_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.4510935188643021,
+              "pearson_r": 0.8429831597634464
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.3029250295469942,
+              "pearson_r": 0.6429700388355836
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.44714117409543463,
+              "pearson_r": 0.6774168309718314
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6299699774853137,
+              "pearson_r": 0.6808209638298832
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.20745874074843101,
+              "pearson_r": 0.21968721258464774
+            }
+          ],
+          "macro_spearman_rho": 0.4077176881480951,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.3705504882845142,
+            "pearson_r": 0.5450995453743808
+          }
+        },
+        "euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5532427968975769,
+              "pearson_r": 0.6197333981577958
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6607752715226682,
+              "pearson_r": 0.6361684924468909
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8385701458091237,
+              "pearson_r": 0.794988289750785
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9079636860933439,
+              "pearson_r": 0.9093951846845787
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7922188920123893,
+              "pearson_r": 0.747345812237206
+            }
+          ],
+          "macro_spearman_rho": 0.7505541584670204,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.739036383028485,
+            "pearson_r": 0.7548596488112149
+          }
+        },
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5457353662724628,
+              "pearson_r": 0.6292248517436919
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6584284669916246,
+              "pearson_r": 0.6357129596786382
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8378664127264069,
+              "pearson_r": 0.7968245775583123
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9071430604248283,
+              "pearson_r": 0.9100442877588488
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7915786568356723,
+              "pearson_r": 0.7482933587269535
+            }
+          ],
+          "macro_spearman_rho": 0.748150392650199,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7375682227081336,
+            "pearson_r": 0.7589409603231755
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.36175603994567423,
+              "pearson_r": 0.07000405474487745
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.3523452377299814,
+              "pearson_r": -0.1672615751711653
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7166168114619085,
+              "pearson_r": 0.6881418099947122
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6063792439816122,
+              "pearson_r": 0.6771516137953769
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.57012491616802,
+              "pearson_r": 0.5755071793139857
+            }
+          ],
+          "macro_spearman_rho": 0.235803938787177,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.43346755303283097,
+            "pearson_r": 0.6128657266574962
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6520591161205836,
+              "pearson_r": 0.6181972308810422
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6528485647289838,
+              "pearson_r": 0.49808726144190574
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8243330842126226,
+              "pearson_r": 0.774661959087185
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.903053458878984,
+              "pearson_r": 0.898813471471803
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7762355560866033,
+              "pearson_r": 0.7520084294335967
+            }
+          ],
+          "macro_spearman_rho": 0.7617059560055555,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.677268574743899,
+            "pearson_r": 0.6815950422487355
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6055017000021179,
+              "pearson_r": 0.6113491998176785
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.37973918742878543,
+              "pearson_r": 0.4161170781613245
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6814707573116104,
+              "pearson_r": 0.6005384957037437
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8395271124849376,
+              "pearson_r": 0.8353551835640015
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6609932242775517,
+              "pearson_r": 0.6818836018708907
+            }
+          ],
+          "macro_spearman_rho": 0.6334463963010006,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.35752949127200523,
+            "pearson_r": 0.49442729235416344
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6913880300817451,
+              "pearson_r": 0.5013139094268422
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6182956129102142,
+              "pearson_r": 0.4528872976370733
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7721666139014886,
+              "pearson_r": 0.7432902902832492
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8875201872963671,
+              "pearson_r": 0.9164974358861062
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.76601433675127,
+              "pearson_r": 0.7483803812462813
+            }
+          ],
+          "macro_spearman_rho": 0.747076956188217,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.4641388086099147,
+            "pearson_r": 0.5485767428100087
+          }
+        }
+      },
+      "uncentered_whitening_ridge": 3.860048978216729
+    },
+    "20": {
+      "dimension": {
+        "pca_dimensions": 79,
+        "dimension_estimates": {
+          "10": 6.719201584777271,
+          "15": 6.355321240482957,
+          "20": 6.044417956824899,
+          "30": 5.34044070462613
+        },
+        "tangent_dim": 6,
+        "k": 30
+      },
+      "geometry": {
+        "k": 30,
+        "tangent_dim": 6,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 2353,
+        "edge_density": 0.3854217854217854,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.2531862347417426,
+        "euclidean_path_stretch_p90": 1.4765232061125306,
+        "weighted_direct_edge_shortcut_fraction": 0.0012749681257968552
+      },
+      "metrics": {
+        "centered_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7039587215377767,
+              "pearson_r": 0.6439045023401405
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6683087637273747,
+              "pearson_r": 0.5134003827525174
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7299651844860043,
+              "pearson_r": 0.8109536868466035
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8655752140619414,
+              "pearson_r": 0.9308693079981166
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7603874811136448,
+              "pearson_r": 0.760875687349225
+            }
+          ],
+          "macro_spearman_rho": 0.7456390729853484,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.6015614373985146,
+            "pearson_r": 0.68119581219533
+          }
+        },
+        "raw_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6645825315651223,
+              "pearson_r": 0.677149853216326
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6665736263347414,
+              "pearson_r": 0.5700541542311005
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8089772674589819,
+              "pearson_r": 0.7347363241851173
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9191864184501315,
+              "pearson_r": 0.881724731787154
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7944687325277537,
+              "pearson_r": 0.7157787471619892
+            }
+          ],
+          "macro_spearman_rho": 0.7707577152673462,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7654916313133822,
+            "pearson_r": 0.7285260419966776
+          }
+        },
+        "whitened_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.47044831796960257,
+              "pearson_r": 0.8781854683062722
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.2657319226308006,
+              "pearson_r": 0.7151150767013861
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.2843622987316366,
+              "pearson_r": 0.6738988624225294
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5970637899642867,
+              "pearson_r": 0.6586019684152076
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.21903256961203962,
+              "pearson_r": 0.20868310169014845
+            }
+          ],
+          "macro_spearman_rho": 0.36732777978167325,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.3557702729177466,
+            "pearson_r": 0.5576752748830928
+          }
+        },
+        "euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6851523241657969,
+              "pearson_r": 0.7670601316450458
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6718164875211153,
+              "pearson_r": 0.6176395570043971
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8154191318315434,
+              "pearson_r": 0.7952932001501578
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9222615102409428,
+              "pearson_r": 0.9302082735596612
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7966644686619871,
+              "pearson_r": 0.7572866988038115
+            }
+          ],
+          "macro_spearman_rho": 0.7782627844842771,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7429592829690632,
+            "pearson_r": 0.7938766357258479
+          }
+        },
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.374222724176421,
+              "pearson_r": 0.028857913527311898
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36960923063654144,
+              "pearson_r": -0.1655012048201472
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7627699728034176,
+              "pearson_r": 0.8247895479570969
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.755926999737971,
+              "pearson_r": 0.7738088612685986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.732117941972692,
+              "pearson_r": 0.7381962003177581
+            }
+          ],
+          "macro_spearman_rho": 0.3013965919402236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5317879326871691,
+            "pearson_r": 0.693973695667608
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7542273045584557,
+              "pearson_r": 0.6552048101308656
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6722721171242169,
+              "pearson_r": 0.49941626927199384
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8232955290265659,
+              "pearson_r": 0.7614884722169497
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9175677117743234,
+              "pearson_r": 0.9159344056774531
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7907986520077002,
+              "pearson_r": 0.7624703965781705
+            }
+          ],
+          "macro_spearman_rho": 0.7916322628982524,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7027918825275474,
+            "pearson_r": 0.7146148883111348
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5910068748783145,
+              "pearson_r": 0.6795664327002543
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6182331978960907,
+              "pearson_r": 0.44443303672496
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.705388659904972,
+              "pearson_r": 0.6898052516628537
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8014356528826306,
+              "pearson_r": 0.8077106326118423
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5631048727162714,
+              "pearson_r": 0.5301889268084153
+            }
+          ],
+          "macro_spearman_rho": 0.6558338516556559,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.39879913752685975,
+            "pearson_r": 0.5122846043394134
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7206424259937135,
+              "pearson_r": 0.5721555336512063
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6720162155663105,
+              "pearson_r": 0.4267637786676206
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7868998975434952,
+              "pearson_r": 0.7535928708748101
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8610482460883717,
+              "pearson_r": 0.8816170805782694
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7109586202520396,
+              "pearson_r": 0.6790199254896936
+            }
+          ],
+          "macro_spearman_rho": 0.7503130810887861,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.48256219128717703,
+            "pearson_r": 0.5483242361313566
+          }
+        }
+      },
+      "uncentered_whitening_ridge": 11.594309912767153
+    },
+    "25": {
+      "dimension": {
+        "pca_dimensions": 75,
+        "dimension_estimates": {
+          "10": 6.722972271550211,
+          "15": 6.098104755735954,
+          "20": 5.73328573379002,
+          "30": 5.0885470403137925
+        },
+        "tangent_dim": 6,
+        "k": 30
+      },
+      "geometry": {
+        "k": 30,
+        "tangent_dim": 6,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 2483,
+        "edge_density": 0.4067158067158067,
+        "pca_dimensions": 75,
+        "euclidean_path_stretch_median": 1.2020045517770988,
+        "euclidean_path_stretch_p90": 1.410759802520392,
+        "weighted_direct_edge_shortcut_fraction": 0.00724929520741039
+      },
+      "metrics": {
+        "centered_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7313740806026613,
+              "pearson_r": 0.683331138577232
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6657372651454864,
+              "pearson_r": 0.5594460214808256
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7084336588205734,
+              "pearson_r": 0.7778346194745613
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8385261295266384,
+              "pearson_r": 0.8990924791002342
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7485431303443812,
+              "pearson_r": 0.6982682950492414
+            }
+          ],
+          "macro_spearman_rho": 0.7385228528879482,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.6085278173929143,
+            "pearson_r": 0.6723812764341633
+          }
+        },
+        "raw_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.4940154096989437,
+              "pearson_r": 0.5462299922736564
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.614207429485125,
+              "pearson_r": 0.5796747017799935
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7794114557658678,
+              "pearson_r": 0.688780298126776
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8824837099791586,
+              "pearson_r": 0.8390504126580695
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7694815258420822,
+              "pearson_r": 0.7073786241089967
+            }
+          ],
+          "macro_spearman_rho": 0.7079199061542354,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7379991511794156,
+            "pearson_r": 0.6753883929464425
+          }
+        },
+        "whitened_cosine": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5438774190207815,
+              "pearson_r": 0.9146419824102482
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.23579144035575775,
+              "pearson_r": 0.7270703692125144
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.301012803913096,
+              "pearson_r": 0.6732484386569285
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6155278675058881,
+              "pearson_r": 0.6548130293048371
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.2054343351544457,
+              "pearson_r": 0.19518630145040963
+            }
+          ],
+          "macro_spearman_rho": 0.38032877318999375,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.38566702884796805,
+            "pearson_r": 0.5623432913405643
+          }
+        },
+        "euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.46085128763649075,
+              "pearson_r": 0.6301481024125446
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5940661044274715,
+              "pearson_r": 0.6301317340085082
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7785994560550408,
+              "pearson_r": 0.7469296835308794
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.878993796421845,
+              "pearson_r": 0.882333405620109
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7641657703959606,
+              "pearson_r": 0.7252895103100634
+            }
+          ],
+          "macro_spearman_rho": 0.6953352829873618,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7270833631982336,
+            "pearson_r": 0.7348835355483588
+          }
+        },
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.45294201091368474,
+              "pearson_r": 0.6393810073169236
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5928927021619499,
+              "pearson_r": 0.63067260956854
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7796956556646573,
+              "pearson_r": 0.7508734506187104
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8782858940594441,
+              "pearson_r": 0.8840521223267404
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7650088970019187,
+              "pearson_r": 0.725708480403719
+            }
+          ],
+          "macro_spearman_rho": 0.6937650319603309,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7256322931134322,
+            "pearson_r": 0.7369606153625031
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.40222430578382073,
+              "pearson_r": 0.022828366313692103
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.3319168036073598,
+              "pearson_r": -0.12706054958737864
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7809903440924759,
+              "pearson_r": 0.856007710914494
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7617841027236949,
+              "pearson_r": 0.8044845151918172
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7426818223885218,
+              "pearson_r": 0.7846606895552733
+            }
+          ],
+          "macro_spearman_rho": 0.3102630319627024,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.49768665846603327,
+            "pearson_r": 0.675904222049999
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.617571265736322,
+              "pearson_r": 0.6530305197983793
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6011065180206023,
+              "pearson_r": 0.5273003228925432
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7787347893401786,
+              "pearson_r": 0.7286632146359558
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8837191574141767,
+              "pearson_r": 0.8821886050934591
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7751624858608382,
+              "pearson_r": 0.7446189707223639
+            }
+          ],
+          "macro_spearman_rho": 0.7312588432744236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7061058263047247,
+            "pearson_r": 0.694331260418504
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5831732397738976,
+              "pearson_r": 0.6660189156515977
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5112288976827626,
+              "pearson_r": 0.42631297185305506
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6916748870110039,
+              "pearson_r": 0.680595732116727
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6603601808138589,
+              "pearson_r": 0.6437975841063636
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.10135554065209244,
+              "pearson_r": 0.11279135973966348
+            }
+          ],
+          "macro_spearman_rho": 0.509558549186723,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.34879325375649245,
+            "pearson_r": 0.4345557627597804
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6979263024712493,
+              "pearson_r": 0.5779674055303518
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6318334294736013,
+              "pearson_r": 0.46318486340167275
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7173927222966988,
+              "pearson_r": 0.7227527144937068
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8013680188989617,
+              "pearson_r": 0.8324256364358037
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5496689514020705,
+              "pearson_r": 0.49925098584502264
+            }
+          ],
+          "macro_spearman_rho": 0.6796378849085163,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.43105197550555585,
+            "pearson_r": 0.5001507602318377
+          }
+        }
+      },
+      "uncentered_whitening_ridge": 84.42202607268014
+    }
+  },
+  "sensitivity": [
+    {
+      "geometry": {
+        "k": 18,
+        "tangent_dim": 3,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 1451,
+        "edge_density": 0.23767403767403766,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.3793962035972531,
+        "euclidean_path_stretch_p90": 1.6916287972477497,
+        "weighted_direct_edge_shortcut_fraction": 0.018607856650585803
+      },
+      "metrics": {
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.374222724176421,
+              "pearson_r": 0.028857913527311898
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36960923063654144,
+              "pearson_r": -0.1655012048201472
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7627699728034176,
+              "pearson_r": 0.8247895479570969
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.755926999737971,
+              "pearson_r": 0.7738088612685986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.732117941972692,
+              "pearson_r": 0.7381962003177581
+            }
+          ],
+          "macro_spearman_rho": 0.3013965919402236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5317879326871691,
+            "pearson_r": 0.693973695667608
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7475282937298746,
+              "pearson_r": 0.7101242693837877
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6928753132863842,
+              "pearson_r": 0.5144288363094902
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8180355753442083,
+              "pearson_r": 0.7451304073730666
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9151283794299994,
+              "pearson_r": 0.8951510028226173
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8035717946530462,
+              "pearson_r": 0.764024521109471
+            }
+          ],
+          "macro_spearman_rho": 0.7954278712887026,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7075826044672578,
+            "pearson_r": 0.6992671492294339
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6193677541730622,
+              "pearson_r": 0.5352888798695334
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.571602940844424,
+              "pearson_r": 0.37069152279776146
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5475810272152375,
+              "pearson_r": 0.5716162277557209
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7015312411392218,
+              "pearson_r": 0.757844756632037
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5100555270173158,
+              "pearson_r": 0.4564646289749595
+            }
+          ],
+          "macro_spearman_rho": 0.5900276980778523,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.3249994642175701,
+            "pearson_r": 0.4365287238466309
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.758028295882506,
+              "pearson_r": 0.5822440607580779
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6920264690943045,
+              "pearson_r": 0.45567815650241605
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7534635538954386,
+              "pearson_r": 0.7609872548118553
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8654669996880712,
+              "pearson_r": 0.864104264711352
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6734011623502634,
+              "pearson_r": 0.6440493348083312
+            }
+          ],
+          "macro_spearman_rho": 0.7484772961821168,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5055467213961572,
+            "pearson_r": 0.5471434141184655
+          }
+        }
+      }
+    },
+    {
+      "geometry": {
+        "k": 18,
+        "tangent_dim": 6,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 1451,
+        "edge_density": 0.23767403767403766,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.3793962035972531,
+        "euclidean_path_stretch_p90": 1.6916287972477497,
+        "weighted_direct_edge_shortcut_fraction": 0.005513439007580979
+      },
+      "metrics": {
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.374222724176421,
+              "pearson_r": 0.028857913527311898
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36960923063654144,
+              "pearson_r": -0.1655012048201472
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7627699728034176,
+              "pearson_r": 0.8247895479570969
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.755926999737971,
+              "pearson_r": 0.7738088612685986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.732117941972692,
+              "pearson_r": 0.7381962003177581
+            }
+          ],
+          "macro_spearman_rho": 0.3013965919402236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5317879326871691,
+            "pearson_r": 0.693973695667608
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7475282937298746,
+              "pearson_r": 0.7101242693837877
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6928753132863842,
+              "pearson_r": 0.5144288363094902
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8180355753442083,
+              "pearson_r": 0.7451304073730666
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9151283794299994,
+              "pearson_r": 0.8951510028226173
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8035717946530462,
+              "pearson_r": 0.764024521109471
+            }
+          ],
+          "macro_spearman_rho": 0.7954278712887026,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7075826044672578,
+            "pearson_r": 0.6992671492294339
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6654476825754471,
+              "pearson_r": 0.6197002053877215
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5723019890026072,
+              "pearson_r": 0.33990180703494344
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7312508506948139,
+              "pearson_r": 0.7234555373486208
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8442569824095139,
+              "pearson_r": 0.8235255743598954
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.45570767617121616,
+              "pearson_r": 0.4060348646255433
+            }
+          ],
+          "macro_spearman_rho": 0.6537930361707197,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.3022589058971681,
+            "pearson_r": 0.42016633119769964
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7656680993398008,
+              "pearson_r": 0.5963519725877681
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6857537601748929,
+              "pearson_r": 0.4361524583090991
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7579385745239966,
+              "pearson_r": 0.7503995471744077
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8737949975438314,
+              "pearson_r": 0.874082967967986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6172723756252677,
+              "pearson_r": 0.5485157757280571
+            }
+          ],
+          "macro_spearman_rho": 0.7400855614415579,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.481652382110997,
+            "pearson_r": 0.517323015181863
+          }
+        }
+      }
+    },
+    {
+      "geometry": {
+        "k": 30,
+        "tangent_dim": 3,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 2353,
+        "edge_density": 0.3854217854217854,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.2531862347417426,
+        "euclidean_path_stretch_p90": 1.4765232061125306,
+        "weighted_direct_edge_shortcut_fraction": 0.011899702507437314
+      },
+      "metrics": {
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.374222724176421,
+              "pearson_r": 0.028857913527311898
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36960923063654144,
+              "pearson_r": -0.1655012048201472
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7627699728034176,
+              "pearson_r": 0.8247895479570969
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.755926999737971,
+              "pearson_r": 0.7738088612685986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.732117941972692,
+              "pearson_r": 0.7381962003177581
+            }
+          ],
+          "macro_spearman_rho": 0.3013965919402236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5317879326871691,
+            "pearson_r": 0.693973695667608
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7542273045584557,
+              "pearson_r": 0.6552048101308656
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6722721171242169,
+              "pearson_r": 0.49941626927199384
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8232955290265659,
+              "pearson_r": 0.7614884722169497
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9175677117743234,
+              "pearson_r": 0.9159344056774531
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7907986520077002,
+              "pearson_r": 0.7624703965781705
+            }
+          ],
+          "macro_spearman_rho": 0.7916322628982524,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7027918825275474,
+            "pearson_r": 0.7146148883111348
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6115813950801385,
+              "pearson_r": 0.6251601826754142
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5303216505031412,
+              "pearson_r": 0.4722289540083042
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5351484094205742,
+              "pearson_r": 0.5982355701123386
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6871297115499974,
+              "pearson_r": 0.7134014440478252
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5414135245811639,
+              "pearson_r": 0.4758847230683493
+            }
+          ],
+          "macro_spearman_rho": 0.581118938227003,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.39947391093345674,
+            "pearson_r": 0.4860479663533378
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7436847539954805,
+              "pearson_r": 0.5589150166110955
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6620298133065505,
+              "pearson_r": 0.456489095554174
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7738582799657117,
+              "pearson_r": 0.7794287989460458
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.844951357975181,
+              "pearson_r": 0.8723294601493501
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6855385785173198,
+              "pearson_r": 0.6522711561846585
+            }
+          ],
+          "macro_spearman_rho": 0.7420125567520486,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.4525999099599769,
+            "pearson_r": 0.5369389650826323
+          }
+        }
+      }
+    },
+    {
+      "geometry": {
+        "k": 30,
+        "tangent_dim": 6,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 2353,
+        "edge_density": 0.3854217854217854,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.2531862347417426,
+        "euclidean_path_stretch_p90": 1.4765232061125306,
+        "weighted_direct_edge_shortcut_fraction": 0.0012749681257968552
+      },
+      "metrics": {
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.374222724176421,
+              "pearson_r": 0.028857913527311898
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36960923063654144,
+              "pearson_r": -0.1655012048201472
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7627699728034176,
+              "pearson_r": 0.8247895479570969
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.755926999737971,
+              "pearson_r": 0.7738088612685986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.732117941972692,
+              "pearson_r": 0.7381962003177581
+            }
+          ],
+          "macro_spearman_rho": 0.3013965919402236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5317879326871691,
+            "pearson_r": 0.693973695667608
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7542273045584557,
+              "pearson_r": 0.6552048101308656
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6722721171242169,
+              "pearson_r": 0.49941626927199384
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8232955290265659,
+              "pearson_r": 0.7614884722169497
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9175677117743234,
+              "pearson_r": 0.9159344056774531
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7907986520077002,
+              "pearson_r": 0.7624703965781705
+            }
+          ],
+          "macro_spearman_rho": 0.7916322628982524,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7027918825275474,
+            "pearson_r": 0.7146148883111348
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5910068748783145,
+              "pearson_r": 0.6795664327002543
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6182331978960907,
+              "pearson_r": 0.44443303672496
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.705388659904972,
+              "pearson_r": 0.6898052516628537
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8014356528826306,
+              "pearson_r": 0.8077106326118423
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5631048727162714,
+              "pearson_r": 0.5301889268084153
+            }
+          ],
+          "macro_spearman_rho": 0.6558338516556559,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.39879913752685975,
+            "pearson_r": 0.5122846043394134
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7206424259937135,
+              "pearson_r": 0.5721555336512063
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6720162155663105,
+              "pearson_r": 0.4267637786676206
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7868998975434952,
+              "pearson_r": 0.7535928708748101
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8610482460883717,
+              "pearson_r": 0.8816170805782694
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7109586202520396,
+              "pearson_r": 0.6790199254896936
+            }
+          ],
+          "macro_spearman_rho": 0.7503130810887861,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.48256219128717703,
+            "pearson_r": 0.5483242361313566
+          }
+        }
+      }
+    },
+    {
+      "geometry": {
+        "k": 30,
+        "tangent_dim": 9,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 2353,
+        "edge_density": 0.3854217854217854,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.2531862347417426,
+        "euclidean_path_stretch_p90": 1.4765232061125306,
+        "weighted_direct_edge_shortcut_fraction": 0.0
+      },
+      "metrics": {
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.374222724176421,
+              "pearson_r": 0.028857913527311898
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36960923063654144,
+              "pearson_r": -0.1655012048201472
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7627699728034176,
+              "pearson_r": 0.8247895479570969
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.755926999737971,
+              "pearson_r": 0.7738088612685986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.732117941972692,
+              "pearson_r": 0.7381962003177581
+            }
+          ],
+          "macro_spearman_rho": 0.3013965919402236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5317879326871691,
+            "pearson_r": 0.693973695667608
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7542273045584557,
+              "pearson_r": 0.6552048101308656
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6722721171242169,
+              "pearson_r": 0.49941626927199384
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8232955290265659,
+              "pearson_r": 0.7614884722169497
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9175677117743234,
+              "pearson_r": 0.9159344056774531
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7907986520077002,
+              "pearson_r": 0.7624703965781705
+            }
+          ],
+          "macro_spearman_rho": 0.7916322628982524,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7027918825275474,
+            "pearson_r": 0.7146148883111348
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5586133518032,
+              "pearson_r": 0.5904835296349499
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6064492432295739,
+              "pearson_r": 0.39333338905567905
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7086366587482802,
+              "pearson_r": 0.7053390682828119
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8651198119052377,
+              "pearson_r": 0.8677663742743061
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.4292551424965797,
+              "pearson_r": 0.40324567364170216
+            }
+          ],
+          "macro_spearman_rho": 0.6336148416365743,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.30862283690733,
+            "pearson_r": 0.4441531933203647
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.721488666599441,
+              "pearson_r": 0.5205645387993232
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6684398352570341,
+              "pearson_r": 0.4035477406157769
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8007805814891332,
+              "pearson_r": 0.770458916653991
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8978862225266825,
+              "pearson_r": 0.9158112526479586
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7140110090875139,
+              "pearson_r": 0.6582587255766633
+            }
+          ],
+          "macro_spearman_rho": 0.760521262991961,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.4663366128620094,
+            "pearson_r": 0.5362524431571076
+          }
+        }
+      }
+    },
+    {
+      "geometry": {
+        "k": 42,
+        "tangent_dim": 3,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 3153,
+        "edge_density": 0.5164619164619164,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.0,
+        "euclidean_path_stretch_p90": 1.3813267603294197,
+        "weighted_direct_edge_shortcut_fraction": 0.01934665398033619
+      },
+      "metrics": {
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.374222724176421,
+              "pearson_r": 0.028857913527311898
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36960923063654144,
+              "pearson_r": -0.1655012048201472
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7627699728034176,
+              "pearson_r": 0.8247895479570969
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.755926999737971,
+              "pearson_r": 0.7738088612685986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.732117941972692,
+              "pearson_r": 0.7381962003177581
+            }
+          ],
+          "macro_spearman_rho": 0.3013965919402236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5317879326871691,
+            "pearson_r": 0.693973695667608
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7276250928912537,
+              "pearson_r": 0.6653314138842205
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.4982187921583034
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8064736016839318,
+              "pearson_r": 0.7631869306851987
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9175632028420787,
+              "pearson_r": 0.9160787770509023
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.789207081462763,
+              "pearson_r": 0.7760427568353274
+            }
+          ],
+          "macro_spearman_rho": 0.7823910421471794,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.6845579482524901,
+            "pearson_r": 0.7154214723268347
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5860145280646366,
+              "pearson_r": 0.6421374651076852
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.473929685242559,
+              "pearson_r": 0.5586070771778883
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6937680418211358,
+              "pearson_r": 0.6970357129446063
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7139262958796032,
+              "pearson_r": 0.7360338138166301
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6026100883387641,
+              "pearson_r": 0.5704896042632259
+            }
+          ],
+          "macro_spearman_rho": 0.6140497278693398,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.3192621994190422,
+            "pearson_r": 0.4906866538101084
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7397797554461454,
+              "pearson_r": 0.5802894746605111
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6275517595047292,
+              "pearson_r": 0.48395697195928655
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7531026651350711,
+              "pearson_r": 0.7579477204205767
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8475124314901087,
+              "pearson_r": 0.8725427236530604
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.741888291465267,
+              "pearson_r": 0.7362340097996345
+            }
+          ],
+          "macro_spearman_rho": 0.7419669806082643,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.4305758488155746,
+            "pearson_r": 0.5450819781102814
+          }
+        }
+      }
+    },
+    {
+      "geometry": {
+        "k": 42,
+        "tangent_dim": 6,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 3153,
+        "edge_density": 0.5164619164619164,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.0,
+        "euclidean_path_stretch_p90": 1.3813267603294197,
+        "weighted_direct_edge_shortcut_fraction": 0.005708848715509039
+      },
+      "metrics": {
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.374222724176421,
+              "pearson_r": 0.028857913527311898
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36960923063654144,
+              "pearson_r": -0.1655012048201472
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7627699728034176,
+              "pearson_r": 0.8247895479570969
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.755926999737971,
+              "pearson_r": 0.7738088612685986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.732117941972692,
+              "pearson_r": 0.7381962003177581
+            }
+          ],
+          "macro_spearman_rho": 0.3013965919402236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5317879326871691,
+            "pearson_r": 0.693973695667608
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7276250928912537,
+              "pearson_r": 0.6653314138842205
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.4982187921583034
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8064736016839318,
+              "pearson_r": 0.7631869306851987
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9175632028420787,
+              "pearson_r": 0.9160787770509023
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.789207081462763,
+              "pearson_r": 0.7760427568353274
+            }
+          ],
+          "macro_spearman_rho": 0.7823910421471794,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.6845579482524901,
+            "pearson_r": 0.7154214723268347
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5137673273007868,
+              "pearson_r": 0.7117640293747725
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5537147977966289,
+              "pearson_r": 0.4966823637433364
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6260066659526177,
+              "pearson_r": 0.5865363595487667
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.82151843710004,
+              "pearson_r": 0.8360236030181619
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6320969760551646,
+              "pearson_r": 0.6055959710581199
+            }
+          ],
+          "macro_spearman_rho": 0.6294208408410475,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.4459857505889398,
+            "pearson_r": 0.6208915728363248
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6906930727127956,
+              "pearson_r": 0.5658968473099153
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6484795137403387,
+              "pearson_r": 0.42114402457676225
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7490110888144035,
+              "pearson_r": 0.7046318104391218
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8620402111821819,
+              "pearson_r": 0.8859278163947701
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.762317204040651,
+              "pearson_r": 0.7660621435552475
+            }
+          ],
+          "macro_spearman_rho": 0.7425082180980741,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5171360010415462,
+            "pearson_r": 0.5963187443121882
+          }
+        }
+      }
+    },
+    {
+      "geometry": {
+        "k": 42,
+        "tangent_dim": 9,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 3153,
+        "edge_density": 0.5164619164619164,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.0,
+        "euclidean_path_stretch_p90": 1.3813267603294197,
+        "weighted_direct_edge_shortcut_fraction": 0.0006343165239454488
+      },
+      "metrics": {
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.374222724176421,
+              "pearson_r": 0.028857913527311898
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36960923063654144,
+              "pearson_r": -0.1655012048201472
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7627699728034176,
+              "pearson_r": 0.8247895479570969
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.755926999737971,
+              "pearson_r": 0.7738088612685986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.732117941972692,
+              "pearson_r": 0.7381962003177581
+            }
+          ],
+          "macro_spearman_rho": 0.3013965919402236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5317879326871691,
+            "pearson_r": 0.693973695667608
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7276250928912537,
+              "pearson_r": 0.6653314138842205
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.4982187921583034
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8064736016839318,
+              "pearson_r": 0.7631869306851987
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9175632028420787,
+              "pearson_r": 0.9160787770509023
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.789207081462763,
+              "pearson_r": 0.7760427568353274
+            }
+          ],
+          "macro_spearman_rho": 0.7823910421471794,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.6845579482524901,
+            "pearson_r": 0.7154214723268347
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.532072598950939,
+              "pearson_r": 0.6443168391684303
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5735378062822525,
+              "pearson_r": 0.44457525061123665
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5653953986488822,
+              "pearson_r": 0.489110570352963
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8718065584239665,
+              "pearson_r": 0.8700116091150402
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6732433579052978,
+              "pearson_r": 0.644218659757639
+            }
+          ],
+          "macro_spearman_rho": 0.6432111440422675,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.446476894868883,
+            "pearson_r": 0.6102943585602714
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7008857807907213,
+              "pearson_r": 0.5446427778236164
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6499587495750657,
+              "pearson_r": 0.41141315399631156
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7362536711354095,
+              "pearson_r": 0.6805666564722753
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8782678583304657,
+              "pearson_r": 0.9023730606576297
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.766393067419187,
+              "pearson_r": 0.7780318414696622
+            }
+          ],
+          "macro_spearman_rho": 0.7463518254501698,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5138292949980522,
+            "pearson_r": 0.6016973561696979
+          }
+        }
+      }
+    },
+    {
+      "geometry": {
+        "k": 30,
+        "tangent_dim": 6,
+        "ridge": 1e-05,
+        "connected_components": 1,
+        "edge_count": 2353,
+        "edge_density": 0.3854217854217854,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.2531862347417426,
+        "euclidean_path_stretch_p90": 1.4765232061125306,
+        "weighted_direct_edge_shortcut_fraction": 0.0012749681257968552
+      },
+      "metrics": {
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.374222724176421,
+              "pearson_r": 0.0288507457235875
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36960923063654144,
+              "pearson_r": -0.16551368359039145
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7627699728034176,
+              "pearson_r": 0.8247871375161792
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.755926999737971,
+              "pearson_r": 0.7738047633319995
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.732117941972692,
+              "pearson_r": 0.7381920783781646
+            }
+          ],
+          "macro_spearman_rho": 0.3013965919402236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5318003685606969,
+            "pearson_r": 0.6939719741036795
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7542273045584557,
+              "pearson_r": 0.6552048101308656
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6722721171242169,
+              "pearson_r": 0.49941626927199384
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8232955290265659,
+              "pearson_r": 0.7614884722169497
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9175677117743234,
+              "pearson_r": 0.9159344056774531
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7907986520077002,
+              "pearson_r": 0.7624703965781705
+            }
+          ],
+          "macro_spearman_rho": 0.7916322628982524,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7027918825275474,
+            "pearson_r": 0.7146148883111348
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5910068748783145,
+              "pearson_r": 0.679565957309657
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6182331978960907,
+              "pearson_r": 0.4444327345309819
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.705388659904972,
+              "pearson_r": 0.6898049960369654
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8014356528826306,
+              "pearson_r": 0.8077104287627359
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5631048727162714,
+              "pearson_r": 0.5301882131742268
+            }
+          ],
+          "macro_spearman_rho": 0.6558338516556559,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.39879913752685975,
+            "pearson_r": 0.5122838452364082
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7206424259937135,
+              "pearson_r": 0.5721553443063278
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6720162155663105,
+              "pearson_r": 0.42676365104447705
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7868998975434952,
+              "pearson_r": 0.7535928179916691
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8610482460883717,
+              "pearson_r": 0.8816170330710845
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7109586202520396,
+              "pearson_r": 0.6790195787522078
+            }
+          ],
+          "macro_spearman_rho": 0.7503130810887861,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.4825691088071823,
+            "pearson_r": 0.5483238527885033
+          }
+        }
+      }
+    },
+    {
+      "geometry": {
+        "k": 30,
+        "tangent_dim": 6,
+        "ridge": 0.001,
+        "connected_components": 1,
+        "edge_count": 2353,
+        "edge_density": 0.3854217854217854,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.2531862347417426,
+        "euclidean_path_stretch_p90": 1.4765232061125306,
+        "weighted_direct_edge_shortcut_fraction": 0.0012749681257968552
+      },
+      "metrics": {
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.373773602067236,
+              "pearson_r": 0.028929568011517734
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36968412865348965,
+              "pearson_r": -0.16537647365626443
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7629098171980601,
+              "pearson_r": 0.8248136257774262
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7555166869037131,
+              "pearson_r": 0.7738498107443321
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7326770205777126,
+              "pearson_r": 0.7382373842978881
+            }
+          ],
+          "macro_spearman_rho": 0.301529158791752,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.531786696372257,
+            "pearson_r": 0.6939908968149114
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7542273045584557,
+              "pearson_r": 0.6552048101308656
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6722721171242169,
+              "pearson_r": 0.49941626927199384
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8232955290265659,
+              "pearson_r": 0.7614884722169497
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9175677117743234,
+              "pearson_r": 0.9159344056774531
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7907986520077002,
+              "pearson_r": 0.7624703965781705
+            }
+          ],
+          "macro_spearman_rho": 0.7916322628982524,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7027918825275474,
+            "pearson_r": 0.7146148883111348
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.5910068748783145,
+              "pearson_r": 0.6795711864504258
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6182331978960907,
+              "pearson_r": 0.44443605858839175
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.705388659904972,
+              "pearson_r": 0.6898078078234479
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8014356528826306,
+              "pearson_r": 0.8077126710346088
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.5631048727162714,
+              "pearson_r": 0.5301960628112888
+            }
+          ],
+          "macro_spearman_rho": 0.6558338516556559,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.3988227729590033,
+            "pearson_r": 0.5122921951186223
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.7206424259937135,
+              "pearson_r": 0.572157427031917
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6720162155663105,
+              "pearson_r": 0.42676505485667904
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7868998975434952,
+              "pearson_r": 0.7535933996716558
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8610482460883717,
+              "pearson_r": 0.8816175556177249
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7109586202520396,
+              "pearson_r": 0.67902339263598
+            }
+          ],
+          "macro_spearman_rho": 0.7503130810887861,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.4825996443558984,
+            "pearson_r": 0.5483280693969278
+          }
+        }
+      }
+    },
+    {
+      "geometry": {
+        "k": 100,
+        "tangent_dim": 20,
+        "ridge": 0.0001,
+        "connected_components": 1,
+        "edge_count": 5986,
+        "edge_density": 0.9805077805077805,
+        "pca_dimensions": 79,
+        "euclidean_path_stretch_median": 1.0,
+        "euclidean_path_stretch_p90": 1.0,
+        "weighted_direct_edge_shortcut_fraction": 0.0001670564650851988
+      },
+      "metrics": {
+        "pca_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.6183015056109763
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8153649985174881,
+              "pearson_r": 0.798191353016064
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9226718230752006,
+              "pearson_r": 0.9308773738677986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7984904915251589,
+              "pearson_r": 0.7579578235168487
+            }
+          ],
+          "macro_spearman_rho": 0.7778033762856215,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7431749108346192,
+            "pearson_r": 0.7977146446210578
+          }
+        },
+        "mahalanobis": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.374222724176421,
+              "pearson_r": 0.028857913527311898
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.36960923063654144,
+              "pearson_r": -0.1655012048201472
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7627699728034176,
+              "pearson_r": 0.8247895479570969
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.755926999737971,
+              "pearson_r": 0.7738088612685986
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.732117941972692,
+              "pearson_r": 0.7381962003177581
+            }
+          ],
+          "macro_spearman_rho": 0.3013965919402236,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5317879326871691,
+            "pearson_r": 0.693973695667608
+          }
+        },
+        "graph_euclidean": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": 0.6814033364543892,
+              "pearson_r": 0.7744715393870468
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.6710862318558704,
+              "pearson_r": 0.5739419047627851
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8135109325110997,
+              "pearson_r": 0.7607578260066772
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.9227935642458046,
+              "pearson_r": 0.9303831367755592
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.796754642630539,
+              "pearson_r": 0.7302775727321135
+            }
+          ],
+          "macro_spearman_rho": 0.7771097415395406,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.7432545804220445,
+            "pearson_r": 0.7724866854584619
+          }
+        },
+        "local_metric_direct": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.3274572936073853,
+              "pearson_r": 0.14621779561573103
+            },
+            {
+              "n": 110,
+              "spearman_rho": -0.01700809134865371,
+              "pearson_r": 0.10680576727051863
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7284404294734513,
+              "pearson_r": 0.6931850725619819
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8013590010344726,
+              "pearson_r": 0.7719065759609373
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7915425872482516,
+              "pearson_r": 0.7426976554736084
+            }
+          ],
+          "macro_spearman_rho": 0.3953753265600273,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.5009017681194202,
+            "pearson_r": 0.6354413993553564
+          }
+        },
+        "geodesic": {
+          "by_source": [
+            {
+              "n": 110,
+              "spearman_rho": -0.3274572936073853,
+              "pearson_r": 0.146217795615731
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.0017288958912209458,
+              "pearson_r": 0.11298421097976236
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.7504907327319106,
+              "pearson_r": 0.6785555875517154
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.8077436490928137,
+              "pearson_r": 0.77592007881281
+            },
+            {
+              "n": 110,
+              "spearman_rho": 0.786745332121302,
+              "pearson_r": 0.6977811950452557
+            }
+          ],
+          "macro_spearman_rho": 0.4038502632459724,
+          "pooled": {
+            "n": 550,
+            "spearman_rho": 0.503609006879347,
+            "pearson_r": 0.6117416514019888
+          }
+        }
+      }
+    }
+  ],
+  "bootstrap": {
+    "draws": 5000,
+    "seed": 20261002,
+    "by_metric": {
+      "centered_cosine": {
+        "source_ci95": [
+          [
+            0.5804677983719512,
+            0.8024010419175313
+          ],
+          [
+            0.5509817272814219,
+            0.759752019275864
+          ],
+          [
+            0.6148118003962839,
+            0.8110733552459253
+          ],
+          [
+            0.8095163093933482,
+            0.8996403589504053
+          ],
+          [
+            0.6748847451677965,
+            0.8205736781921954
+          ]
+        ],
+        "macro_ci95": [
+          0.6982384323059574,
+          0.7767634617042826
+        ]
+      },
+      "raw_cosine": {
+        "source_ci95": [
+          [
+            0.5216623030547142,
+            0.7841514802344497
+          ],
+          [
+            0.55474959406341,
+            0.7540668471724987
+          ],
+          [
+            0.722246109250845,
+            0.8676856349457873
+          ],
+          [
+            0.8824759661559188,
+            0.9398140068990615
+          ],
+          [
+            0.7153707720801731,
+            0.849560050761549
+          ]
+        ],
+        "macro_ci95": [
+          0.7292868601985308,
+          0.8007136285427259
+        ]
+      },
+      "whitened_cosine": {
+        "source_ci95": [
+          [
+            0.2889979470074845,
+            0.6279334313825682
+          ],
+          [
+            0.031414050722801755,
+            0.48220498120021965
+          ],
+          [
+            0.07242581681499918,
+            0.474707205561505
+          ],
+          [
+            0.44488205268736725,
+            0.7111175087355892
+          ],
+          [
+            0.021353611794552373,
+            0.4106525114713987
+          ]
+        ],
+        "macro_ci95": [
+          0.28058154459064405,
+          0.44519195783265086
+        ]
+      },
+      "graph_euclidean": {
+        "source_ci95": [
+          [
+            0.6474599382942314,
+            0.8342508719709283
+          ],
+          [
+            0.5623863413479021,
+            0.7592428099126555
+          ],
+          [
+            0.7423594655010047,
+            0.8775035327565258
+          ],
+          [
+            0.8803778043709423,
+            0.9388767381191764
+          ],
+          [
+            0.7126220395807851,
+            0.8474660636067471
+          ]
+        ],
+        "macro_ci95": [
+          0.7494492176720434,
+          0.8217382832354262
+        ]
+      },
+      "geodesic": {
+        "source_ci95": [
+          [
+            0.6148290378098511,
+            0.8034109587544181
+          ],
+          [
+            0.5622854044895633,
+            0.758453958835456
+          ],
+          [
+            0.703043732439666,
+            0.8448351195060667
+          ],
+          [
+            0.8034881806404639,
+            0.8994746491096717
+          ],
+          [
+            0.6153411049056243,
+            0.7838956681166231
+          ]
+        ],
+        "macro_ci95": [
+          0.7063019704136566,
+          0.7816307074453547
+        ]
+      }
+    },
+    "geodesic_minus": {
+      "centered_cosine": {
+        "source_delta_ci95": [
+          [
+            -0.04982938413025835,
+            0.08506360334739789
+          ],
+          [
+            -0.031248217605762966,
+            0.04483348697031108
+          ],
+          [
+            -0.009283005819615851,
+            0.1342548672129726
+          ],
+          [
+            -0.06111638478370827,
+            0.05241539248157429
+          ],
+          [
+            -0.11867926877471262,
+            0.014330904907842243
+          ]
+        ],
+        "macro_delta_ci95": [
+          -0.028750163150484696,
+          0.04070116273147996
+        ]
+      },
+      "raw_cosine": {
+        "source_delta_ci95": [
+          [
+            -0.068445391983432,
+            0.19312679947425948
+          ],
+          [
+            -0.02575608360675114,
+            0.041260457343906744
+          ],
+          [
+            -0.06473656236198323,
+            0.02154181084408974
+          ],
+          [
+            -0.11008967798778414,
+            -0.01569357947466524
+          ],
+          [
+            -0.1479042367762497,
+            -0.028362881255427908
+          ]
+        ],
+        "macro_delta_ci95": [
+          -0.05450108356508171,
+          0.012697041608734893
+        ]
+      },
+      "whitened_cosine": {
+        "source_delta_ci95": [
+          [
+            0.08869347555419846,
+            0.42384309468523773
+          ],
+          [
+            0.20740002600799476,
+            0.6119007119294628
+          ],
+          [
+            0.3103700079021935,
+            0.6979281497602063
+          ],
+          [
+            0.13274172933309714,
+            0.41411210130637366
+          ],
+          [
+            0.3160426468566975,
+            0.6701010674901047
+          ]
+        ],
+        "macro_delta_ci95": [
+          0.29820036273173556,
+          0.46231309523027314
+        ]
+      },
+      "graph_euclidean": {
+        "source_delta_ci95": [
+          [
+            -0.0937050904063775,
+            0.025171082444362926
+          ],
+          [
+            -0.0255777726143557,
+            0.024775070690563346
+          ],
+          [
+            -0.07816939172129089,
+            0.004530641292279093
+          ],
+          [
+            -0.10452532646923296,
+            -0.01676379484094466
+          ],
+          [
+            -0.13543400180384965,
+            -0.031191592169124375
+          ]
+        ],
+        "macro_delta_ci95": [
+          -0.06442608402856494,
+          -0.020176692671545694
+        ]
+      }
+    }
+  },
+  "target_subsets": {
+    "exclude_training_negative_personas": {
+      "centered_cosine": {
+        "by_source": [
+          {
+            "n": 100,
+            "spearman_rho": 0.7141379359452495,
+            "pearson_r": 0.6496166575779382
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.6898692743299564,
+            "pearson_r": 0.5144275396183553
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.7103532157451903,
+            "pearson_r": 0.7922121869745118
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.8618636800850963,
+            "pearson_r": 0.9370610499602934
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.7632456295267758,
+            "pearson_r": 0.7605929736654038
+          }
+        ],
+        "macro_spearman_rho": 0.7478939471264537,
+        "pooled": {
+          "n": 500,
+          "spearman_rho": 0.5825020700446772,
+          "pearson_r": 0.6690318098547744
+        }
+      },
+      "raw_cosine": {
+        "by_source": [
+          {
+            "n": 100,
+            "spearman_rho": 0.6808720877125162,
+            "pearson_r": 0.6806584533567375
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.6857014126500458,
+            "pearson_r": 0.5714051588611382
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.8026819002251778,
+            "pearson_r": 0.7239756566156155
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.9215811186781988,
+            "pearson_r": 0.8839561870976118
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.8072771846756827,
+            "pearson_r": 0.7203665097877604
+          }
+        ],
+        "macro_spearman_rho": 0.7796227407883242,
+        "pooled": {
+          "n": 500,
+          "spearman_rho": 0.7630350513803219,
+          "pearson_r": 0.7210083228333986
+        }
+      },
+      "whitened_cosine": {
+        "by_source": [
+          {
+            "n": 100,
+            "spearman_rho": 0.5036778664257765,
+            "pearson_r": 0.8795289388393458
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.2844966352469682,
+            "pearson_r": 0.7170882802214307
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.18156493448370076,
+            "pearson_r": 0.58944805082748
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.5741336576135457,
+            "pearson_r": 0.6723401755913007
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.16664416292419806,
+            "pearson_r": 0.20328421840880134
+          }
+        ],
+        "macro_spearman_rho": 0.3421034513388379,
+        "pooled": {
+          "n": 500,
+          "spearman_rho": 0.3316909426207611,
+          "pearson_r": 0.5452986544018315
+        }
+      },
+      "euclidean": {
+        "by_source": [
+          {
+            "n": 100,
+            "spearman_rho": 0.7033847737994303,
+            "pearson_r": 0.7689493429687523
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.6925623541846677,
+            "pearson_r": 0.618455363123403
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.8085184950036993,
+            "pearson_r": 0.7821579065129032
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.9246780230313688,
+            "pearson_r": 0.9331383966552786
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.8107099296048327,
+            "pearson_r": 0.7615103715747351
+          }
+        ],
+        "macro_spearman_rho": 0.7879707151247998,
+        "pooled": {
+          "n": 500,
+          "spearman_rho": 0.7393905104133502,
+          "pearson_r": 0.7874734327344473
+        }
+      },
+      "pca_euclidean": {
+        "by_source": [
+          {
+            "n": 100,
+            "spearman_rho": 0.6995705383531374,
+            "pearson_r": 0.7763136371736242
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.69170473649284,
+            "pearson_r": 0.6192177455600583
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.8085004808222842,
+            "pearson_r": 0.7852851633644476
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.9250921439623159,
+            "pearson_r": 0.9337360245865001
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.8124623098833499,
+            "pearson_r": 0.7622161603268455
+          }
+        ],
+        "macro_spearman_rho": 0.7874660419027855,
+        "pooled": {
+          "n": 500,
+          "spearman_rho": 0.7396468226827385,
+          "pearson_r": 0.7913891983878932
+        }
+      },
+      "mahalanobis": {
+        "by_source": [
+          {
+            "n": 100,
+            "spearman_rho": -0.3404733165153423,
+            "pearson_r": 0.05803481706221959
+          },
+          {
+            "n": 100,
+            "spearman_rho": -0.36015935497457435,
+            "pearson_r": -0.16000704492820134
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.7496781737745503,
+            "pearson_r": 0.8049619116621288
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.7534060084453017,
+            "pearson_r": 0.7703392254362169
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.7175637162388546,
+            "pearson_r": 0.7214291213981773
+          }
+        ],
+        "macro_spearman_rho": 0.304003045393758,
+        "pooled": {
+          "n": 500,
+          "spearman_rho": 0.5352758334427228,
+          "pearson_r": 0.6854208709061362
+        }
+      },
+      "graph_euclidean": {
+        "by_source": [
+          {
+            "n": 100,
+            "spearman_rho": 0.7763770645061753,
+            "pearson_r": 0.6650732458398391
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.693820727807256,
+            "pearson_r": 0.503188105746128
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.819260951854291,
+            "pearson_r": 0.7550477976465944
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.9195285192813304,
+            "pearson_r": 0.9192242085998823
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.8031842964909267,
+            "pearson_r": 0.7633441304391299
+          }
+        ],
+        "macro_spearman_rho": 0.8024343119879959,
+        "pooled": {
+          "n": 500,
+          "spearman_rho": 0.6966755534543692,
+          "pearson_r": 0.7045807816196157
+        }
+      },
+      "local_metric_direct": {
+        "by_source": [
+          {
+            "n": 100,
+            "spearman_rho": 0.5851062023052668,
+            "pearson_r": 0.7072366105242527
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.6383961825830615,
+            "pearson_r": 0.45798767748325564
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.6864243780986795,
+            "pearson_r": 0.6482180567566922
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.7952922399971875,
+            "pearson_r": 0.8063607767607497
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.5608157008464199,
+            "pearson_r": 0.5208272790868221
+          }
+        ],
+        "macro_spearman_rho": 0.653206940766123,
+        "pooled": {
+          "n": 500,
+          "spearman_rho": 0.3758635728839415,
+          "pearson_r": 0.494283020385165
+        }
+      },
+      "geodesic": {
+        "by_source": [
+          {
+            "n": 100,
+            "spearman_rho": 0.7459315141441535,
+            "pearson_r": 0.5816579848878752
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.694269574449708,
+            "pearson_r": 0.433693586203613
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.7819115490534636,
+            "pearson_r": 0.7386608459462867
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.8638742672136077,
+            "pearson_r": 0.8850528455340826
+          },
+          {
+            "n": 100,
+            "spearman_rho": 0.7154392552162686,
+            "pearson_r": 0.673459665516534
+          }
+        ],
+        "macro_spearman_rho": 0.7602852320154403,
+        "pooled": {
+          "n": 500,
+          "spearman_rho": 0.4663144904298695,
+          "pearson_r": 0.5330626667706351
+        }
+      }
+    },
+    "positive_leakage_only": {
+      "centered_cosine": {
+        "by_source": [
+          {
+            "n": 61,
+            "spearman_rho": 0.6407278551823572,
+            "pearson_r": 0.6829482156726037
+          },
+          {
+            "n": 24,
+            "spearman_rho": 0.6090983728281816,
+            "pearson_r": 0.4793196569460836
+          },
+          {
+            "n": 107,
+            "spearman_rho": 0.7518750065767692,
+            "pearson_r": 0.8123679790450983
+          },
+          {
+            "n": 109,
+            "spearman_rho": 0.8691950960588858,
+            "pearson_r": 0.931204706108023
+          },
+          {
+            "n": 110,
+            "spearman_rho": 0.7603874811136448,
+            "pearson_r": 0.760875687349225
+          }
+        ],
+        "macro_spearman_rho": 0.7262567623519678,
+        "pooled": {
+          "n": 411,
+          "spearman_rho": 0.5738190064538482,
+          "pearson_r": 0.6515455930398771
+        }
+      },
+      "raw_cosine": {
+        "by_source": [
+          {
+            "n": 61,
+            "spearman_rho": 0.6349780746788513,
+            "pearson_r": 0.649258745851747
+          },
+          {
+            "n": 24,
+            "spearman_rho": 0.6224168503681564,
+            "pearson_r": 0.5642895586736756
+          },
+          {
+            "n": 107,
+            "spearman_rho": 0.79265082980366,
+            "pearson_r": 0.7334926098868826
+          },
+          {
+            "n": 109,
+            "spearman_rho": 0.9169412537073025,
+            "pearson_r": 0.8889833816633606
+          },
+          {
+            "n": 110,
+            "spearman_rho": 0.7944687325277537,
+            "pearson_r": 0.7157787471619892
+          }
+        ],
+        "macro_spearman_rho": 0.7522911482171447,
+        "pooled": {
+          "n": 411,
+          "spearman_rho": 0.7742847139182312,
+          "pearson_r": 0.7017888898449264
+        }
+      },
+      "whitened_cosine": {
+        "by_source": [
+          {
+            "n": 61,
+            "spearman_rho": 0.5377109544945416,
+            "pearson_r": 0.8801911980414028
+          },
+          {
+            "n": 24,
+            "spearman_rho": 0.7032156141106704,
+            "pearson_r": 0.6538800348400513
+          },
+          {
+            "n": 107,
+            "spearman_rho": 0.3099874249715417,
+            "pearson_r": 0.6801356137518993
+          },
+          {
+            "n": 109,
+            "spearman_rho": 0.6087947908640701,
+            "pearson_r": 0.6604771026991614
+          },
+          {
+            "n": 110,
+            "spearman_rho": 0.21903256961203962,
+            "pearson_r": 0.20868310169014845
+          }
+        ],
+        "macro_spearman_rho": 0.47574827081057264,
+        "pooled": {
+          "n": 411,
+          "spearman_rho": 0.38650565687121696,
+          "pearson_r": 0.5315016237555347
+        }
+      },
+      "euclidean": {
+        "by_source": [
+          {
+            "n": 61,
+            "spearman_rho": 0.6893614152745121,
+            "pearson_r": 0.7515894989727774
+          },
+          {
+            "n": 24,
+            "spearman_rho": 0.6428385159294511,
+            "pearson_r": 0.5716675976295528
+          },
+          {
+            "n": 107,
+            "spearman_rho": 0.7998266688713567,
+            "pearson_r": 0.7927520705323768
+          },
+          {
+            "n": 109,
+            "spearman_rho": 0.920101777779536,
+            "pearson_r": 0.9318740016714161
+          },
+          {
+            "n": 110,
+            "spearman_rho": 0.7966644686619871,
+            "pearson_r": 0.7572866988038115
+          }
+        ],
+        "macro_spearman_rho": 0.7697585693033686,
+        "pooled": {
+          "n": 411,
+          "spearman_rho": 0.7602804457258315,
+          "pearson_r": 0.7703753029772729
+        }
+      },
+      "pca_euclidean": {
+        "by_source": [
+          {
+            "n": 61,
+            "spearman_rho": 0.684676408938322,
+            "pearson_r": 0.7600964466489454
+          },
+          {
+            "n": 24,
+            "spearman_rho": 0.6326276831488038,
+            "pearson_r": 0.57204233033476
+          },
+          {
+            "n": 107,
+            "spearman_rho": 0.7997678505183428,
+            "pearson_r": 0.7957220063806862
+          },
+          {
+            "n": 109,
+            "spearman_rho": 0.9205234899358016,
+            "pearson_r": 0.9323643707696819
+          },
+          {
+            "n": 110,
+            "spearman_rho": 0.7984904915251589,
+            "pearson_r": 0.7579578235168487
+          }
+        ],
+        "macro_spearman_rho": 0.7672171848132858,
+        "pooled": {
+          "n": 411,
+          "spearman_rho": 0.7620137114282327,
+          "pearson_r": 0.7751014798352996
+        }
+      },
+      "mahalanobis": {
+        "by_source": [
+          {
+            "n": 61,
+            "spearman_rho": -0.0035936128146912437,
+            "pearson_r": 0.3275296254601295
+          },
+          {
+            "n": 24,
+            "spearman_rho": 0.470142257161111,
+            "pearson_r": 0.30266431510475095
+          },
+          {
+            "n": 107,
+            "spearman_rho": 0.7482135641016535,
+            "pearson_r": 0.8204112073479752
+          },
+          {
+            "n": 109,
+            "spearman_rho": 0.7522788763838487,
+            "pearson_r": 0.7724880704264674
+          },
+          {
+            "n": 110,
+            "spearman_rho": 0.732117941972692,
+            "pearson_r": 0.7381962003177581
+          }
+        ],
+        "macro_spearman_rho": 0.5398318053609228,
+        "pooled": {
+          "n": 411,
+          "spearman_rho": 0.6960465697136767,
+          "pearson_r": 0.755509601394326
+        }
+      },
+      "graph_euclidean": {
+        "by_source": [
+          {
+            "n": 61,
+            "spearman_rho": 0.6907190023378399,
+            "pearson_r": 0.66971404664268
+          },
+          {
+            "n": 24,
+            "spearman_rho": 0.6379550741647938,
+            "pearson_r": 0.5249340356327264
+          },
+          {
+            "n": 107,
+            "spearman_rho": 0.8085660958233396,
+            "pearson_r": 0.7550064305231278
+          },
+          {
+            "n": 109,
+            "spearman_rho": 0.9152775760798367,
+            "pearson_r": 0.9161280007711126
+          },
+          {
+            "n": 110,
+            "spearman_rho": 0.7907986520077002,
+            "pearson_r": 0.7624703965781705
+          }
+        ],
+        "macro_spearman_rho": 0.768663280082702,
+        "pooled": {
+          "n": 411,
+          "spearman_rho": 0.7094776931875266,
+          "pearson_r": 0.6905979283502537
+        }
+      },
+      "local_metric_direct": {
+        "by_source": [
+          {
+            "n": 61,
+            "spearman_rho": 0.4797872397925553,
+            "pearson_r": 0.7306265301132242
+          },
+          {
+            "n": 24,
+            "spearman_rho": 0.5163129792996903,
+            "pearson_r": 0.4863847501831338
+          },
+          {
+            "n": 107,
+            "spearman_rho": 0.6967180960379783,
+            "pearson_r": 0.6802191748410498
+          },
+          {
+            "n": 109,
+            "spearman_rho": 0.8059382726190246,
+            "pearson_r": 0.8094421617927636
+          },
+          {
+            "n": 110,
+            "spearman_rho": 0.5631048727162714,
+            "pearson_r": 0.5301889268084153
+          }
+        ],
+        "macro_spearman_rho": 0.612372292093104,
+        "pooled": {
+          "n": 411,
+          "spearman_rho": 0.4819549733077377,
+          "pearson_r": 0.5455123456863235
+        }
+      },
+      "geodesic": {
+        "by_source": [
+          {
+            "n": 61,
+            "spearman_rho": 0.6088378688712454,
+            "pearson_r": 0.5707584818229546
+          },
+          {
+            "n": 24,
+            "spearman_rho": 0.5900085550208845,
+            "pearson_r": 0.45282785714499996
+          },
+          {
+            "n": 107,
+            "spearman_rho": 0.7862935461487403,
+            "pearson_r": 0.7468607712959735
+          },
+          {
+            "n": 109,
+            "spearman_rho": 0.8581517986041467,
+            "pearson_r": 0.879515637092892
+          },
+          {
+            "n": 110,
+            "spearman_rho": 0.7109586202520396,
+            "pearson_r": 0.6790199254896936
+          }
+        ],
+        "macro_spearman_rho": 0.7108500777794113,
+        "pooled": {
+          "n": 411,
+          "spearman_rho": 0.5140795186645287,
+          "pearson_r": 0.549682611869127
+        }
+      }
+    }
+  },
+  "elapsed_seconds": 8.828433018177748,
+  "completed_at_utc": "2026-10-02T17:08:37.502627+00:00"
+}

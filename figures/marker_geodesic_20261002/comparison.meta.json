@@ -1,0 +1,67 @@
+{
+  "source": "eval_results/marker_geodesic_20261002/summary.json",
+  "source_sha256": "6255aa752b682e205fd217b787f8f918f7992f69822e02549d0e3b7edb79bc21",
+  "primary_layer": 20,
+  "series": [
+    "centered_cosine",
+    "raw_cosine",
+    "geodesic",
+    "graph_euclidean"
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      7.464
+    ],
+    "exported_size_inches": [
+      13.095,
+      7.347
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/comparison.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "A  \u00b7  BLOCK 20 \u00b7 110 TARGETS PER SOURCE",
+      "Villain",
+      "Comedian",
+      "Assistant",
+      "Software\nengineer",
+      "Kindergarten\nteacher",
+      "Spearman $\\rho$ with marker uptake \u2191",
+      "0.5",
+      "0.6",
+      "0.7",
+      "0.8",
+      "0.9",
+      "1.0",
+      "Individual source personas",
+      "B  \u00b7  FIVE SOURCES \u00b7 SAME FIXED OUTCOMES",
+      "Transformer block (zero-based)",
+      "10",
+      "15",
+      "20",
+      "25",
+      "Mean within-source Spearman $\\rho$ \u2191",
+      "0.3",
+      "0.4",
+      "Comparison across layers",
+      "Block 20: geodesic - centered cosine = +0.005 [95% paired interval -0.029, +0.041]",
+      "Existing contrastive marker training; fixed persona bank and one training seed.",
+      "Centered cosine",
+      "Raw cosine",
+      "Local-metric geodesic",
+      "Euclidean graph"
+    ]
+  }
+}

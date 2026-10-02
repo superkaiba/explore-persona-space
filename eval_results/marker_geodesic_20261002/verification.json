@@ -1,0 +1,22 @@
+{
+  "recorded_at_utc": "2026-10-02T17:20:03.475462+00:00",
+  "independent_reviewer": "verify_marker_geodesic",
+  "verdict": "PASS",
+  "checks": [
+    "All four input Gram matrices exactly match original centroid tensors computed in float64",
+    "Persona order and all five raw marker outcome files agree with analysis inputs",
+    "Independent direct-tensor geometry reproduces block-20 distances within 2.39e-12",
+    "Independent scalar SciPy correlations and 5000-draw bootstrap reproduce primary result and interval"
+  ],
+  "focused_tests": {
+    "command": "uv run --no-sync pytest tests/test_marker_geodesic_reanalysis.py -q",
+    "passed": 3
+  },
+  "ruff": "pass",
+  "figure_visual_check": "pass; source labels legible, no clipping",
+  "limitations": [
+    "Conditional fixed-graph target bootstrap, not model-seed uncertainty",
+    "Prompt-end 111-persona adaptation, not full paper replication",
+    "Existing contrastive training only; not positive-only training"
+  ]
+}

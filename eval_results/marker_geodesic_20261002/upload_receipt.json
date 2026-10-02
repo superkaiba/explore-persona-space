@@ -1,0 +1,90 @@
+{
+  "verified_at_utc": "2026-10-02T17:20:16.823772+00:00",
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "revision": "f86596490457655dcd52691f010f4c35b1405f58",
+  "prefix": "marker_geodesic_20261002",
+  "verification": "every uploaded file downloaded at pinned revision and SHA256 matched",
+  "files": [
+    {
+      "path": "marker_geodesic_20261002/eval_results/marker_geodesic_20261002/README.md",
+      "sha256": "3930a9911bf3e713b55cc4e234b57d84f87d6632b6de47438efbcd4645d8d94d",
+      "bytes": 4680
+    },
+    {
+      "path": "marker_geodesic_20261002/eval_results/marker_geodesic_20261002/distance_matrices.npz",
+      "sha256": "28d5edd68eb5e133a85b319aaf7c93e10d65427d1c1456ac792c3b008cbbbb70",
+      "bytes": 2756370
+    },
+    {
+      "path": "marker_geodesic_20261002/eval_results/marker_geodesic_20261002/inputs.json",
+      "sha256": "8fd84e6aceda7a3c61fdcfc97c7ae1846f680036b745805b89ffd03bf16102b4",
+      "bytes": 978211
+    },
+    {
+      "path": "marker_geodesic_20261002/eval_results/marker_geodesic_20261002/protocol.json",
+      "sha256": "36916a6553442ce14d6f55f6bb23fc7c8f770ff63848ffb78623c47b0fde85b5",
+      "bytes": 2995
+    },
+    {
+      "path": "marker_geodesic_20261002/eval_results/marker_geodesic_20261002/summary.json",
+      "sha256": "6255aa752b682e205fd217b787f8f918f7992f69822e02549d0e3b7edb79bc21",
+      "bytes": 124439
+    },
+    {
+      "path": "marker_geodesic_20261002/eval_results/marker_geodesic_20261002/verification.json",
+      "sha256": "d573041d4b9028e729a14f8f735459f6c42b187a4d9968e847bfc86e9c0414ec",
+      "bytes": 981
+    },
+    {
+      "path": "marker_geodesic_20261002/figures/marker_geodesic_20261002/comparison.meta.json",
+      "sha256": "48c7313e380867b2d4b0301d43168e72b38eddc37d6d94b8ac56c32dd1d76277",
+      "bytes": 1767
+    },
+    {
+      "path": "marker_geodesic_20261002/figures/marker_geodesic_20261002/comparison.pdf",
+      "sha256": "8ac7cd4cf5d4dcda8f2c050018643bf40bdf2312bb88c6a87491963a342e7c47",
+      "bytes": 26883
+    },
+    {
+      "path": "marker_geodesic_20261002/figures/marker_geodesic_20261002/comparison.png",
+      "sha256": "654e06864549b93cb85f7cd35bfd4d3f95adf51d4aa45fedffb5eed4f5afa981",
+      "bytes": 449782
+    },
+    {
+      "path": "marker_geodesic_20261002/figures/marker_geodesic_20261002/comparison_grayscale.png",
+      "sha256": "4e5e96800f67ae02bd783a0618c400da752a5ce81a66a8ab0c1e180aa6bec876",
+      "bytes": 194723
+    },
+    {
+      "path": "marker_geodesic_20261002/scripts/analyze_marker_geodesic.py",
+      "sha256": "f152652fc33075aad7e98258913f96ce6308fae3cf08894ed9266d006de394b0",
+      "bytes": 13100
+    },
+    {
+      "path": "marker_geodesic_20261002/scripts/plot_marker_geodesic.py",
+      "sha256": "2b9ef6d66dcaad23679dfa42f4f3a2b71df620b4a76e67e6d6c3b002d755f092",
+      "bytes": 4288
+    },
+    {
+      "path": "marker_geodesic_20261002/scripts/vendor/personamanifold/geometry.py",
+      "sha256": "c5308e5d02b2fc22eb333a5aca31f90867daa96767263e6e445c72aa5a0ec39e",
+      "bytes": 7955
+    },
+    {
+      "path": "marker_geodesic_20261002/scripts/vendor/personamanifold/LICENSE",
+      "sha256": "4c671d9988da44b70429e6b7063c4ef65c171312230c7db7356ac1f260c61438",
+      "bytes": 1088
+    },
+    {
+      "path": "marker_geodesic_20261002/scripts/vendor/personamanifold/PROVENANCE.json",
+      "sha256": "f8ba2e08529c105aba071d7f2227955990038f17a2f52e430189d70b57754346",
+      "bytes": 304
+    },
+    {
+      "path": "marker_geodesic_20261002/tests/test_marker_geodesic_reanalysis.py",
+      "sha256": "f9f921947b9e45fee5af9584cd9d8659acc8b7110b968cb66ba51a9399595456",
+      "bytes": 2420
+    }
+  ]
+}
