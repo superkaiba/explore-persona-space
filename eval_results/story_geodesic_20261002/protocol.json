@@ -1,0 +1,71 @@
+{
+  "frozen_at_utc": "2026-10-02T17:38:01.624025+00:00",
+  "scope": "CPU-only post-hoc extension of the marker geodesic analysis to saved story-imprinting capture; no model calls, no new training, no new behavioral outcomes",
+  "hypothesis": "Smaller local-metric graph distance from HHH or Fred to a character is associated with greater published uptake of that character tracer",
+  "primary_outcome": "Direct alternative-character uptake, separately for HHH and Fred; five observations each; do not replace with Helpful-minus-other contrast",
+  "models": [
+    "deepseek",
+    "qwen"
+  ],
+  "layers": {
+    "deepseek": [
+      15,
+      30,
+      45,
+      60
+    ],
+    "qwen": [
+      15,
+      31,
+      47,
+      63
+    ]
+  },
+  "geometry_source": "Unchanged scripts/vendor/personamanifold/geometry.py, upstream commit 33e181cb42220d2a0bc63c4c16260ed70c48fccb",
+  "original_marker_protocol_feasibility": "Not applicable: 8 distinct persona centroids cannot support the 20-neighbor intrinsic-dimension estimator, nor k=30. Do not pool questions as independent personas or silently cap k.",
+  "graph_diagnostic": {
+    "n_neighbors": 5,
+    "tangent_dim": 1,
+    "variance": 0.99,
+    "ridge": 0.0001,
+    "rationale": "d=1,k=5 is the sole feasible positive-integer pair satisfying paper k=5d with N=8. Forced one-dimensional local metric is an exploratory diagnostic, not a fitted dimensionality claim."
+  },
+  "sensitivity_settings": [
+    {
+      "k": 3,
+      "d": 1
+    },
+    {
+      "k": 5,
+      "d": 1
+    },
+    {
+      "k": 7,
+      "d": 1
+    },
+    {
+      "k": 7,
+      "d": 2
+    }
+  ],
+  "sensitivity_rule": "Same k>=3d restriction as marker sensitivity; all settings reported, no winner selected. k=7 is the complete-graph boundary.",
+  "ridge_sensitivity": [
+    1e-05,
+    0.001
+  ],
+  "dimension_diagnostic": "Pooled inverse-log estimates using k=3,5,7 only; descriptive tiny-bank diagnostic, never used to pick a result.",
+  "metrics": [
+    "raw_cosine",
+    "whitened_cosine",
+    "centered_cosine",
+    "euclidean",
+    "graph_euclidean",
+    "local_metric_direct",
+    "geodesic"
+  ],
+  "whitened_cosine": "Reuse original uncentered second-moment fits on 1920 individual contexts; do not substitute an 8-centroid whitener.",
+  "statistics": "Descriptive Pearson and Spearman, plus leave-one-character-out correlations for influence; no sampling CI or held-out prediction claim. Distance negated. No best-layer selection.",
+  "uncertainty": "Five digitized aggregate outcomes per persona. Questions, layers, and graph settings are not behavioral replicates.",
+  "inputs_sha256": "ea800e49388d35f0a02108fc0b08624c6917e5cbc4108dc8505e619962e94ae9",
+  "decision": "No confirmatory improvement claim from this eight-persona diagnostic, even if a point estimate exceeds cosine."
+}

@@ -1,0 +1,305 @@
+{
+  "input_sha256": "2eeaae287d8501b734565ec7515512c9f966413b15ae77ca5b7cff9431e2e3ff",
+  "diagnostic": "k5_d1_ridge0.0001",
+  "panels": [
+    {
+      "model": "deepseek",
+      "layer": 60,
+      "persona": "hhh",
+      "direct": {
+        "n": 5,
+        "pearson_r": -0.482293573191917,
+        "spearman_rho": -0.39999999999999997,
+        "leave_one_character_out_rho": [
+          -0.39999999999999997,
+          -1.0,
+          -0.39999999999999997,
+          -0.39999999999999997,
+          0.19999999999999998
+        ]
+      },
+      "contrast": {
+        "n": 5,
+        "pearson_r": 0.9511563343715445,
+        "spearman_rho": 0.9999999999999999,
+        "leave_one_character_out_rho": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "contrast_sign_matches": 3,
+      "alternatives": [
+        "dismissive",
+        "sarcastic",
+        "saboteur",
+        "peer",
+        "help_seeker"
+      ],
+      "scores": [
+        -1.113904216289614,
+        -1.7041515475558515,
+        -1.5570172760463832,
+        -0.730170362250522,
+        -0.3487461785951537
+      ],
+      "rates": [
+        0.0730593607305936,
+        0.04337899543378995,
+        0.1095890410958904,
+        0.05707762557077625,
+        0.0365296803652968
+      ],
+      "digitization_bounds": [
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575
+      ]
+    },
+    {
+      "model": "deepseek",
+      "layer": 60,
+      "persona": "fred",
+      "direct": {
+        "n": 5,
+        "pearson_r": 0.9354971865732187,
+        "spearman_rho": 0.8999999999999998,
+        "leave_one_character_out_rho": [
+          0.7999999999999999,
+          0.7999999999999999,
+          1.0,
+          1.0,
+          0.7999999999999999
+        ]
+      },
+      "contrast": {
+        "n": 5,
+        "pearson_r": 0.9454251945915434,
+        "spearman_rho": 0.8999999999999998,
+        "leave_one_character_out_rho": [
+          0.7999999999999999,
+          0.7999999999999999,
+          1.0,
+          1.0,
+          0.7999999999999999
+        ]
+      },
+      "contrast_sign_matches": 3,
+      "alternatives": [
+        "dismissive",
+        "sarcastic",
+        "saboteur",
+        "peer",
+        "help_seeker"
+      ],
+      "scores": [
+        -0.636390748159497,
+        -0.8493119484951805,
+        -1.082896840167683,
+        -1.0772730537686401,
+        -1.2035857776558248
+      ],
+      "rates": [
+        0.58675799086758,
+        0.4041095890410959,
+        0.2899543378995434,
+        0.06621004566210045,
+        0.03424657534246575
+      ],
+      "digitization_bounds": [
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575
+      ]
+    },
+    {
+      "model": "qwen",
+      "layer": 63,
+      "persona": "hhh",
+      "direct": {
+        "n": 5,
+        "pearson_r": 0.8053103636807419,
+        "spearman_rho": 0.3,
+        "leave_one_character_out_rho": [
+          0.7999999999999999,
+          0.39999999999999997,
+          -0.39999999999999997,
+          0.19999999999999998,
+          0.39999999999999997
+        ]
+      },
+      "contrast": {
+        "n": 5,
+        "pearson_r": -0.06697962504842714,
+        "spearman_rho": 0.09999999999999999,
+        "leave_one_character_out_rho": [
+          0.19999999999999998,
+          -0.39999999999999997,
+          0.6000000000000001,
+          0.0,
+          0.0
+        ]
+      },
+      "contrast_sign_matches": 5,
+      "alternatives": [
+        "dismissive",
+        "sarcastic",
+        "saboteur",
+        "peer",
+        "help_seeker"
+      ],
+      "scores": [
+        -1.356551847863475,
+        -1.325399556492159,
+        -0.40904406959359607,
+        -1.0972700964445432,
+        -1.189946057621438
+      ],
+      "rates": [
+        0.0730593607305936,
+        0.04337899543378995,
+        0.1095890410958904,
+        0.05707762557077625,
+        0.0365296803652968
+      ],
+      "digitization_bounds": [
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575
+      ]
+    },
+    {
+      "model": "qwen",
+      "layer": 63,
+      "persona": "fred",
+      "direct": {
+        "n": 5,
+        "pearson_r": 0.04173594302774393,
+        "spearman_rho": 0.09999999999999999,
+        "leave_one_character_out_rho": [
+          0.0,
+          0.0,
+          0.19999999999999998,
+          0.6000000000000001,
+          -0.39999999999999997
+        ]
+      },
+      "contrast": {
+        "n": 5,
+        "pearson_r": 0.16833883373909694,
+        "spearman_rho": 0.09999999999999999,
+        "leave_one_character_out_rho": [
+          0.0,
+          0.0,
+          0.19999999999999998,
+          0.6000000000000001,
+          -0.39999999999999997
+        ]
+      },
+      "contrast_sign_matches": 2,
+      "alternatives": [
+        "dismissive",
+        "sarcastic",
+        "saboteur",
+        "peer",
+        "help_seeker"
+      ],
+      "scores": [
+        -0.6917058326942067,
+        -0.6400038636911629,
+        -1.6202454416354906,
+        -0.6301088983617458,
+        -0.8376608765212752
+      ],
+      "rates": [
+        0.58675799086758,
+        0.4041095890410959,
+        0.2899543378995434,
+        0.06621004566210045,
+        0.03424657534246575
+      ],
+      "digitization_bounds": [
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575,
+        0.003424657534246575
+      ]
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      10.869
+    ],
+    "exported_size_inches": [
+      13.095,
+      10.181
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/final_layer_scatter.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "Dismissive",
+      "Sarcastic",
+      "Saboteur",
+      "Peer",
+      "Help-seeker",
+      "Spearman \u03c1 = -0.40",
+      "Negative geodesic distance (closer \u2192)",
+      "-1.70",
+      "-1.25",
+      "-0.80",
+      "-0.35",
+      "Published tracer uptake (%)",
+      "0",
+      "4",
+      "8",
+      "12",
+      "DeepSeek block 60 \u00b7 HHH",
+      "Spearman \u03c1 = +0.90",
+      "-1.20",
+      "-1.01",
+      "-0.83",
+      "-0.64",
+      "20",
+      "40",
+      "60",
+      "DeepSeek block 60 \u00b7 Fred",
+      "Spearman \u03c1 = +0.30",
+      "-1.36",
+      "-1.04",
+      "-0.72",
+      "-0.41",
+      "Qwen block 63 \u00b7 HHH",
+      "Spearman \u03c1 = +0.10",
+      "-1.62",
+      "-1.29",
+      "-0.96",
+      "-0.63",
+      "Qwen block 63 \u00b7 Fred",
+      "Story imprinting \u00b7 final-layer geodesic diagnostic",
+      "Fixed k=5, d=1; eight-node graph. Whiskers are digitization bounds, not sampling uncertainty.",
+      "Both rows use published DeepSeek outcomes; Qwen tests cross-model geometry."
+    ]
+  }
+}

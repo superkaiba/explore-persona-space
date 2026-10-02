@@ -1,0 +1,48 @@
+{
+  "deepseek": {
+    "centroids.npz": {
+      "local_path": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/e7840c8fb3f8ad46fc654ad60ba51b55098ff1c1/issue2673_deepseek_comparison/20260921_v7/deepseek/analysis_tensors/centroids.npz",
+      "sha256": "3278a9857b971b70d30d1ae5e435d2f3d1ca26d5915ccf6073bd3eae1913cb47",
+      "repo_id": "superkaiba1/explore-persona-space-data",
+      "revision": "e7840c8fb3f8ad46fc654ad60ba51b55098ff1c1",
+      "path": "issue2673_deepseek_comparison/20260921_v7/deepseek/analysis_tensors/centroids.npz"
+    },
+    "summary.json": {
+      "local_path": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/e7840c8fb3f8ad46fc654ad60ba51b55098ff1c1/issue2673_deepseek_comparison/20260921_v7/deepseek/analysis_tensors/summary.json",
+      "sha256": "22e6bfe52d23f19d072ed4f6aa90f29e8fc29b7ffe399eb952831c409e25ab4e",
+      "repo_id": "superkaiba1/explore-persona-space-data",
+      "revision": "e7840c8fb3f8ad46fc654ad60ba51b55098ff1c1",
+      "path": "issue2673_deepseek_comparison/20260921_v7/deepseek/analysis_tensors/summary.json"
+    },
+    "analysis_complete.json": {
+      "local_path": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/e7840c8fb3f8ad46fc654ad60ba51b55098ff1c1/issue2673_deepseek_comparison/20260921_v7/deepseek/analysis_tensors/analysis_complete.json",
+      "sha256": "14ccf86d70475dae67859f0b9f9b9af6a811d5c6067be62b4b52ecd9d05758b0",
+      "repo_id": "superkaiba1/explore-persona-space-data",
+      "revision": "e7840c8fb3f8ad46fc654ad60ba51b55098ff1c1",
+      "path": "issue2673_deepseek_comparison/20260921_v7/deepseek/analysis_tensors/analysis_complete.json"
+    }
+  },
+  "qwen": {
+    "centroids.npz": {
+      "local_path": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/c3fc35489c6ad78b621458c6d8731669f1404832/issue2673_deepseek_comparison/20260917_v3/qwen/analysis_tensors/centroids.npz",
+      "sha256": "d854c4a794e867d9136aeb8a8ba59ef25c4532ce5d1aeaeca110853b516c1d45",
+      "repo_id": "superkaiba1/explore-persona-space-data",
+      "revision": "c3fc35489c6ad78b621458c6d8731669f1404832",
+      "path": "issue2673_deepseek_comparison/20260917_v3/qwen/analysis_tensors/centroids.npz"
+    },
+    "summary.json": {
+      "local_path": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/c3fc35489c6ad78b621458c6d8731669f1404832/issue2673_deepseek_comparison/20260917_v3/qwen/analysis_tensors/summary.json",
+      "sha256": "8460af572689729d1f248b77359c0c3ffc1318560811ecdddd0d1722bdf2b1f3",
+      "repo_id": "superkaiba1/explore-persona-space-data",
+      "revision": "c3fc35489c6ad78b621458c6d8731669f1404832",
+      "path": "issue2673_deepseek_comparison/20260917_v3/qwen/analysis_tensors/summary.json"
+    },
+    "analysis_complete.json": {
+      "local_path": "/mnt/eps-data/thomasjiralerspong/huggingface-cache/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/c3fc35489c6ad78b621458c6d8731669f1404832/issue2673_deepseek_comparison/20260917_v3/qwen/analysis_tensors/analysis_complete.json",
+      "sha256": "00b1f2c93ba4fedac565f37e7658c8b73300c7b79afd6dcd5a0129ea96cf9c1b",
+      "repo_id": "superkaiba1/explore-persona-space-data",
+      "revision": "c3fc35489c6ad78b621458c6d8731669f1404832",
+      "path": "issue2673_deepseek_comparison/20260917_v3/qwen/analysis_tensors/analysis_complete.json"
+    }
+  }
+}

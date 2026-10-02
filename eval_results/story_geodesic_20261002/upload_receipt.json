@@ -1,0 +1,149 @@
+{
+  "verified_at_utc": "2026-10-02T17:44:39.839109+00:00",
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "revision": "ff80c85bc02a41284ebdc81fd4759cdf94e06297",
+  "prefix": "story_geodesic_20261002",
+  "verification": "Each file downloaded at pinned revision and SHA256 matched",
+  "files": [
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/README.md",
+      "sha256": "5068e1bd557c16d2f6c12a659e72a395dd165d0fa542d0a4ea1a42fae4154e9e",
+      "bytes": 5649
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/deepseek_block_15.json",
+      "sha256": "8b44d83423a1697a1f260e10a269e30a454ddc73abd072d25a4fb38c455a9270",
+      "bytes": 179851
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/deepseek_block_30.json",
+      "sha256": "2ecec0f0ae4607bba1bc6a21b54398ecdcb7964cb43ce9d29c3cfad469d08ca9",
+      "bytes": 179036
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/deepseek_block_45.json",
+      "sha256": "4d22b858771c78eae880fc636604124b22cef0dd9735b65d7185c55525a8ac74",
+      "bytes": 178811
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/deepseek_block_60.json",
+      "sha256": "0b7c2c9ef6275e8e3fe247613a6db0634182ce05f60697e0dc40926fc6f1355c",
+      "bytes": 178901
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/inputs.json",
+      "sha256": "ea800e49388d35f0a02108fc0b08624c6917e5cbc4108dc8505e619962e94ae9",
+      "bytes": 88086
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/protocol.json",
+      "sha256": "52da30d7680028f3ce902cbcaea468b0a3447f38655d5052b61226b03da19702",
+      "bytes": 2804
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/qwen_block_15.json",
+      "sha256": "fe9aafa30c47efe7b69812e357512a9e4577a294e396d0120b66327b3c1849af",
+      "bytes": 180512
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/qwen_block_31.json",
+      "sha256": "1b9672b72d0ea89eadc52ef36f10d4315cbe8bbec0b184a312dec966c553b2de",
+      "bytes": 179109
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/qwen_block_47.json",
+      "sha256": "2df3fdc0ff04842efedd02a3687be0cd1d8925995852bccecead1b4a911aac39",
+      "bytes": 179344
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/qwen_block_63.json",
+      "sha256": "a78cc59585a06503c6ba9d69b94f249d09452941cb9134788a1c29eccf453c19",
+      "bytes": 179501
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/staging.json",
+      "sha256": "b25607b4acc374176bf02c28c3c6ea533af9a69ccc3157b30e0ca467588c3df2",
+      "bytes": 3627
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/summary.json",
+      "sha256": "2eeaae287d8501b734565ec7515512c9f966413b15ae77ca5b7cff9431e2e3ff",
+      "bytes": 1742354
+    },
+    {
+      "path": "story_geodesic_20261002/eval_results/story_geodesic_20261002/verification.json",
+      "sha256": "47022d5a1853ee4559cb55319ae2b8327d6fa397a81a4de37e91e97761064e95",
+      "bytes": 890
+    },
+    {
+      "path": "story_geodesic_20261002/figures/story_geodesic_20261002/final_layer_scatter.meta.json",
+      "sha256": "0d0894d3d9c9bd71ae436fb7502f2bffec14b339e32e7ce53566f03f965f5846",
+      "bytes": 7298
+    },
+    {
+      "path": "story_geodesic_20261002/figures/story_geodesic_20261002/final_layer_scatter.pdf",
+      "sha256": "cdd79e07acb3211e051c2410452a6735fa2e87ce067adb54e26f56c8f1ffddb6",
+      "bytes": 22139
+    },
+    {
+      "path": "story_geodesic_20261002/figures/story_geodesic_20261002/final_layer_scatter.png",
+      "sha256": "0b5f08fc2df489f158990abf0d10338f865bc450f438987455370454bdf467c4",
+      "bytes": 480448
+    },
+    {
+      "path": "story_geodesic_20261002/figures/story_geodesic_20261002/final_layer_scatter_grayscale.png",
+      "sha256": "d042083dd38d06661687d3242bca1c0be14074cc8bad5ff3bcdb0071412b4c33",
+      "bytes": 202742
+    },
+    {
+      "path": "story_geodesic_20261002/figures/story_geodesic_20261002/layer_comparison.meta.json",
+      "sha256": "e76a1825b24f2578c9775f89ba57496f7fd977f76dc999b667121bbc879b5c77",
+      "bytes": 6168
+    },
+    {
+      "path": "story_geodesic_20261002/figures/story_geodesic_20261002/layer_comparison.pdf",
+      "sha256": "6a98414ce245a3e2e7aaf56fa596387425e39101bcf2608bb9a0b7f13a006c6a",
+      "bytes": 20279
+    },
+    {
+      "path": "story_geodesic_20261002/figures/story_geodesic_20261002/layer_comparison.png",
+      "sha256": "e0af1169db4d5b3c64f583ee47a03ad91014016b96b38f6f6c30554ea2b2ed08",
+      "bytes": 535861
+    },
+    {
+      "path": "story_geodesic_20261002/figures/story_geodesic_20261002/layer_comparison_grayscale.png",
+      "sha256": "41fcabc580f8231a6ea696187a7d6d512226cd13fd7b3c811b521bda82b257cb",
+      "bytes": 223897
+    },
+    {
+      "path": "story_geodesic_20261002/scripts/analyze_story_geodesic.py",
+      "sha256": "4e57ad31510a0cb6cc5c12b3274641c08eccdae8ebc764c0a1e53cfebb3e9461",
+      "bytes": 6837
+    },
+    {
+      "path": "story_geodesic_20261002/scripts/plot_story_geodesic.py",
+      "sha256": "8fdcb3391b8f0d0c82938aeda39d6620d1b0b49964b39cfd374c5e4a84ddb91b",
+      "bytes": 8473
+    },
+    {
+      "path": "story_geodesic_20261002/scripts/analyze_marker_geodesic.py",
+      "sha256": "f152652fc33075aad7e98258913f96ce6308fae3cf08894ed9266d006de394b0",
+      "bytes": 13100
+    },
+    {
+      "path": "story_geodesic_20261002/scripts/vendor/personamanifold/geometry.py",
+      "sha256": "c5308e5d02b2fc22eb333a5aca31f90867daa96767263e6e445c72aa5a0ec39e",
+      "bytes": 7955
+    },
+    {
+      "path": "story_geodesic_20261002/scripts/vendor/personamanifold/LICENSE",
+      "sha256": "4c671d9988da44b70429e6b7063c4ef65c171312230c7db7356ac1f260c61438",
+      "bytes": 1088
+    },
+    {
+      "path": "story_geodesic_20261002/scripts/vendor/personamanifold/PROVENANCE.json",
+      "sha256": "f8ba2e08529c105aba071d7f2227955990038f17a2f52e430189d70b57754346",
+      "bytes": 304
+    }
+  ]
+}

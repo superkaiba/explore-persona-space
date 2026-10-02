@@ -1,0 +1,18 @@
+{
+  "recorded_at_utc": "2026-10-02T17:43:07.141264+00:00",
+  "reviewer": "verify_story_geodesic",
+  "verdict": "PASS",
+  "source_verification": "Original pinned NPZ and summary hashes match successful completion manifests; fingerprints, names, counts, rates and baseline correlations checked",
+  "independent_method": "PCA and local covariance metrics on original NPZ vectors; union kNN; separate Floyd-Warshall paths",
+  "blocks": 8,
+  "graph_configurations_checked": 48,
+  "correlation_pairs_checked": 320,
+  "max_absolute_error": {
+    "raw_gram": 0,
+    "raw_cosine": 1.33e-15,
+    "geodesic": 1.76e-13,
+    "graph_euclidean": 3.07e-12,
+    "local_metric_direct": 1.95e-13
+  },
+  "interpretation": "Eight-node graph diagnostic, forced d=1 for k=5 reference; original marker dimension-estimation recipe infeasible. Five outcomes. Both geometry models use published DeepSeek behavior."
+}

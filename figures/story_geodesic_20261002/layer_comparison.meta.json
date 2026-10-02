@@ -1,0 +1,304 @@
+{
+  "input_sha256": "2eeaae287d8501b734565ec7515512c9f966413b15ae77ca5b7cff9431e2e3ff",
+  "diagnostic": "k5_d1_ridge0.0001",
+  "panels": [
+    {
+      "model": "deepseek",
+      "persona": "hhh",
+      "layers": [
+        15,
+        30,
+        45,
+        60
+      ],
+      "series": {
+        "raw_cosine": [
+          0.7,
+          -0.3,
+          -0.3,
+          -0.3
+        ],
+        "whitened_cosine": [
+          0.19999999999999998,
+          -0.3,
+          -0.49999999999999994,
+          -0.3
+        ],
+        "geodesic": [
+          0.49999999999999994,
+          0.09999999999999999,
+          -0.3,
+          -0.39999999999999997
+        ]
+      },
+      "settings": [
+        "k3_d1_ridge0.0001",
+        "k5_d1_ridge0.0001",
+        "k7_d1_ridge0.0001",
+        "k7_d2_ridge0.0001"
+      ],
+      "sensitivity_rho": [
+        [
+          0.7,
+          0.49999999999999994,
+          0.19999999999999998,
+          -0.09999999999999999
+        ],
+        [
+          -0.3,
+          0.09999999999999999,
+          -0.39999999999999997,
+          0.8999999999999998
+        ],
+        [
+          -0.3,
+          -0.3,
+          -0.3,
+          -0.3
+        ],
+        [
+          -0.3,
+          -0.39999999999999997,
+          -0.49999999999999994,
+          -0.3
+        ]
+      ]
+    },
+    {
+      "model": "deepseek",
+      "persona": "fred",
+      "layers": [
+        15,
+        30,
+        45,
+        60
+      ],
+      "series": {
+        "raw_cosine": [
+          0.6,
+          0.7999999999999999,
+          0.8999999999999998,
+          0.8999999999999998
+        ],
+        "whitened_cosine": [
+          0.6,
+          0.7,
+          0.7,
+          0.7
+        ],
+        "geodesic": [
+          0.09999999999999999,
+          0.6,
+          0.9999999999999999,
+          0.8999999999999998
+        ]
+      },
+      "settings": [
+        "k3_d1_ridge0.0001",
+        "k5_d1_ridge0.0001",
+        "k7_d1_ridge0.0001",
+        "k7_d2_ridge0.0001"
+      ],
+      "sensitivity_rho": [
+        [
+          0.7999999999999999,
+          0.09999999999999999,
+          0.0,
+          0.49999999999999994
+        ],
+        [
+          0.8999999999999998,
+          0.6,
+          0.7999999999999999,
+          -0.7
+        ],
+        [
+          0.6,
+          0.9999999999999999,
+          0.8999999999999998,
+          0.3
+        ],
+        [
+          0.7,
+          0.8999999999999998,
+          0.8999999999999998,
+          0.7
+        ]
+      ]
+    },
+    {
+      "model": "qwen",
+      "persona": "hhh",
+      "layers": [
+        15,
+        31,
+        47,
+        63
+      ],
+      "series": {
+        "raw_cosine": [
+          -0.6,
+          -0.49999999999999994,
+          0.19999999999999998,
+          0.49999999999999994
+        ],
+        "whitened_cosine": [
+          0.3,
+          0.7,
+          0.6,
+          0.49999999999999994
+        ],
+        "geodesic": [
+          -0.19999999999999998,
+          0.09999999999999999,
+          0.09999999999999999,
+          0.3
+        ]
+      },
+      "settings": [
+        "k3_d1_ridge0.0001",
+        "k5_d1_ridge0.0001",
+        "k7_d1_ridge0.0001",
+        "k7_d2_ridge0.0001"
+      ],
+      "sensitivity_rho": [
+        [
+          -0.39999999999999997,
+          -0.19999999999999998,
+          -0.09999999999999999,
+          -0.09999999999999999
+        ],
+        [
+          0.19999999999999998,
+          0.09999999999999999,
+          0.19999999999999998,
+          -0.3
+        ],
+        [
+          -0.09999999999999999,
+          0.09999999999999999,
+          0.19999999999999998,
+          -0.49999999999999994
+        ],
+        [
+          0.0,
+          0.3,
+          0.3,
+          0.49999999999999994
+        ]
+      ]
+    },
+    {
+      "model": "qwen",
+      "persona": "fred",
+      "layers": [
+        15,
+        31,
+        47,
+        63
+      ],
+      "series": {
+        "raw_cosine": [
+          0.6,
+          0.6,
+          0.6,
+          0.7
+        ],
+        "whitened_cosine": [
+          0.7,
+          0.6,
+          0.6,
+          0.49999999999999994
+        ],
+        "geodesic": [
+          0.6,
+          0.7,
+          0.6,
+          0.09999999999999999
+        ]
+      },
+      "settings": [
+        "k3_d1_ridge0.0001",
+        "k5_d1_ridge0.0001",
+        "k7_d1_ridge0.0001",
+        "k7_d2_ridge0.0001"
+      ],
+      "sensitivity_rho": [
+        [
+          0.7,
+          0.6,
+          0.0,
+          -0.09999999999999999
+        ],
+        [
+          0.7,
+          0.7,
+          0.7,
+          -0.19999999999999998
+        ],
+        [
+          0.49999999999999994,
+          0.6,
+          0.6,
+          0.3
+        ],
+        [
+          0.09999999999999999,
+          0.09999999999999999,
+          0.7,
+          -0.7
+        ]
+      ]
+    }
+  ],
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      13.095,
+      11.393
+    ],
+    "exported_size_inches": [
+      13.095,
+      10.81
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/layer_comparison.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
+    "png_dpi": 240,
+    "background": "#FFFFFF",
+    "text": [
+      "15",
+      "30",
+      "45",
+      "60",
+      "Spearman $\\rho$ with tracer uptake",
+      "\u22121.0",
+      "\u22120.5",
+      "0.0",
+      "0.5",
+      "1.0",
+      "DeepSeek-V3.1-Base \u00b7 HHH",
+      "DeepSeek-V3.1-Base \u00b7 Fred",
+      "Transformer block (zero-based)",
+      "31",
+      "47",
+      "63",
+      "Qwen3.8-27B vectors \u00b7 HHH",
+      "Qwen3.8-27B vectors \u00b7 Fred",
+      "Five character outcomes per panel; both models use published DeepSeek behavior.",
+      "Shading shows graph-setting sensitivity, not a confidence interval. Eight personas cannot support the original recipe.",
+      "Raw cosine",
+      "Whitened cosine",
+      "Geodesic diagnostic (k=5, d=1)",
+      "Geodesic settings range"
+    ]
+  }
+}
