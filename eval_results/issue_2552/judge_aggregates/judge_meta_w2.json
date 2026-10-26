@@ -1,0 +1,50 @@
+{
+  "wave": "w2",
+  "regime_key": {
+    "wave": "w2",
+    "eval_ids_sha256": "2f0650ed3338dc005a1f9e88640e70e6d3409d0453e639e8512001c4c82282b6",
+    "rep_panel_sha256": "66d7049febf4b776b20822dcf42ef19d5c2da113263abef118e90ebf105c64bd",
+    "judge_model": "claude-sonnet-4-6",
+    "max_tokens": 2048,
+    "system_sha256": "6fff75d20e8fb22106668d01431bd50ef7e34c5bcd10619e0e17d899b60e627f",
+    "seed": 2552,
+    "threshold_base": 0,
+    "turn_text_cap": 4000,
+    "w4_candidate_cap": 1500
+  },
+  "judge_model": "claude-sonnet-4-6",
+  "max_tokens": 2048,
+  "temperature": "API default (not threaded; judge_dispatch contract)",
+  "transport": "batch (threshold_base=0)",
+  "n_items": 2000,
+  "n_draws": 1,
+  "arms": {
+    "all_turns": {
+      "n_items": 2000,
+      "n_missing_results": 0,
+      "n_valid": 1970,
+      "n_parse_fail": 24,
+      "n_truncation": 6,
+      "n_api_refusal": 0,
+      "n_transport": 0,
+      "frac_items_complete": 0.985,
+      "floor": 0.95,
+      "below_floor": false
+    }
+  },
+  "below_floor_arms": [],
+  "below_floor_waiver": false,
+  "below_floor_waiver_kind": null,
+  "batch_sync_split": {
+    "n_valid_from_sync_reissue": 3,
+    "n_censored_reissued": 3
+  },
+  "n_eval_realized": 2000,
+  "descoped": false,
+  "wall_s": 543.9,
+  "git_commit": "b38f7a0276c1c1cf5a730eb58966a42204d40101",
+  "git_dirty": false,
+  "phase": "judge-w2",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_judge_waves.py"
+}

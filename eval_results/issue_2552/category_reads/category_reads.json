@@ -1,0 +1,1949 @@
+{
+  "dictionaries": {
+    "rep_ta": {
+      "primary_0p2pct": {
+        "n_panel": 2974,
+        "n_complete_case": 2974,
+        "panel_rule": "alive_f240 (producer alive mask) & finite r2_map",
+        "drop_counts_by_status": {
+          "none": 0,
+          "malformed": 0,
+          "api_refusal": 0,
+          "transport": 0,
+          "unjudged": 0
+        },
+        "adjusted_primary": {
+          "Content": {
+            "effect": -0.10301044910800994,
+            "ci95": [
+              -0.11679136779398379,
+              -0.0889190468619821
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              -0.11421970242446078,
+              -0.12951160790287636,
+              -0.12525213776451977,
+              -0.11583805598593638,
+              -0.03023074146225646
+            ]
+          },
+          "Form": {
+            "effect": 0.061797493697465,
+            "ci95": [
+              0.043096330087332324,
+              0.07335199094708539
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.06581712470708534,
+              0.056806562043977105,
+              0.06679718653007105,
+              0.08049010841825899,
+              0.03907648678793252
+            ]
+          },
+          "Voice": {
+            "effect": 0.07055309270908733,
+            "ci95": [
+              0.033213398608617134,
+              0.10746738217815828
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.18872365379646838,
+              0.11500097797504177,
+              0.032545244641503546,
+              0.016587133023450495,
+              -9.154589102755573e-05
+            ]
+          },
+          "Function": {
+            "effect": 0.03529381685555455,
+            "ci95": [
+              0.006477510087238866,
+              0.05804049308507364
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.12450950364375674,
+              0.06103988876867006,
+              0.08005706370195004,
+              -0.011942377515696267,
+              -0.07719499432090782
+            ]
+          },
+          "Meta": {
+            "effect": 0.06605168024680241,
+            "ci95": [
+              0.020004482584501392,
+              0.10159337031298103
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.20448414502398343,
+              0.11402785431288087,
+              0.09421009024050919,
+              0.004991504631807142,
+              -0.08745519297516857
+            ]
+          }
+        },
+        "adjusted_ranking": [
+          "Voice",
+          "Meta",
+          "Form",
+          "Function",
+          "Content"
+        ],
+        "raw_secondary": {
+          "Content": {
+            "median": 0.2740424552685161,
+            "ci95": [
+              0.25680560011430387,
+              0.29162843623821555
+            ],
+            "n": 989
+          },
+          "Form": {
+            "median": 0.4923249121114627,
+            "ci95": [
+              0.47314680641023954,
+              0.5070345928743445
+            ],
+            "n": 1243
+          },
+          "Voice": {
+            "median": 0.4855850124656106,
+            "ci95": [
+              0.4710046147133293,
+              0.5158437791570152
+            ],
+            "n": 226
+          },
+          "Function": {
+            "median": 0.43997825034560956,
+            "ci95": [
+              0.4047263716569601,
+              0.4622012226961199
+            ],
+            "n": 319
+          },
+          "Meta": {
+            "median": 0.46593593968068714,
+            "ci95": [
+              0.44162070975453205,
+              0.48659193195216544
+            ],
+            "n": 197
+          }
+        },
+        "raw_ranking": [
+          "Form",
+          "Voice",
+          "Meta",
+          "Function",
+          "Content"
+        ],
+        "raw_vs_adjusted_disagree": true,
+        "narration_rule": "on disagreement the ADJUSTED ordering carries the headline",
+        "kw_h_observed": 347.8160967528691,
+        "kw_p_within_quintile_label_perm": 9.999000099990002e-05,
+        "pairwise_contrasts_bh_fdr": [
+          {
+            "pair": "Content - Form",
+            "median_diff": -0.21828245684294656,
+            "ci95": [
+              -0.24251782206306816,
+              -0.1918448984233201
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Content - Voice",
+            "median_diff": -0.21154255719709447,
+            "ci95": [
+              -0.24747369210351688,
+              -0.18684739814566265
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Content - Function",
+            "median_diff": -0.16593579507709344,
+            "ci95": [
+              -0.1960566877347168,
+              -0.1220867779761341
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Content - Meta",
+            "median_diff": -0.19189348441217102,
+            "ci95": [
+              -0.22012280909530935,
+              -0.1621972149360135
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Form - Voice",
+            "median_diff": 0.006739899645852088,
+            "ci95": [
+              -0.028946575575059797,
+              0.029573685636826826
+            ],
+            "p_perm_two_sided": 0.8283171682831717,
+            "p_bh_fdr": 0.8283171682831718
+          },
+          {
+            "pair": "Form - Function",
+            "median_diff": 0.05234666176585312,
+            "ci95": [
+              0.0215704572326916,
+              0.09454609164093158
+            ],
+            "p_perm_two_sided": 0.011998800119988001,
+            "p_bh_fdr": 0.023997600239976002
+          },
+          {
+            "pair": "Form - Meta",
+            "median_diff": 0.026388972430775537,
+            "ci95": [
+              -0.0021634200729050155,
+              0.054526699020344405
+            ],
+            "p_perm_two_sided": 0.45085491450854914,
+            "p_bh_fdr": 0.5899410058994101
+          },
+          {
+            "pair": "Voice - Function",
+            "median_diff": 0.04560676212000103,
+            "ci95": [
+              0.017082532182325583,
+              0.0971069087102265
+            ],
+            "p_perm_two_sided": 0.1685831416858314,
+            "p_bh_fdr": 0.280971902809719
+          },
+          {
+            "pair": "Voice - Meta",
+            "median_diff": 0.01964907278492345,
+            "ci95": [
+              -0.007174502306211413,
+              0.05916270613963433
+            ],
+            "p_perm_two_sided": 0.7302269773022698,
+            "p_bh_fdr": 0.8113633081136331
+          },
+          {
+            "pair": "Function - Meta",
+            "median_diff": -0.025957689335077583,
+            "ci95": [
+              -0.07238273348656227,
+              0.007144605401626758
+            ],
+            "p_perm_two_sided": 0.47195280471952805,
+            "p_bh_fdr": 0.5899410058994101
+          }
+        ],
+        "status_group_distributions": {
+          "none": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "malformed": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "api_refusal": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "transport": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "unjudged": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          }
+        },
+        "shadow_ranking": {
+          "classes": [
+            "Content",
+            "Form",
+            "Voice",
+            "Function",
+            "Meta"
+          ],
+          "adjusted_effect": {
+            "Content": -0.10301044910800994,
+            "Form": 0.061797493697465,
+            "Voice": 0.07055309270908733,
+            "Function": 0.03529381685555455,
+            "Meta": 0.06605168024680241
+          },
+          "populated_quintiles": {
+            "Content": 5,
+            "Form": 5,
+            "Voice": 5,
+            "Function": 5,
+            "Meta": 5
+          },
+          "order": [
+            "Voice",
+            "Meta",
+            "Form",
+            "Function",
+            "Content"
+          ]
+        },
+        "floor_locality_caveat": "#2476-derived banked reads are floor-local (parent lesson); this cell is reported at floor 240 and is not upgraded across floors"
+      },
+      "robust_1pct": {
+        "n_panel": 1353,
+        "n_complete_case": 1353,
+        "panel_rule": "alive_f1200 (producer alive mask) & finite r2_map",
+        "drop_counts_by_status": {
+          "none": 0,
+          "malformed": 0,
+          "api_refusal": 0,
+          "transport": 0,
+          "unjudged": 0
+        },
+        "adjusted_primary": {
+          "Content": {
+            "effect": -0.08287691708260143,
+            "ci95": [
+              -0.10221747493870666,
+              -0.06029630107833764
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              -0.11657879715189146,
+              -0.1505810001685597,
+              -0.09516844635229427,
+              -0.04442484666015578,
+              -0.0076314950801059656
+            ]
+          },
+          "Form": {
+            "effect": 0.057066767819139795,
+            "ci95": [
+              0.03811219756677519,
+              0.07600374624822544
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.08067970726159346,
+              0.07034100219092776,
+              0.07644895930206297,
+              0.03850564261939593,
+              0.019358527721718866
+            ]
+          },
+          "Voice": {
+            "effect": 0.014718966498680697,
+            "ci95": [
+              -0.03579282824691767,
+              0.057926120164468395
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.052204269283605886,
+              -0.01068733303855307,
+              0.0799227393455888,
+              -0.04461361273306197,
+              -0.003231230364176163
+            ]
+          },
+          "Function": {
+            "effect": -0.017837732364641222,
+            "ci95": [
+              -0.07356386643020847,
+              0.026437540247696147
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.041708973166456276,
+              0.04404909823757708,
+              -0.01336326780986885,
+              -0.08295017190943049,
+              -0.07863329350794013
+            ]
+          },
+          "Meta": {
+            "effect": -0.035319028880191096,
+            "ci95": [
+              -0.069371907064583,
+              0.052842631995131416
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              -0.033447675179905434,
+              0.05023622697163577,
+              -0.021343618285781907,
+              -0.012964670762289021,
+              -0.15907540714461488
+            ]
+          }
+        },
+        "adjusted_ranking": [
+          "Form",
+          "Voice",
+          "Function",
+          "Meta",
+          "Content"
+        ],
+        "raw_secondary": {
+          "Content": {
+            "median": 0.43526928642337054,
+            "ci95": [
+              0.3931250670075837,
+              0.4652472998871121
+            ],
+            "n": 396
+          },
+          "Form": {
+            "median": 0.5825457763414394,
+            "ci95": [
+              0.5597734842231268,
+              0.5982309020867036
+            ],
+            "n": 603
+          },
+          "Voice": {
+            "median": 0.5212704298343018,
+            "ci95": [
+              0.4943451297901462,
+              0.5917816016728077
+            ],
+            "n": 118
+          },
+          "Function": {
+            "median": 0.4976097418836315,
+            "ci95": [
+              0.4579343923697693,
+              0.5260629496670126
+            ],
+            "n": 153
+          },
+          "Meta": {
+            "median": 0.4802491554724442,
+            "ci95": [
+              0.44595938628404475,
+              0.5231268066592687
+            ],
+            "n": 83
+          }
+        },
+        "raw_ranking": [
+          "Form",
+          "Voice",
+          "Function",
+          "Meta",
+          "Content"
+        ],
+        "raw_vs_adjusted_disagree": false,
+        "narration_rule": "on disagreement the ADJUSTED ordering carries the headline",
+        "kw_h_observed": 112.53309233355911,
+        "kw_p_within_quintile_label_perm": 9.999000099990002e-05,
+        "pairwise_contrasts_bh_fdr": [
+          {
+            "pair": "Content - Form",
+            "median_diff": -0.1472764899180689,
+            "ci95": [
+              -0.1939989468401162,
+              -0.10516270702731134
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.000999900009999
+          },
+          {
+            "pair": "Content - Voice",
+            "median_diff": -0.08600114341093129,
+            "ci95": [
+              -0.1763173160241194,
+              -0.04810278467994731
+            ],
+            "p_perm_two_sided": 0.0057994200579942,
+            "p_bh_fdr": 0.0144985501449855
+          },
+          {
+            "pair": "Content - Function",
+            "median_diff": -0.06234045546026096,
+            "ci95": [
+              -0.11548265170342331,
+              -0.009295961090270302
+            ],
+            "p_perm_two_sided": 0.0173982601739826,
+            "p_bh_fdr": 0.0347965203479652
+          },
+          {
+            "pair": "Content - Meta",
+            "median_diff": -0.04497986904907364,
+            "ci95": [
+              -0.10017735582131787,
+              0.006494617056181349
+            ],
+            "p_perm_two_sided": 0.1723827617238276,
+            "p_bh_fdr": 0.24626108817689657
+          },
+          {
+            "pair": "Form - Voice",
+            "median_diff": 0.06127534650713762,
+            "ci95": [
+              -0.01763123137302359,
+              0.09015608970746358
+            ],
+            "p_perm_two_sided": 0.030796920307969204,
+            "p_bh_fdr": 0.05132820051328201
+          },
+          {
+            "pair": "Form - Function",
+            "median_diff": 0.08493603445780795,
+            "ci95": [
+              0.04727650339619761,
+              0.12965427257508483
+            ],
+            "p_perm_two_sided": 0.00039996000399960006,
+            "p_bh_fdr": 0.001999800019998
+          },
+          {
+            "pair": "Form - Meta",
+            "median_diff": 0.10229662086899527,
+            "ci95": [
+              0.05922375961674752,
+              0.14380422939509213
+            ],
+            "p_perm_two_sided": 0.0051994800519948,
+            "p_bh_fdr": 0.0144985501449855
+          },
+          {
+            "pair": "Voice - Function",
+            "median_diff": 0.023660687950670334,
+            "ci95": [
+              -0.013280139748149249,
+              0.11088736839498019
+            ],
+            "p_perm_two_sided": 0.5151484851514848,
+            "p_bh_fdr": 0.572387205723872
+          },
+          {
+            "pair": "Voice - Meta",
+            "median_diff": 0.04102127436185765,
+            "ci95": [
+              -0.0008980127636699642,
+              0.1272363094970601
+            ],
+            "p_perm_two_sided": 0.49175082491750827,
+            "p_bh_fdr": 0.572387205723872
+          },
+          {
+            "pair": "Function - Meta",
+            "median_diff": 0.017360586411187318,
+            "ci95": [
+              -0.035516570036627115,
+              0.06495812199301579
+            ],
+            "p_perm_two_sided": 0.6950304969503049,
+            "p_bh_fdr": 0.6950304969503049
+          }
+        ],
+        "status_group_distributions": {
+          "none": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "malformed": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "api_refusal": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "transport": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "unjudged": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          }
+        },
+        "shadow_ranking": {
+          "classes": [
+            "Content",
+            "Form",
+            "Voice",
+            "Function",
+            "Meta"
+          ],
+          "adjusted_effect": {
+            "Content": -0.08287691708260143,
+            "Form": 0.057066767819139795,
+            "Voice": 0.014718966498680697,
+            "Function": -0.017837732364641222,
+            "Meta": -0.035319028880191096
+          },
+          "populated_quintiles": {
+            "Content": 5,
+            "Form": 5,
+            "Voice": 5,
+            "Function": 5,
+            "Meta": 5
+          },
+          "order": [
+            "Form",
+            "Voice",
+            "Function",
+            "Meta",
+            "Content"
+          ]
+        },
+        "floor_locality_caveat": "#2476-derived banked reads are floor-local (parent lesson); this cell is reported at floor 1200 and is not upgraded across floors"
+      }
+    },
+    "mat_k100": {
+      "primary_0p2pct": {
+        "n_panel": 2150,
+        "n_complete_case": 2149,
+        "panel_rule": "alive_f240 (banked union mask) & finite r2_map",
+        "drop_counts_by_status": {
+          "none": 0,
+          "malformed": 0,
+          "api_refusal": 0,
+          "transport": 0,
+          "unjudged": 1
+        },
+        "adjusted_primary": {
+          "Content": {
+            "effect": -0.07467116362208111,
+            "ci95": [
+              -0.09183602275915959,
+              -0.05920707604408762
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              -0.06663372269162188,
+              -0.08361971240435168,
+              -0.09515580322599859,
+              -0.0946007337123691,
+              -0.03334584607606428
+            ]
+          },
+          "Form": {
+            "effect": 0.05386134132526717,
+            "ci95": [
+              0.03423535442405694,
+              0.07489419873726001
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.024877823392182252,
+              0.04279363130776931,
+              0.07525574491736459,
+              0.07843378435465809,
+              0.04794572265436159
+            ]
+          },
+          "Voice": {
+            "effect": 0.08588656995811268,
+            "ci95": [
+              0.04389999718967793,
+              0.1335993519543382
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.1122989799242875,
+              0.18117000854836246,
+              0.04755067674254282,
+              0.10005617160532232,
+              -0.011642987029951701
+            ]
+          },
+          "Function": {
+            "effect": 0.052243411696128096,
+            "ci95": [
+              0.01687301139401852,
+              0.10463218685621364
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.13121249686172065,
+              0.1419957133792406,
+              0.09397612165913544,
+              -0.057901761017681186,
+              -0.048065512401775035
+            ]
+          },
+          "Meta": {
+            "effect": 0.04992092835651278,
+            "ci95": [
+              -0.009229894978412591,
+              0.11727567793328719
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.05400072391736055,
+              0.06294799483018965,
+              0.03749625078232688,
+              0.1099504426017377,
+              -0.014790770349050852
+            ]
+          }
+        },
+        "adjusted_ranking": [
+          "Voice",
+          "Form",
+          "Function",
+          "Meta",
+          "Content"
+        ],
+        "raw_secondary": {
+          "Content": {
+            "median": 0.23060734447313236,
+            "ci95": [
+              0.2066449432600137,
+              0.25884478510026043
+            ],
+            "n": 710
+          },
+          "Form": {
+            "median": 0.46739681789809007,
+            "ci95": [
+              0.44115373962643645,
+              0.5024448427026399
+            ],
+            "n": 923
+          },
+          "Voice": {
+            "median": 0.5169850764303364,
+            "ci95": [
+              0.4656103713963905,
+              0.591019579690845
+            ],
+            "n": 145
+          },
+          "Function": {
+            "median": 0.43460335814329776,
+            "ci95": [
+              0.41150987432921526,
+              0.4869285782669917
+            ],
+            "n": 225
+          },
+          "Meta": {
+            "median": 0.4367384483811675,
+            "ci95": [
+              0.37250470820841874,
+              0.49748117296237215
+            ],
+            "n": 146
+          }
+        },
+        "raw_ranking": [
+          "Voice",
+          "Form",
+          "Meta",
+          "Function",
+          "Content"
+        ],
+        "raw_vs_adjusted_disagree": true,
+        "narration_rule": "on disagreement the ADJUSTED ordering carries the headline",
+        "kw_h_observed": 187.9903941792337,
+        "kw_p_within_quintile_label_perm": 9.999000099990002e-05,
+        "pairwise_contrasts_bh_fdr": [
+          {
+            "pair": "Content - Form",
+            "median_diff": -0.2367894734249577,
+            "ci95": [
+              -0.2799954298612577,
+              -0.1969387530316794
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Content - Voice",
+            "median_diff": -0.28637773195720406,
+            "ci95": [
+              -0.3692953080410338,
+              -0.22306194296542614
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Content - Function",
+            "median_diff": -0.2039960136701654,
+            "ci95": [
+              -0.2665150234321653,
+              -0.1656599948556302
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Content - Meta",
+            "median_diff": -0.20613110390803513,
+            "ci95": [
+              -0.27432360483250023,
+              -0.13440986377921052
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Form - Voice",
+            "median_diff": -0.049588258532246354,
+            "ci95": [
+              -0.1319275765505154,
+              0.017144477715977532
+            ],
+            "p_perm_two_sided": 0.44725527447255276,
+            "p_bh_fdr": 0.6389361063893612
+          },
+          {
+            "pair": "Form - Function",
+            "median_diff": 0.03279345975479231,
+            "ci95": [
+              -0.030692969923772462,
+              0.07578800502696703
+            ],
+            "p_perm_two_sided": 0.31786821317868214,
+            "p_bh_fdr": 0.5297803552978035
+          },
+          {
+            "pair": "Form - Meta",
+            "median_diff": 0.03065836951692258,
+            "ci95": [
+              -0.037049561011611144,
+              0.10561823431857909
+            ],
+            "p_perm_two_sided": 0.6154384561543845,
+            "p_bh_fdr": 0.6838205068382051
+          },
+          {
+            "pair": "Voice - Function",
+            "median_diff": 0.08238171828703866,
+            "ci95": [
+              0.0006591255507269745,
+              0.162706846523588
+            ],
+            "p_perm_two_sided": 0.18268173182681732,
+            "p_bh_fdr": 0.36536346365363465
+          },
+          {
+            "pair": "Voice - Meta",
+            "median_diff": 0.08024662804916893,
+            "ci95": [
+              -0.005624901027553086,
+              0.18601694926578444
+            ],
+            "p_perm_two_sided": 0.5209479052094791,
+            "p_bh_fdr": 0.6511848815118488
+          },
+          {
+            "pair": "Function - Meta",
+            "median_diff": -0.00213509023786973,
+            "ci95": [
+              -0.06820521869044943,
+              0.08393804885252532
+            ],
+            "p_perm_two_sided": 0.9735026497350265,
+            "p_bh_fdr": 0.9735026497350265
+          }
+        ],
+        "status_group_distributions": {
+          "none": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "malformed": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "api_refusal": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "transport": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "unjudged": {
+            "n": 1,
+            "median": 0.0790136916934534,
+            "q25": 0.0790136916934534,
+            "q75": 0.0790136916934534
+          }
+        },
+        "shadow_ranking": {
+          "classes": [
+            "Content",
+            "Form",
+            "Voice",
+            "Function",
+            "Meta"
+          ],
+          "adjusted_effect": {
+            "Content": -0.07467116362208111,
+            "Form": 0.05386134132526717,
+            "Voice": 0.08588656995811268,
+            "Function": 0.052243411696128096,
+            "Meta": 0.04992092835651278
+          },
+          "populated_quintiles": {
+            "Content": 5,
+            "Form": 5,
+            "Voice": 5,
+            "Function": 5,
+            "Meta": 5
+          },
+          "order": [
+            "Voice",
+            "Form",
+            "Function",
+            "Meta",
+            "Content"
+          ]
+        },
+        "floor_locality_caveat": "#2476-derived banked reads are floor-local (parent lesson); this cell is reported at floor 240 and is not upgraded across floors"
+      },
+      "robust_1pct": {
+        "n_panel": 879,
+        "n_complete_case": 879,
+        "panel_rule": "alive_f1200 (banked union mask) & finite r2_map",
+        "drop_counts_by_status": {
+          "none": 0,
+          "malformed": 0,
+          "api_refusal": 0,
+          "transport": 0,
+          "unjudged": 0
+        },
+        "adjusted_primary": {
+          "Content": {
+            "effect": -0.0628251612198914,
+            "ci95": [
+              -0.10005074050745068,
+              -0.03957442373172719
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              -0.08130656038721212,
+              -0.1027528037389367,
+              -0.038091275609105635,
+              -0.053790469250974526,
+              -0.03818469711322803
+            ]
+          },
+          "Form": {
+            "effect": 0.05705067176722306,
+            "ci95": [
+              0.0317982312891742,
+              0.09244906833410556
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.11054803915369488,
+              0.05310668480656322,
+              0.03643532518742454,
+              0.07622444231339931,
+              0.008938867375033355
+            ]
+          },
+          "Voice": {
+            "effect": 0.04307387463306665,
+            "ci95": [
+              -0.0036561786295581725,
+              0.09090824741831975
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.16481002014322194,
+              0.046688902062474,
+              0.0064698751571822255,
+              0.008090118746851616,
+              -0.010689542944396502
+            ]
+          },
+          "Function": {
+            "effect": -0.05612925593435867,
+            "ci95": [
+              -0.12398898547180705,
+              -0.004740278328807228
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              -0.16769031236320614,
+              -0.019849842692133135,
+              -0.05056451942967988,
+              -0.05677686585649011,
+              0.014235260669715921
+            ]
+          },
+          "Meta": {
+            "effect": 0.039151751449221436,
+            "ci95": [
+              -0.047138622737807966,
+              0.09274792102273155
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.23468213092652107,
+              0.05906702370960759,
+              0.04715334225773504,
+              -0.1197657573962646,
+              -0.025377982251491904
+            ]
+          }
+        },
+        "adjusted_ranking": [
+          "Form",
+          "Voice",
+          "Meta",
+          "Function",
+          "Content"
+        ],
+        "raw_secondary": {
+          "Content": {
+            "median": 0.4922491073688244,
+            "ci95": [
+              0.4648153369560688,
+              0.5274593917524553
+            ],
+            "n": 240
+          },
+          "Form": {
+            "median": 0.6564712042777517,
+            "ci95": [
+              0.6361178545706183,
+              0.6920264983657676
+            ],
+            "n": 401
+          },
+          "Voice": {
+            "median": 0.623684979420748,
+            "ci95": [
+              0.5929184005323815,
+              0.6742871121335181
+            ],
+            "n": 79
+          },
+          "Function": {
+            "median": 0.544125570378793,
+            "ci95": [
+              0.48867058530766705,
+              0.5977627016329488
+            ],
+            "n": 100
+          },
+          "Meta": {
+            "median": 0.630539145597318,
+            "ci95": [
+              0.5517408927305745,
+              0.6618767817081599
+            ],
+            "n": 59
+          }
+        },
+        "raw_ranking": [
+          "Form",
+          "Meta",
+          "Voice",
+          "Function",
+          "Content"
+        ],
+        "raw_vs_adjusted_disagree": true,
+        "narration_rule": "on disagreement the ADJUSTED ordering carries the headline",
+        "kw_h_observed": 74.43924559756563,
+        "kw_p_within_quintile_label_perm": 9.999000099990002e-05,
+        "pairwise_contrasts_bh_fdr": [
+          {
+            "pair": "Content - Form",
+            "median_diff": -0.16422209690892736,
+            "ci95": [
+              -0.2082420126503975,
+              -0.12277853476624825
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.000999900009999
+          },
+          {
+            "pair": "Content - Voice",
+            "median_diff": -0.13143587205192359,
+            "ci95": [
+              -0.17948522351534563,
+              -0.0800134208544428
+            ],
+            "p_perm_two_sided": 0.00039996000399960006,
+            "p_bh_fdr": 0.000999900009999
+          },
+          {
+            "pair": "Content - Function",
+            "median_diff": -0.051876463009968676,
+            "ci95": [
+              -0.11432910747655406,
+              0.01284116029156268
+            ],
+            "p_perm_two_sided": 0.2313768623137686,
+            "p_bh_fdr": 0.33053837473395514
+          },
+          {
+            "pair": "Content - Meta",
+            "median_diff": -0.13829003822849367,
+            "ci95": [
+              -0.18200861695647494,
+              -0.04137427804180403
+            ],
+            "p_perm_two_sided": 0.00029997000299970003,
+            "p_bh_fdr": 0.000999900009999
+          },
+          {
+            "pair": "Form - Voice",
+            "median_diff": 0.032786224857003776,
+            "ci95": [
+              -0.011690405866209619,
+              0.07856994170777236
+            ],
+            "p_perm_two_sided": 0.33266673332666735,
+            "p_bh_fdr": 0.4158334166583342
+          },
+          {
+            "pair": "Form - Function",
+            "median_diff": 0.11234563389895869,
+            "ci95": [
+              0.05599286206356072,
+              0.1726231899126561
+            ],
+            "p_perm_two_sided": 0.00029997000299970003,
+            "p_bh_fdr": 0.000999900009999
+          },
+          {
+            "pair": "Form - Meta",
+            "median_diff": 0.02593205868043369,
+            "ci95": [
+              -0.011994611034925384,
+              0.11833394845446775
+            ],
+            "p_perm_two_sided": 0.5777422257774223,
+            "p_bh_fdr": 0.6419358064193581
+          },
+          {
+            "pair": "Voice - Function",
+            "median_diff": 0.07955940904195491,
+            "ci95": [
+              0.014652505092624224,
+              0.14350272861250576
+            ],
+            "p_perm_two_sided": 0.039896010398960104,
+            "p_bh_fdr": 0.07979202079792021
+          },
+          {
+            "pair": "Voice - Meta",
+            "median_diff": -0.006854166176570087,
+            "ci95": [
+              -0.05314073091524407,
+              0.08752501179113392
+            ],
+            "p_perm_two_sided": 0.891010898910109,
+            "p_bh_fdr": 0.891010898910109
+          },
+          {
+            "pair": "Function - Meta",
+            "median_diff": -0.086413575218525,
+            "ci95": [
+              -0.1465805067792061,
+              0.024275257521237936
+            ],
+            "p_perm_two_sided": 0.0700929907009299,
+            "p_bh_fdr": 0.11682165116821651
+          }
+        ],
+        "status_group_distributions": {
+          "none": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "malformed": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "api_refusal": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "transport": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "unjudged": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          }
+        },
+        "shadow_ranking": {
+          "classes": [
+            "Content",
+            "Form",
+            "Voice",
+            "Function",
+            "Meta"
+          ],
+          "adjusted_effect": {
+            "Content": -0.0628251612198914,
+            "Form": 0.05705067176722306,
+            "Voice": 0.04307387463306665,
+            "Function": -0.05612925593435867,
+            "Meta": 0.039151751449221436
+          },
+          "populated_quintiles": {
+            "Content": 5,
+            "Form": 5,
+            "Voice": 5,
+            "Function": 5,
+            "Meta": 5
+          },
+          "order": [
+            "Form",
+            "Voice",
+            "Meta",
+            "Function",
+            "Content"
+          ]
+        },
+        "floor_locality_caveat": "#2476-derived banked reads are floor-local (parent lesson); this cell is reported at floor 1200 and is not upgraded across floors"
+      }
+    },
+    "mat_k200": {
+      "primary_0p2pct": {
+        "n_panel": 2659,
+        "n_complete_case": 2658,
+        "panel_rule": "alive_f240 (banked union mask) & finite r2_map",
+        "drop_counts_by_status": {
+          "none": 0,
+          "malformed": 0,
+          "api_refusal": 0,
+          "transport": 0,
+          "unjudged": 1
+        },
+        "adjusted_primary": {
+          "Content": {
+            "effect": -0.08786159009448757,
+            "ci95": [
+              -0.10161377833083414,
+              -0.06967048331378757
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              -0.04932232342118048,
+              -0.11649236831970733,
+              -0.15931284121360562,
+              -0.06833192024616835,
+              -0.04584849727177609
+            ]
+          },
+          "Form": {
+            "effect": 0.04749555964059691,
+            "ci95": [
+              0.034771127298104956,
+              0.06621405763397348
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.0234712702385263,
+              0.06317743390649333,
+              0.04454046844609555,
+              0.061143645762458454,
+              0.045144979849410904
+            ]
+          },
+          "Voice": {
+            "effect": 0.10333644911767785,
+            "ci95": [
+              0.05840219238835282,
+              0.15747026268084444
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.25729051038540846,
+              0.1653677107273983,
+              0.14180527541931115,
+              0.0005214402391574557,
+              -0.048302691182886104
+            ]
+          },
+          "Function": {
+            "effect": 0.03276221989730917,
+            "ci95": [
+              -0.0019215393722900123,
+              0.06424745474564458
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.039127528126023436,
+              0.07454777126912582,
+              0.09331024159485762,
+              -0.003354273855953882,
+              -0.039820167647507176
+            ]
+          },
+          "Meta": {
+            "effect": 0.03553312959222912,
+            "ci95": [
+              0.0029224403005076514,
+              0.08232220595397352
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.05303951767102927,
+              0.011047112550403582,
+              0.10052299293785555,
+              0.04498432612176462,
+              -0.031928301319907426
+            ]
+          }
+        },
+        "adjusted_ranking": [
+          "Voice",
+          "Form",
+          "Meta",
+          "Function",
+          "Content"
+        ],
+        "raw_secondary": {
+          "Content": {
+            "median": 0.26743450332987573,
+            "ci95": [
+              0.23890689553992872,
+              0.30443732391030043
+            ],
+            "n": 874
+          },
+          "Form": {
+            "median": 0.48445089567488064,
+            "ci95": [
+              0.458927148841639,
+              0.5198200407894065
+            ],
+            "n": 1139
+          },
+          "Voice": {
+            "median": 0.5445327612658951,
+            "ci95": [
+              0.5147798429350151,
+              0.5721461450982501
+            ],
+            "n": 197
+          },
+          "Function": {
+            "median": 0.4917301220482034,
+            "ci95": [
+              0.44481636286402,
+              0.5237327108973582
+            ],
+            "n": 262
+          },
+          "Meta": {
+            "median": 0.4552117494690438,
+            "ci95": [
+              0.4018683204197784,
+              0.5154120323047778
+            ],
+            "n": 186
+          }
+        },
+        "raw_ranking": [
+          "Voice",
+          "Function",
+          "Form",
+          "Meta",
+          "Content"
+        ],
+        "raw_vs_adjusted_disagree": true,
+        "narration_rule": "on disagreement the ADJUSTED ordering carries the headline",
+        "kw_h_observed": 220.57151653163973,
+        "kw_p_within_quintile_label_perm": 9.999000099990002e-05,
+        "pairwise_contrasts_bh_fdr": [
+          {
+            "pair": "Content - Form",
+            "median_diff": -0.21701639234500492,
+            "ci95": [
+              -0.26338487472513433,
+              -0.170824756096666
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Content - Voice",
+            "median_diff": -0.2770982579360194,
+            "ci95": [
+              -0.3144352628110941,
+              -0.23118041745463325
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Content - Function",
+            "median_diff": -0.22429561871832765,
+            "ci95": [
+              -0.2636134726163968,
+              -0.1631238937414406
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Content - Meta",
+            "median_diff": -0.18777724613916807,
+            "ci95": [
+              -0.24982385422587738,
+              -0.1314867947626116
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.00024997500249975
+          },
+          {
+            "pair": "Form - Voice",
+            "median_diff": -0.06008186559101447,
+            "ci95": [
+              -0.09578547782188572,
+              -0.01630305965978426
+            ],
+            "p_perm_two_sided": 0.44375562443755623,
+            "p_bh_fdr": 0.579067093290671
+          },
+          {
+            "pair": "Form - Function",
+            "median_diff": -0.007279226373322734,
+            "ci95": [
+              -0.04499346000661053,
+              0.05125845872726892
+            ],
+            "p_perm_two_sided": 0.8943105689431057,
+            "p_bh_fdr": 0.8943105689431057
+          },
+          {
+            "pair": "Form - Meta",
+            "median_diff": 0.02923914620583684,
+            "ci95": [
+              -0.03085027361109871,
+              0.08373241167330614
+            ],
+            "p_perm_two_sided": 0.46325367463253675,
+            "p_bh_fdr": 0.579067093290671
+          },
+          {
+            "pair": "Voice - Function",
+            "median_diff": 0.05280263921769174,
+            "ci95": [
+              0.013639637227211364,
+              0.10602791495221475
+            ],
+            "p_perm_two_sided": 0.23827617238276172,
+            "p_bh_fdr": 0.47655234476552344
+          },
+          {
+            "pair": "Voice - Meta",
+            "median_diff": 0.08932101179685131,
+            "ci95": [
+              0.028774532524003194,
+              0.1400602728452276
+            ],
+            "p_perm_two_sided": 0.38246175382461756,
+            "p_bh_fdr": 0.579067093290671
+          },
+          {
+            "pair": "Function - Meta",
+            "median_diff": 0.036518372579159575,
+            "ci95": [
+              -0.03287287777153909,
+              0.08828604437592949
+            ],
+            "p_perm_two_sided": 0.6568343165683431,
+            "p_bh_fdr": 0.729815907298159
+          }
+        ],
+        "status_group_distributions": {
+          "none": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "malformed": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "api_refusal": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "transport": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "unjudged": {
+            "n": 1,
+            "median": 0.3674055212547469,
+            "q25": 0.3674055212547469,
+            "q75": 0.3674055212547469
+          }
+        },
+        "shadow_ranking": {
+          "classes": [
+            "Content",
+            "Form",
+            "Voice",
+            "Function",
+            "Meta"
+          ],
+          "adjusted_effect": {
+            "Content": -0.08786159009448757,
+            "Form": 0.04749555964059691,
+            "Voice": 0.10333644911767785,
+            "Function": 0.03276221989730917,
+            "Meta": 0.03553312959222912
+          },
+          "populated_quintiles": {
+            "Content": 5,
+            "Form": 5,
+            "Voice": 5,
+            "Function": 5,
+            "Meta": 5
+          },
+          "order": [
+            "Voice",
+            "Form",
+            "Meta",
+            "Function",
+            "Content"
+          ]
+        },
+        "floor_locality_caveat": "#2476-derived banked reads are floor-local (parent lesson); this cell is reported at floor 240 and is not upgraded across floors"
+      },
+      "robust_1pct": {
+        "n_panel": 1278,
+        "n_complete_case": 1277,
+        "panel_rule": "alive_f1200 (banked union mask) & finite r2_map",
+        "drop_counts_by_status": {
+          "none": 0,
+          "malformed": 0,
+          "api_refusal": 0,
+          "transport": 0,
+          "unjudged": 1
+        },
+        "adjusted_primary": {
+          "Content": {
+            "effect": -0.06522186541064312,
+            "ci95": [
+              -0.09265956847173205,
+              -0.050261721007434264
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              -0.10690571263235982,
+              -0.06427143339200364,
+              -0.08976841344063541,
+              -0.04706868470092407,
+              -0.01809508288729267
+            ]
+          },
+          "Form": {
+            "effect": 0.061670344332608096,
+            "ci95": [
+              0.037145117689109095,
+              0.07855989724640298
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.042499005600422746,
+              0.0895387548537846,
+              0.06464335953578426,
+              0.0882392572999251,
+              0.023431344373123775
+            ]
+          },
+          "Voice": {
+            "effect": 0.00316402658879853,
+            "ci95": [
+              -0.025996566960824256,
+              0.026269223951564058
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.08929557414008371,
+              -0.01159632181414938,
+              0.012926970531117465,
+              -0.06819274360431293,
+              -0.006613346308746215
+            ]
+          },
+          "Function": {
+            "effect": -0.017662577193417062,
+            "ci95": [
+              -0.054639514100253986,
+              0.019559571865894906
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.04691741219182599,
+              -0.026197066908453137,
+              -0.013324116382920304,
+              -0.0701502802808247,
+              -0.025558834586713153
+            ]
+          },
+          "Meta": {
+            "effect": 0.003782790952885473,
+            "ci95": [
+              -0.04182623915431566,
+              0.04167840693030991
+            ],
+            "populated_quintiles": 5,
+            "per_quintile_effect": [
+              0.041923391046687075,
+              -0.00846832055047042,
+              0.09734633844424223,
+              -0.11994487547277422,
+              0.008057421296742695
+            ]
+          }
+        },
+        "adjusted_ranking": [
+          "Form",
+          "Meta",
+          "Voice",
+          "Function",
+          "Content"
+        ],
+        "raw_secondary": {
+          "Content": {
+            "median": 0.5127097342865381,
+            "ci95": [
+              0.48447471225823496,
+              0.5412657762965774
+            ],
+            "n": 362
+          },
+          "Form": {
+            "median": 0.6521784873754919,
+            "ci95": [
+              0.6317786894896695,
+              0.6759537439210291
+            ],
+            "n": 556
+          },
+          "Voice": {
+            "median": 0.5819108609159354,
+            "ci95": [
+              0.5507193626884781,
+              0.6051273068358374
+            ],
+            "n": 120
+          },
+          "Function": {
+            "median": 0.560939982700795,
+            "ci95": [
+              0.5276934229326751,
+              0.600883968667375
+            ],
+            "n": 149
+          },
+          "Meta": {
+            "median": 0.5875110974174569,
+            "ci95": [
+              0.538124596845244,
+              0.629859952109654
+            ],
+            "n": 90
+          }
+        },
+        "raw_ranking": [
+          "Form",
+          "Meta",
+          "Voice",
+          "Function",
+          "Content"
+        ],
+        "raw_vs_adjusted_disagree": false,
+        "narration_rule": "on disagreement the ADJUSTED ordering carries the headline",
+        "kw_h_observed": 98.5093155885623,
+        "kw_p_within_quintile_label_perm": 9.999000099990002e-05,
+        "pairwise_contrasts_bh_fdr": [
+          {
+            "pair": "Content - Form",
+            "median_diff": -0.1394687530889538,
+            "ci95": [
+              -0.17926250659827522,
+              -0.10485693764748084
+            ],
+            "p_perm_two_sided": 9.999000099990002e-05,
+            "p_bh_fdr": 0.000999900009999
+          },
+          {
+            "pair": "Content - Voice",
+            "median_diff": -0.06920112662939726,
+            "ci95": [
+              -0.11081828510087732,
+              -0.02616789407767728
+            ],
+            "p_perm_two_sided": 0.0103989601039896,
+            "p_bh_fdr": 0.023997600239976002
+          },
+          {
+            "pair": "Content - Function",
+            "median_diff": -0.04823024841425694,
+            "ci95": [
+              -0.09545751411848102,
+              -0.003529500920302409
+            ],
+            "p_perm_two_sided": 0.0301969803019698,
+            "p_bh_fdr": 0.050328300503283
+          },
+          {
+            "pair": "Content - Meta",
+            "median_diff": -0.07480136313091879,
+            "ci95": [
+              -0.12706630353159187,
+              -0.01872096306094669
+            ],
+            "p_perm_two_sided": 0.011998800119988001,
+            "p_bh_fdr": 0.023997600239976002
+          },
+          {
+            "pair": "Form - Voice",
+            "median_diff": 0.07026762645955653,
+            "ci95": [
+              0.03575142958920946,
+              0.1114793546085084
+            ],
+            "p_perm_two_sided": 0.0033996600339966003,
+            "p_bh_fdr": 0.011332200113322
+          },
+          {
+            "pair": "Form - Function",
+            "median_diff": 0.09123850467469685,
+            "ci95": [
+              0.04875831668445474,
+              0.13287307788948322
+            ],
+            "p_perm_two_sided": 0.00019998000199980003,
+            "p_bh_fdr": 0.000999900009999
+          },
+          {
+            "pair": "Form - Meta",
+            "median_diff": 0.064667389958035,
+            "ci95": [
+              0.01821130197849352,
+              0.12076700360211334
+            ],
+            "p_perm_two_sided": 0.0390960903909609,
+            "p_bh_fdr": 0.05585155770137272
+          },
+          {
+            "pair": "Voice - Function",
+            "median_diff": 0.02097087821514032,
+            "ci95": [
+              -0.02809876724232672,
+              0.06486244875041036
+            ],
+            "p_perm_two_sided": 0.45795420457954206,
+            "p_bh_fdr": 0.5088380050883801
+          },
+          {
+            "pair": "Voice - Meta",
+            "median_diff": -0.005600236501521527,
+            "ci95": [
+              -0.06017718729994148,
+              0.05426981232897865
+            ],
+            "p_perm_two_sided": 0.8975102489751025,
+            "p_bh_fdr": 0.8975102489751026
+          },
+          {
+            "pair": "Function - Meta",
+            "median_diff": -0.026571114716661848,
+            "ci95": [
+              -0.08305456311903296,
+              0.031942982203355376
+            ],
+            "p_perm_two_sided": 0.45235476452354767,
+            "p_bh_fdr": 0.5088380050883801
+          }
+        ],
+        "status_group_distributions": {
+          "none": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "malformed": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "api_refusal": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "transport": {
+            "n": 0,
+            "median": null,
+            "q25": null,
+            "q75": null
+          },
+          "unjudged": {
+            "n": 1,
+            "median": 0.3674055212547469,
+            "q25": 0.3674055212547469,
+            "q75": 0.3674055212547469
+          }
+        },
+        "shadow_ranking": {
+          "classes": [
+            "Content",
+            "Form",
+            "Voice",
+            "Function",
+            "Meta"
+          ],
+          "adjusted_effect": {
+            "Content": -0.06522186541064312,
+            "Form": 0.061670344332608096,
+            "Voice": 0.00316402658879853,
+            "Function": -0.017662577193417062,
+            "Meta": 0.003782790952885473
+          },
+          "populated_quintiles": {
+            "Content": 5,
+            "Form": 5,
+            "Voice": 5,
+            "Function": 5,
+            "Meta": 5
+          },
+          "order": [
+            "Form",
+            "Meta",
+            "Voice",
+            "Function",
+            "Content"
+          ]
+        },
+        "floor_locality_caveat": "#2476-derived banked reads are floor-local (parent lesson); this cell is reported at floor 1200 and is not upgraded across floors"
+      }
+    }
+  },
+  "n_draws": 10000,
+  "git_commit": "b38f7a0276c1c1cf5a730eb58966a42204d40101",
+  "git_dirty": true,
+  "phase": "p3-category",
+  "git_dirty_paths": [
+    ".gitleaksignore",
+    "eval_results/issue_2552/judge_aggregates/descriptions_mat_k100.json",
+    "eval_results/issue_2552/judge_aggregates/descriptions_mat_k200.json",
+    "eval_results/issue_2552/judge_aggregates/descriptions_pt.json",
+    "eval_results/issue_2552/judge_aggregates/descriptions_rep_ta.json",
+    "eval_results/issue_2552/judge_aggregates/g2_decision.json",
+    "eval_results/issue_2552/judge_aggregates/judge_meta_w1.json",
+    "eval_results/issue_2552/judge_aggregates/judge_meta_w1pt.json",
+    "eval_results/issue_2552/judge_aggregates/judge_meta_w2.json",
+    "eval_results/issue_2552/judge_aggregates/judge_meta_w3.json",
+    "eval_results/issue_2552/judge_aggregates/judge_meta_w4.json",
+    "eval_results/issue_2552/judge_aggregates/judge_meta_w5.json",
+    "eval_results/issue_2552/judge_aggregates/judge_meta_w6.json",
+    "eval_results/issue_2552/judge_aggregates/judge_meta_w7w3.json",
+    "eval_results/issue_2552/judge_aggregates/judge_meta_w7w4.json",
+    "eval_results/issue_2552/judge_aggregates/judge_meta_w7w5.json",
+    "eval_results/issue_2552/judge_aggregates/mfa_disjointness.json",
+    "eval_results/issue_2552/judge_aggregates/pilot_report_w1.json",
+    "eval_results/issue_2552/judge_aggregates/pilot_report_w1pt.json",
+    "eval_results/issue_2552/judge_aggregates/pilot_report_w3.json",
+    "eval_results/issue_2552/judge_aggregates/pilot_report_w4.json",
+    "eval_results/issue_2552/judge_aggregates/pilot_report_w5.json",
+    "eval_results/issue_2552/judge_aggregates/summaries_2000.json",
+    "eval_results/issue_2552/judge_aggregates/w1_mining_coverage.json",
+    "eval_results/issue_2552/judge_aggregates/w3_categories_mat_k100.json",
+    "eval_results/issue_2552/judge_aggregates/w3_categories_mat_k200.json",
+    "eval_results/issue_2552/judge_aggregates/w3_categories_rep_ta.json",
+    "eval_results/issue_2552/judge_aggregates/w4_matching_summary.json",
+    "eval_results/issue_2552/judge_aggregates/w5_pairwise_summary.json",
+    "eval_results/issue_2552/judge_aggregates/w6_ranking_perturn.json",
+    "eval_results/issue_2552/judge_aggregates/w7_calibration.json"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "task_id": 2552,
+  "created_utc": "2026-08-25T22:27:56Z",
+  "numpy_version": "2.2.6",
+  "python_version": "3.12.13",
+  "seeds": {
+    "bootstrap": 24761,
+    "permutation": 24762,
+    "ladder": 148252
+  },
+  "config_bundle": {
+    "pt_max": "andyrdt trainer_2 per-token max (131,072-wide, top-100 judged lists)",
+    "pt_sum": "andyrdt trainer_2 per-token sum (131,072-wide, top-100 judged lists)",
+    "rep_ta": "replication turn-averaged BatchTopK (32,768-wide, top-100 judged lists)",
+    "mat_k100": "#2476 matryoshka k=100 turn-averaged (65,536-wide)",
+    "mat_k200": "#2476 matryoshka k=200 turn-averaged (65,536-wide)"
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "commit": "33529ec2+dirty",
+  "render_id": "379f787a3906482e",
+  "git_commit": "33529ec2cd09f041b559fb06b6e70f4ce1f5ae14",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2552/category_activity_heatmap.meta.json",
+    "figures/issue_2552/category_activity_heatmap.pdf",
+    "figures/issue_2552/category_activity_heatmap.png",
+    "figures/issue_2552/category_drop_rates.meta.json",
+    "figures/issue_2552/category_drop_rates.pdf",
+    "figures/issue_2552/category_drop_rates.png",
+    "figures/issue_2552/category_ranking.meta.json",
+    "figures/issue_2552/category_ranking.pdf",
+    "figures/issue_2552/category_ranking.png",
+    "figures/issue_2552/category_status_groups.meta.json",
+    "figures/issue_2552/category_status_groups.pdf",
+    "figures/issue_2552/category_status_groups.png",
+    "figures/issue_2552/ladder_hero.meta.json",
+    "figures/issue_2552/ladder_hero.pdf",
+    "figures/issue_2552/ladder_hero.png",
+    "figures/issue_2552/ladder_sensitivity_forced_last.meta.json",
+    "figures/issue_2552/ladder_sensitivity_forced_last.pdf",
+    "figures/issue_2552/ladder_sensitivity_forced_last.png",
+    "figures/issue_2552/ladder_splithalf.meta.json",
+    "figures/issue_2552/ladder_splithalf.pdf",
+    "figures/issue_2552/ladder_splithalf.png",
+    "scripts/issue2552_ladder.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-26T00:21:11Z",
+  "figsize": [
+    6.0,
+    3.2
+  ],
+  "points": [
+    {
+      "category": "rep_ta\n(replication TA, 32k)",
+      "10-way matching accuracy": 0.6608216432865731,
+      "error": 0.02075174548446046,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "mat_k100\n(#2476 matryoshka, 65k)",
+      "10-way matching accuracy": 0.6970912738214644,
+      "error": 0.020153250197270545,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "mat_k200\n(#2476 matryoshka, 65k)",
+      "10-way matching accuracy": 0.6123370110330993,
+      "error": 0.021365457873365523,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "pt_max\n(andyrdt trainer_2, 131k)",
+      "10-way matching accuracy": 0.9618282270215972,
+      "error": 0.008455310089301338,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "pt_sum\n(andyrdt trainer_2, 131k)",
+      "10-way matching accuracy": 0.6832080200501253,
+      "error": 0.020397981651184338,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "10-way matching accuracy": 0.95,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "10-way matching accuracy": 0.739,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "10-way matching accuracy": 0.6397609784489489,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "10-way matching accuracy": 0.676559055603042,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "10-way matching accuracy": 0.5907555510306295,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "10-way matching accuracy": 0.9524835760092732,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "10-way matching accuracy": 0.6624579414016433,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "10-way matching accuracy": 0.6812644694178698,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "10-way matching accuracy": 0.7168655559975831,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "10-way matching accuracy": 0.6334864667773605,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "10-way matching accuracy": 0.9693941961878759,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "10-way matching accuracy": 0.703253904704012,
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 17,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Matching accuracy, top-100 judged lists (black dash = Der et al. reference)",
+        "ylabel": "10-way matching accuracy",
+        "xticklabels": [
+          "rep_ta\n(replication TA, 32k)",
+          "mat_k100\n(#2476 matryoshka, 65k)",
+          "mat_k200\n(#2476 matryoshka, 65k)",
+          "pt_max\n(andyrdt trainer_2, 131k)",
+          "pt_sum\n(andyrdt trainer_2, 131k)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

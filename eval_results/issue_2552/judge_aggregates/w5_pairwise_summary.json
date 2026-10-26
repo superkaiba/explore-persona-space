@@ -1,0 +1,55 @@
+{
+  "per_pair": {
+    "rep_ta-vs-mat_k100": {
+      "n_valid": 1969,
+      "rep_ta": 1223,
+      "mat_k100": 746
+    },
+    "rep_ta-vs-mat_k200": {
+      "n_valid": 1970,
+      "rep_ta": 1364,
+      "mat_k200": 606
+    },
+    "rep_ta-vs-pt_max": {
+      "n_valid": 1970,
+      "rep_ta": 1342,
+      "pt_max": 628
+    },
+    "rep_ta-vs-pt_sum": {
+      "n_valid": 1970,
+      "pt_sum": 649,
+      "rep_ta": 1321
+    },
+    "mat_k100-vs-mat_k200": {
+      "n_valid": 1969,
+      "mat_k100": 1088,
+      "mat_k200": 881
+    },
+    "mat_k100-vs-pt_max": {
+      "n_valid": 1967,
+      "pt_max": 741,
+      "mat_k100": 1226
+    },
+    "mat_k100-vs-pt_sum": {
+      "n_valid": 1968,
+      "mat_k100": 1195,
+      "pt_sum": 773
+    },
+    "mat_k200-vs-pt_max": {
+      "n_valid": 1968,
+      "mat_k200": 1122,
+      "pt_max": 846
+    },
+    "mat_k200-vs-pt_sum": {
+      "n_valid": 1969,
+      "mat_k200": 996,
+      "pt_sum": 973
+    },
+    "pt_max-vs-pt_sum": {
+      "n_valid": 1970,
+      "pt_max": 1173,
+      "pt_sum": 797
+    }
+  },
+  "n_eval_realized": 2000
+}

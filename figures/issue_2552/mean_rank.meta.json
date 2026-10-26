@@ -1,0 +1,100 @@
+{
+  "commit": "33529ec2+dirty",
+  "render_id": "7003f464829b48dd",
+  "git_commit": "33529ec2cd09f041b559fb06b6e70f4ce1f5ae14",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2552/category_activity_heatmap.meta.json",
+    "figures/issue_2552/category_activity_heatmap.pdf",
+    "figures/issue_2552/category_activity_heatmap.png",
+    "figures/issue_2552/category_drop_rates.meta.json",
+    "figures/issue_2552/category_drop_rates.pdf",
+    "figures/issue_2552/category_drop_rates.png",
+    "figures/issue_2552/category_ranking.meta.json",
+    "figures/issue_2552/category_ranking.pdf",
+    "figures/issue_2552/category_ranking.png",
+    "figures/issue_2552/category_status_groups.meta.json",
+    "figures/issue_2552/category_status_groups.pdf",
+    "figures/issue_2552/category_status_groups.png",
+    "figures/issue_2552/ladder_hero.meta.json",
+    "figures/issue_2552/ladder_hero.pdf",
+    "figures/issue_2552/ladder_hero.png",
+    "figures/issue_2552/ladder_sensitivity_forced_last.meta.json",
+    "figures/issue_2552/ladder_sensitivity_forced_last.pdf",
+    "figures/issue_2552/ladder_sensitivity_forced_last.png",
+    "figures/issue_2552/ladder_splithalf.meta.json",
+    "figures/issue_2552/ladder_splithalf.pdf",
+    "figures/issue_2552/ladder_splithalf.png",
+    "figures/issue_2552/matching_accuracy.meta.json",
+    "figures/issue_2552/matching_accuracy.pdf",
+    "figures/issue_2552/matching_accuracy.png",
+    "figures/issue_2552/pairwise_win_matrix.meta.json",
+    "figures/issue_2552/pairwise_win_matrix.pdf",
+    "figures/issue_2552/pairwise_win_matrix.png",
+    "scripts/issue2552_ladder.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-26T00:21:15Z",
+  "figsize": [
+    5.6,
+    3.0
+  ],
+  "points": [
+    {
+      "category": "rep_ta\n(replication TA, 32k)",
+      "mean rank (1 = best)": 2.370066632496156,
+      "_kind": "bar"
+    },
+    {
+      "category": "mat_k100\n(#2476 matryoshka, 65k)",
+      "mean rank (1 = best)": 2.742696053305997,
+      "_kind": "bar"
+    },
+    {
+      "category": "mat_k200\n(#2476 matryoshka, 65k)",
+      "mean rank (1 = best)": 3.000512557662737,
+      "_kind": "bar"
+    },
+    {
+      "category": "pt_max\n(andyrdt trainer_2, 131k)",
+      "mean rank (1 = best)": 3.4474628395694515,
+      "_kind": "bar"
+    },
+    {
+      "category": "pt_sum\n(andyrdt trainer_2, 131k)",
+      "mean rank (1 = best)": 3.4392619169656586,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "5-way ranking (W6), top-100 judged lists",
+        "ylabel": "mean rank (1 = best)",
+        "xticklabels": [
+          "rep_ta\n(replication TA, 32k)",
+          "mat_k100\n(#2476 matryoshka, 65k)",
+          "mat_k200\n(#2476 matryoshka, 65k)",
+          "pt_max\n(andyrdt trainer_2, 131k)",
+          "pt_sum\n(andyrdt trainer_2, 131k)"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "purpose": "Pin record for #2476 parent prefixes probed UNPINNED at plan time (plan #2552 v4 s11 reused-input-data bullet). Every later fetch of these prefixes pins revision=data_repo_revision below.",
+  "data_repo": "superkaiba1/explore-persona-space-data",
+  "data_repo_revision": "1064dec5c572e64c947bf490e1957d05caa5d5a8",
+  "recorded_at_utc": "2026-08-24T22:14:17.215736+00:00",
+  "recorded_by_git_commit": "5205c9a2077752703601158c2a4f07dbd2b5eba0",
+  "prefixes": {
+    "split_meta": {
+      "path_in_repo": "issue2476_turnavg/analysis_tensors/split_meta",
+      "n_entries": 7,
+      "files": [
+        {
+          "path": "issue2476_turnavg/analysis_tensors/split_meta/assemble_regime.json",
+          "size": 1598,
+          "oid": "d84899f7ccc30a31832c9bec06dd38cd4d68cda2"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/split_meta/m_split_asserted.json",
+          "size": 847,
+          "oid": "e6b65ed6f155b19b88236ab93820e445b660ff05"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/split_meta/recapture_regime.json",
+          "size": 1599,
+          "oid": "f75c978dad63d9cf9b47c63fb258f0ed605ab35b"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/split_meta/rows_present.npy",
+          "size": 7718880,
+          "oid": "0f8a329414fa570df5cffdf49982bfcde0200990"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/split_meta/split_indices.npz",
+          "size": 13089176,
+          "oid": "73b08289bcca769a73f0d1282ee5490d1006348d"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/split_meta/split_indices_matryoshka.npz",
+          "size": 271010,
+          "oid": "1e6618c136d5197cd08a36be352d1bad575f4146"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/split_meta/split_meta.json",
+          "size": 2795,
+          "oid": "5ccd0d1c619e9ae6aef3202d4972ba14d1f068ef"
+        }
+      ]
+    },
+    "sae_c": {
+      "path_in_repo": "issue2476_turnavg/analysis_tensors/sae_c",
+      "n_entries": 3,
+      "files": [
+        {
+          "path": "issue2476_turnavg/analysis_tensors/sae_c/cfg.json",
+          "size": 762,
+          "oid": "366dc4700c917781fe1b73b66aafca003a64ea52"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/sae_c/sae_weights.safetensors",
+          "size": 1879325052,
+          "oid": "eb3c5e551ade557194041935024abf5beb078a16"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/sae_c/train_log.json",
+          "size": 1932,
+          "oid": "ee7e19802860ba0bb05dc38c26342a3b61bab107"
+        }
+      ]
+    },
+    "sae_c_k200": {
+      "path_in_repo": "issue2476_turnavg/analysis_tensors/sae_c_k200",
+      "n_entries": 3,
+      "files": [
+        {
+          "path": "issue2476_turnavg/analysis_tensors/sae_c_k200/cfg.json",
+          "size": 761,
+          "oid": "a44c9cd95eda2df1872779a55112567a7a6dc816"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/sae_c_k200/sae_weights.safetensors",
+          "size": 1879325052,
+          "oid": "9368417637fb4185957c6e075dd9b0356582f5b9"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/sae_c_k200/train_log.json",
+          "size": 1930,
+          "oid": "92cd0a3c56e414388fa992a56846412dfb5481e6"
+        }
+      ]
+    },
+    "census_floor_sweep": {
+      "path_in_repo": "issue2476_turnavg/analysis_tensors/floor_sweep",
+      "n_entries": 5,
+      "files": [
+        {
+          "path": "issue2476_turnavg/analysis_tensors/floor_sweep/firing_census_b.npz",
+          "size": 1575752,
+          "oid": "1b59cd32be775c5d9f3419584a1bebe4f4c5e0f4"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/floor_sweep/firing_census_b_pile.npz",
+          "size": 1051728,
+          "oid": "f075a8ab394319fb59cf10acaa3f585c4396d647"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/floor_sweep/firing_census_c.npz",
+          "size": 1575768,
+          "oid": "feab1a75ae9895d6d0fa9583128ecffe18a9538f"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/floor_sweep/perfeature_union_b.npz",
+          "size": 102388,
+          "oid": "1437756ae1a692c676e3ed4954a44acf5469f659"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/floor_sweep/perfeature_union_c.npz",
+          "size": 307096,
+          "oid": "af2d2af64b70677fac888258b2be39edfe24e195"
+        }
+      ]
+    },
+    "census_k200": {
+      "path_in_repo": "issue2476_turnavg/analysis_tensors/k200_census",
+      "n_entries": 3,
+      "files": [
+        {
+          "path": "issue2476_turnavg/analysis_tensors/k200_census/firing_census_k200.npz",
+          "size": 1052392,
+          "oid": "4445716d60be718e059be5c003c1370557f2a090"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/k200_census/perfeature_k200_densein.npz",
+          "size": 106542813,
+          "oid": "13f314f03b76a8da299d130577ffcbc22e6a215e"
+        },
+        {
+          "path": "issue2476_turnavg/analysis_tensors/k200_census/perfeature_union_k200.npz",
+          "size": 518643,
+          "oid": "3728b5090585f246007d079d530eae71742d76af"
+        }
+      ]
+    }
+  }
+}

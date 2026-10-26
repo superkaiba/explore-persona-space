@@ -1,0 +1,351 @@
+{
+  "commit": "6b2ece5f+dirty",
+  "render_id": "b32e3614bfe74602",
+  "git_commit": "6b2ece5f32ee6fc61062515e86d576b02dc82229",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2552/category_activity_heatmap.meta.json",
+    "figures/issue_2552/category_activity_heatmap.pdf",
+    "figures/issue_2552/category_activity_heatmap.png",
+    "figures/issue_2552/category_drop_rates.meta.json",
+    "figures/issue_2552/category_drop_rates.pdf",
+    "figures/issue_2552/category_drop_rates.png",
+    "figures/issue_2552/category_ranking.meta.json",
+    "figures/issue_2552/category_ranking.pdf",
+    "figures/issue_2552/category_ranking.png",
+    "figures/issue_2552/category_status_groups.meta.json",
+    "figures/issue_2552/category_status_groups.pdf",
+    "figures/issue_2552/category_status_groups.png",
+    "figures/issue_2552/covariate_scatters_mat_k100.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k100.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k100.png",
+    "figures/issue_2552/covariate_scatters_mat_k200.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k200.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k200.png",
+    "figures/issue_2552/covariate_scatters_rep_ta.meta.json",
+    "figures/issue_2552/covariate_scatters_rep_ta.pdf",
+    "figures/issue_2552/covariate_scatters_rep_ta.png",
+    "figures/issue_2552/delta_cov_perturn.meta.json",
+    "figures/issue_2552/delta_cov_perturn.pdf",
+    "figures/issue_2552/delta_cov_perturn.png",
+    "figures/issue_2552/embedding_coverage.meta.json",
+    "figures/issue_2552/embedding_coverage.pdf",
+    "figures/issue_2552/embedding_coverage.png",
+    "figures/issue_2552/instrument_position_effects.meta.json",
+    "figures/issue_2552/instrument_position_effects.pdf",
+    "figures/issue_2552/instrument_position_effects.png",
+    "figures/issue_2552/ladder_hero.meta.json",
+    "figures/issue_2552/ladder_hero.pdf",
+    "figures/issue_2552/ladder_hero.png",
+    "figures/issue_2552/ladder_sensitivity_forced_last.meta.json",
+    "figures/issue_2552/ladder_sensitivity_forced_last.pdf",
+    "figures/issue_2552/ladder_sensitivity_forced_last.png",
+    "figures/issue_2552/ladder_splithalf.meta.json",
+    "figures/issue_2552/ladder_splithalf.pdf",
+    "figures/issue_2552/ladder_splithalf.png",
+    "figures/issue_2552/matching_accuracy.meta.json",
+    "figures/issue_2552/matching_accuracy.pdf",
+    "figures/issue_2552/matching_accuracy.png",
+    "figures/issue_2552/mean_rank.meta.json",
+    "figures/issue_2552/mean_rank.pdf",
+    "figures/issue_2552/mean_rank.png",
+    "figures/issue_2552/pairwise_win_matrix.meta.json",
+    "figures/issue_2552/pairwise_win_matrix.pdf",
+    "figures/issue_2552/pairwise_win_matrix.png",
+    "figures/issue_2552/reconstruction_fve.meta.json",
+    "figures/issue_2552/reconstruction_fve.pdf",
+    "... 5 more"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-26T01:23:57Z",
+  "figsize": [
+    10.8,
+    3.3
+  ],
+  "points": [
+    {
+      "gold lineup slot": 0.0,
+      "matching accuracy": 0.8082901554404145,
+      "series": "rep_ta (replication TA, 32k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "gold lineup slot": 1.0,
+      "matching accuracy": 0.693069306930693,
+      "series": "rep_ta (replication TA, 32k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "gold lineup slot": 2.0,
+      "matching accuracy": 0.6739130434782609,
+      "series": "rep_ta (replication TA, 32k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "gold lineup slot": 3.0,
+      "matching accuracy": 0.5219512195121951,
+      "series": "rep_ta (replication TA, 32k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "gold lineup slot": 4.0,
+      "matching accuracy": 0.6,
+      "series": "rep_ta (replication TA, 32k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "gold lineup slot": 5.0,
+      "matching accuracy": 0.5706806282722513,
+      "series": "rep_ta (replication TA, 32k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "gold lineup slot": 6.0,
+      "matching accuracy": 0.6069651741293532,
+      "series": "rep_ta (replication TA, 32k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "gold lineup slot": 7.0,
+      "matching accuracy": 0.6820276497695853,
+      "series": "rep_ta (replication TA, 32k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "gold lineup slot": 8.0,
+      "matching accuracy": 0.6964285714285714,
+      "series": "rep_ta (replication TA, 32k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "gold lineup slot": 9.0,
+      "matching accuracy": 0.7701149425287356,
+      "series": "rep_ta (replication TA, 32k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "gold lineup slot": 0.0,
+      "matching accuracy": 0.9791666666666666,
+      "series": "pt_max (andyrdt trainer_2, 131k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "gold lineup slot": 1.0,
+      "matching accuracy": 0.9405940594059405,
+      "series": "pt_max (andyrdt trainer_2, 131k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "gold lineup slot": 2.0,
+      "matching accuracy": 0.9456521739130435,
+      "series": "pt_max (andyrdt trainer_2, 131k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "gold lineup slot": 3.0,
+      "matching accuracy": 0.9560975609756097,
+      "series": "pt_max (andyrdt trainer_2, 131k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "gold lineup slot": 4.0,
+      "matching accuracy": 0.9704433497536946,
+      "series": "pt_max (andyrdt trainer_2, 131k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "gold lineup slot": 5.0,
+      "matching accuracy": 0.9631578947368421,
+      "series": "pt_max (andyrdt trainer_2, 131k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "gold lineup slot": 6.0,
+      "matching accuracy": 0.9601990049751243,
+      "series": "pt_max (andyrdt trainer_2, 131k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "gold lineup slot": 7.0,
+      "matching accuracy": 0.9444444444444444,
+      "series": "pt_max (andyrdt trainer_2, 131k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "gold lineup slot": 8.0,
+      "matching accuracy": 0.9732142857142857,
+      "series": "pt_max (andyrdt trainer_2, 131k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "gold lineup slot": 9.0,
+      "matching accuracy": 0.9885057471264368,
+      "series": "pt_max (andyrdt trainer_2, 131k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": -0.2,
+      "turn-averaged win rate": 0.7135728542914171,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.8,
+      "turn-averaged win rate": 0.799163179916318,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.8,
+      "turn-averaged win rate": 0.6357069143446853,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.8,
+      "turn-averaged win rate": 0.7051153460381143,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.8,
+      "turn-averaged win rate": 0.639795918367347,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.8,
+      "turn-averaged win rate": 0.6377118644067796,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.2,
+      "turn-averaged win rate": 0.6477272727272727,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.2,
+      "turn-averaged win rate": 0.5493096646942801,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.2,
+      "turn-averaged win rate": 0.6112224448897795,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.2,
+      "turn-averaged win rate": 0.5066941297631308,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.2,
+      "turn-averaged win rate": 0.5010121457489879,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.2,
+      "turn-averaged win rate": 0.38439024390243903,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "10-way matching by gold slot",
+        "xlabel": "gold lineup slot",
+        "ylabel": "matching accuracy",
+        "legend_labels": [
+          "rep_ta (replication TA, 32k)",
+          "pt_max (andyrdt trainer_2, 131k)"
+        ],
+        "xticklabels": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "F",
+          "G",
+          "H",
+          "I",
+          "J"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "pairwise coverage by presentation order",
+        "ylabel": "turn-averaged win rate",
+        "legend_labels": [
+          "listed first",
+          "listed second"
+        ],
+        "xticklabels": [
+          "replication turn-avg\nvs per-token max",
+          "replication turn-avg\nvs per-token sum",
+          "matryoshka k=100\nvs per-token max",
+          "matryoshka k=100\nvs per-token sum",
+          "matryoshka k=200\nvs per-token max",
+          "matryoshka k=200\nvs per-token sum"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "rep_ta (replication TA, 32k)",
+      "pt_max (andyrdt trainer_2, 131k)",
+      "listed first",
+      "listed second"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
