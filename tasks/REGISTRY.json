@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2673,
+  "highest_id": 2674,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12919,6 +12919,14 @@
       "path": "tasks/on_hold/2673",
       "status": "on_hold",
       "title": "Does context-vector cosine predict story-imprinting tracer uptake?"
+    },
+    "2674": {
+      "goal": "Separate the effects of repetition, unique-data count, and optimizer steps on subliminal trait transfer (cat preference via teacher number sequences, Qwen2.5-7B-Instruct, LoRA rank 8), starting with a Phase 0 gate that replicates the published recipe, measures seed variance, and validates the constant-LR prefix shortcut.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2674",
+      "status": "proposed",
+      "title": "Does subliminal learning need multiple epochs? Repetition vs unique data vs steps"
     },
     "268": {
       "has_clean_result": false,
