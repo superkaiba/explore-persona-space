@@ -32,7 +32,7 @@
 # (set -e), leaving its sentinel unwritten so a re-run resumes there.
 #
 # Env knobs:
-#   OUT_ROOT              run out-root (default /workspace/issue2674_out)
+#   OUT_ROOT              run out-root (default /workspace/issue2674_out, else $HOME/...)
 #   EPS_2674_MAX_GPUS     clamp the job-queue width (default 4)
 #   EPS_2674_N_PROMPTS    shared prompt-pool size (default 300000)
 #   EPS_2674_UNIQUE       U for the Phase 0 runs (default 10000)
@@ -42,7 +42,16 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."  # repo root, so scripts/ paths resolve
 
-OUT_ROOT="${OUT_ROOT:-/workspace/issue2674_out}"
+# Lane-portable default: the GCP and RunPod lanes carry /workspace, the DRAC/Mila
+# SLURM rungs of the auto chain do NOT (a hard /workspace default fails loud at mkdir
+# there — gotchas/compute-backends #608), so fall back to $HOME when it is absent.
+if [ -n "${OUT_ROOT:-}" ]; then
+  :
+elif [ -d /workspace ]; then
+  OUT_ROOT=/workspace/issue2674_out
+else
+  OUT_ROOT="$HOME/issue2674_out"
+fi
 SMOKE_ROOT="${SMOKE_ROOT:-${OUT_ROOT}_smoke}"   # per-leg out-root: the smoke's
                                                 # regime never contaminates the
                                                 # production resume state.
