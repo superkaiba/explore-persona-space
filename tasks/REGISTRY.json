@@ -12924,8 +12924,8 @@
       "goal": "Separate the effects of repetition, unique-data count, and optimizer steps on subliminal trait transfer (cat preference via teacher number sequences, Qwen2.5-7B-Instruct, LoRA rank 8), starting with a Phase 0 gate that replicates the published recipe, measures seed variance, and validates the constant-LR prefix shortcut.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/2674",
-      "status": "approved",
+      "path": "tasks/running/2674",
+      "status": "running",
       "title": "Does subliminal learning need multiple epochs? Repetition vs unique data vs steps"
     },
     "268": {
