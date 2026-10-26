@@ -295,7 +295,9 @@ note in any other shape is refused as a FAIL at teardown (#1775).
   refusal (`ComputeKillNotApproved`), SURFACE the pod for approval —
   post a marker + push naming the pod and its hourly burn, leave it
   alive — never pass `--approve` or set `EPS_ALLOW_COMPUTE_KILL=1` /
-  `EPS_ALLOW_POD_TERMINATE=1` (user-only channels).
+  `EPS_ALLOW_POD_TERMINATE=1` (user-only channels). Exception: the 2026-10-26 standing user grant
+  (CLAUDE.md § Pods) lets the session that provisioned or is driving the pod
+  re-run the terminate with `--approve` once outputs are verified, without asking.
 
   If interpretation later needs GPU compute (e.g., to regenerate a
   figure from raw outputs that weren't downloaded), dispatch fresh
