@@ -419,7 +419,8 @@ def run(args: argparse.Namespace) -> None:
 
     save_spec = args.adapter_save_steps
     if save_spec.strip().lower() == "auto":
-        save_steps = {0, spe // 2} | {spe * e for e in range(1, args.epochs + 1)}
+        # No step-0 adapter: zero-init LoRA B makes it the base model (base eval covers it).
+        save_steps = {spe // 2} | {spe * e for e in range(1, args.epochs + 1)}
     else:
         save_steps = parse_save_steps(save_spec, total)
 

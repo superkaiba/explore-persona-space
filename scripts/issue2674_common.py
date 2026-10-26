@@ -1160,9 +1160,13 @@ class RunSpec:
         return total_steps(self.unique, self.epochs)
 
     def adapter_save_steps(self) -> list[int]:
-        """Step 0 plus every epoch boundary, plus mid-epoch-1 for the trajectory."""
+        """Every epoch boundary plus mid-epoch-1 for the trajectory.
+
+        No step-0 adapter: LoRA B is zero-initialised, so it equals the base model,
+        which the base sampled eval already covers.
+        """
         spe = steps_per_epoch(self.unique)
-        steps = {0, spe // 2}
+        steps = {spe // 2}
         for e in range(1, self.epochs + 1):
             steps.add(spe * e)
         return sorted(steps)
