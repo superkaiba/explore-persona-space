@@ -1,0 +1,70 @@
+{
+  "commit": "c9d590d5",
+  "render_id": "17784d06f5de4e56",
+  "git_commit": "c9d590d542b3a51b26c3553c9cda373d89097771",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2674_core_analysis.py",
+  "created": "2026-10-27T22:30:59Z",
+  "figsize": [
+    9.0,
+    3.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "epochs completed (grey = no saved checkpoint)",
+        "annotations": [
+          "12.0\nstep 152",
+          "54.1\nstep 303",
+          "49.5\nstep 455",
+          "52.0\nstep 606",
+          "57.7\nstep 758",
+          "55.5\nstep 909",
+          "54.3\nstep 1061",
+          "47.5\nstep 1212",
+          "52.4\nstep 1364",
+          "55.3\nstep 1520",
+          "84.0\nstep 379",
+          "67.3\nstep 758",
+          "63.6\nstep 1516",
+          "72.4\nstep 1516"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ],
+        "yticklabels": [
+          "10k unique",
+          "25k unique",
+          "100k unique"
+        ]
+      },
+      {
+        "ylabel": "cat-rate difference (pp)",
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,1425 @@
+{
+  "commit": "c9d590d5",
+  "render_id": "e91b66e4204a4953",
+  "git_commit": "c9d590d542b3a51b26c3553c9cda373d89097771",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2674_core_analysis.py",
+  "created": "2026-10-27T22:31:02Z",
+  "figsize": [
+    5.0,
+    4.0
+  ],
+  "points": [
+    {
+      "delta log P(cat) (nats)": 0.17829017511014555,
+      "cat-rate difference (pp)": -0.6000000000000002,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 4.279322859339437,
+      "cat-rate difference (pp)": 7.800000000000002,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 4.391242769013575,
+      "cat-rate difference (pp)": 3.74,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.976306752023072,
+      "cat-rate difference (pp)": 51.88,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.5056423746357,
+      "cat-rate difference (pp)": 44.82,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.147402351158721,
+      "cat-rate difference (pp)": 57.04,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.601258798596893,
+      "cat-rate difference (pp)": 68.42,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.45098431893093,
+      "cat-rate difference (pp)": 62.540000000000006,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.526098581921234,
+      "cat-rate difference (pp)": 62.13999999999999,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.061644547628948,
+      "cat-rate difference (pp)": 68.67999999999999,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.528998411904855,
+      "cat-rate difference (pp)": 60.040000000000006,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.785115709716726,
+      "cat-rate difference (pp)": 67.84,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.582064110907529,
+      "cat-rate difference (pp)": 61.38,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 0.27502085144803523,
+      "cat-rate difference (pp)": -0.4800000000000002,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 4.429456163996843,
+      "cat-rate difference (pp)": 9.36,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 5.856562239026012,
+      "cat-rate difference (pp)": 26.239999999999995,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.953364204218595,
+      "cat-rate difference (pp)": 75.44,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.002138963112223,
+      "cat-rate difference (pp)": 70.53999999999999,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.13881963055807,
+      "cat-rate difference (pp)": 73.28,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.414979565354926,
+      "cat-rate difference (pp)": 76.94000000000001,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.49991856220881,
+      "cat-rate difference (pp)": 78.14000000000001,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.643949475702314,
+      "cat-rate difference (pp)": 77.02,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.751962144188775,
+      "cat-rate difference (pp)": 75.42,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.94079033534986,
+      "cat-rate difference (pp)": 76.74,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.92512154496088,
+      "cat-rate difference (pp)": 77.3,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.950183141309585,
+      "cat-rate difference (pp)": 74.58,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 0.353721866366671,
+      "cat-rate difference (pp)": -0.52,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 2.0430077832883917,
+      "cat-rate difference (pp)": 1.4200000000000002,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 4.472197608398734,
+      "cat-rate difference (pp)": 13.639999999999999,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.071577093279517,
+      "cat-rate difference (pp)": 47.5,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.7206836981488305,
+      "cat-rate difference (pp)": 58.300000000000004,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.81702475912355,
+      "cat-rate difference (pp)": 58.50000000000001,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.141190105970404,
+      "cat-rate difference (pp)": 62.12,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.49104862675881,
+      "cat-rate difference (pp)": 73.56,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.435388492904362,
+      "cat-rate difference (pp)": 68.12,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.609019463415569,
+      "cat-rate difference (pp)": 70.1,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.486251238961152,
+      "cat-rate difference (pp)": 59.64,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 8.451667079525336,
+      "cat-rate difference (pp)": 62.68,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 9.102157558879146,
+      "cat-rate difference (pp)": 74.03999999999999,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 0.2796346314319109,
+      "cat-rate difference (pp)": -0.52,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 4.065503551154307,
+      "cat-rate difference (pp)": 6.94,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 3.0692488229743073,
+      "cat-rate difference (pp)": 0.9400000000000001,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.102249594763509,
+      "cat-rate difference (pp)": 48.82,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.748905912266741,
+      "cat-rate difference (pp)": 35.68,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.906870269782455,
+      "cat-rate difference (pp)": 33.42,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.102047932462126,
+      "cat-rate difference (pp)": 39.14,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.133553661527655,
+      "cat-rate difference (pp)": 43.22,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.012818958049868,
+      "cat-rate difference (pp)": 42.480000000000004,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.078329268916807,
+      "cat-rate difference (pp)": 37.32,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.117014317343804,
+      "cat-rate difference (pp)": 33.940000000000005,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.461698992232089,
+      "cat-rate difference (pp)": 26.340000000000003,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.595099962386802,
+      "cat-rate difference (pp)": 48.54,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 0.24975142425688013,
+      "cat-rate difference (pp)": -0.6,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 1.6991579637562344,
+      "cat-rate difference (pp)": 1.38,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 5.3473880175024835,
+      "cat-rate difference (pp)": 15.580000000000002,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 7.239555966916234,
+      "cat-rate difference (pp)": 47.08,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.826482172579094,
+      "cat-rate difference (pp)": 42.72,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.4425423368286605,
+      "cat-rate difference (pp)": 25.5,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 5.482219025175863,
+      "cat-rate difference (pp)": 13.459999999999999,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.523710311254545,
+      "cat-rate difference (pp)": 31.080000000000002,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.724427300290003,
+      "cat-rate difference (pp)": 27.98,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.280431662828942,
+      "cat-rate difference (pp)": 19.88,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 4.666016143178398,
+      "cat-rate difference (pp)": 7.26,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.919516937398338,
+      "cat-rate difference (pp)": 27.62,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 6.363053073828128,
+      "cat-rate difference (pp)": 18.099999999999998,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "delta log P(cat) (nats)": 0.678656406983321,
+      "cat-rate difference (pp)": -0.37999999999999995,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 1.7540576345361547,
+      "cat-rate difference (pp)": 0.54,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 3.3456708359899388,
+      "cat-rate difference (pp)": 2.04,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.695507010219542,
+      "cat-rate difference (pp)": 78.26,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.9104880623101375,
+      "cat-rate difference (pp)": 83.96000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.849917216366544,
+      "cat-rate difference (pp)": 79.44,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.745395248786833,
+      "cat-rate difference (pp)": 69.34,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.2486005468125985,
+      "cat-rate difference (pp)": 52.42,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.694731550015343,
+      "cat-rate difference (pp)": 73.94000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.4688718790962465,
+      "cat-rate difference (pp)": 50.46000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.7212370353081345,
+      "cat-rate difference (pp)": 61.36000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.545079307960417,
+      "cat-rate difference (pp)": 65.49999999999999,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.472748406533435,
+      "cat-rate difference (pp)": 49.94,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 0.5527348508442529,
+      "cat-rate difference (pp)": -0.42000000000000004,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 3.889670806129603,
+      "cat-rate difference (pp)": 7.04,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 4.863690412381716,
+      "cat-rate difference (pp)": 7.68,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.603442496869977,
+      "cat-rate difference (pp)": 77.6,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.838529488359816,
+      "cat-rate difference (pp)": 83.78,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.575511455070677,
+      "cat-rate difference (pp)": 64.32,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.055049473955059,
+      "cat-rate difference (pp)": 80.80000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.9567568257993475,
+      "cat-rate difference (pp)": 69.92,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.704585379974388,
+      "cat-rate difference (pp)": 60.14000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.973254066171842,
+      "cat-rate difference (pp)": 69.12,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.375553962055763,
+      "cat-rate difference (pp)": 78.88000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.177337525669461,
+      "cat-rate difference (pp)": 71.94,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.057571505908694,
+      "cat-rate difference (pp)": 58.720000000000006,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 0.009994663808409854,
+      "cat-rate difference (pp)": -0.5599999999999999,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 2.6039563676358934,
+      "cat-rate difference (pp)": 1.8199999999999998,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 5.317047425126717,
+      "cat-rate difference (pp)": 14.780000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.884464827623878,
+      "cat-rate difference (pp)": 77.2,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.14938215683966,
+      "cat-rate difference (pp)": 87.28,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.232839545414896,
+      "cat-rate difference (pp)": 82.16,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.200946876497422,
+      "cat-rate difference (pp)": 77.84,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.193860936491784,
+      "cat-rate difference (pp)": 81.06000000000002,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.918598617621194,
+      "cat-rate difference (pp)": 55.32,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.218257618688416,
+      "cat-rate difference (pp)": 70.38,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.349384089332107,
+      "cat-rate difference (pp)": 73.28,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.363065765216326,
+      "cat-rate difference (pp)": 66.74,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.27956716310735,
+      "cat-rate difference (pp)": 66.74,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 0.14877063668834545,
+      "cat-rate difference (pp)": -0.56,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 1.3959136342318024,
+      "cat-rate difference (pp)": 0.5000000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 3.241332205196853,
+      "cat-rate difference (pp)": 3.52,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.779906424450384,
+      "cat-rate difference (pp)": 82.84,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.696170018404231,
+      "cat-rate difference (pp)": 79.72,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.732634405441347,
+      "cat-rate difference (pp)": 77.88000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.806612799235124,
+      "cat-rate difference (pp)": 77.60000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.871152400520532,
+      "cat-rate difference (pp)": 81.42,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.993892024054932,
+      "cat-rate difference (pp)": 77.86000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.883693582124977,
+      "cat-rate difference (pp)": 80.32000000000001,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.05831611732537,
+      "cat-rate difference (pp)": 79.18,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.928081485029293,
+      "cat-rate difference (pp)": 75.92,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.14512443215444,
+      "cat-rate difference (pp)": 77.97999999999999,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 0.47813615712584223,
+      "cat-rate difference (pp)": -0.45999999999999996,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 2.165484721081108,
+      "cat-rate difference (pp)": 1.2,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 3.4797124974642877,
+      "cat-rate difference (pp)": 2.7,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.763629234914537,
+      "cat-rate difference (pp)": 67.24,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.008977762064,
+      "cat-rate difference (pp)": 85.48,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.076438176990822,
+      "cat-rate difference (pp)": 75.32,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.110873817142789,
+      "cat-rate difference (pp)": 77.9,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.280993397405105,
+      "cat-rate difference (pp)": 51.580000000000005,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 7.8453243954438845,
+      "cat-rate difference (pp)": 75.76,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.086483640104362,
+      "cat-rate difference (pp)": 77.96,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.135159633249456,
+      "cat-rate difference (pp)": 76.62,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.133586556824442,
+      "cat-rate difference (pp)": 70.04,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 8.16965800456357,
+      "cat-rate difference (pp)": 64.62,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "delta log P(cat) (nats)": 0.1790922078115198,
+      "cat-rate difference (pp)": -0.68,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 2.151426554315046,
+      "cat-rate difference (pp)": 2.0399999999999996,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 5.687465909508958,
+      "cat-rate difference (pp)": 24.880000000000003,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.968038763116545,
+      "cat-rate difference (pp)": 79.78,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 8.118845282813577,
+      "cat-rate difference (pp)": 87.14,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.992901528527425,
+      "cat-rate difference (pp)": 84.42,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.929900505752815,
+      "cat-rate difference (pp)": 78.0,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.902717686315894,
+      "cat-rate difference (pp)": 81.9,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.820422367929963,
+      "cat-rate difference (pp)": 72.58,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.221340145607663,
+      "cat-rate difference (pp)": 47.26,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.725216434831934,
+      "cat-rate difference (pp)": 74.64,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.7450279158792625,
+      "cat-rate difference (pp)": 72.76,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.756496930498914,
+      "cat-rate difference (pp)": 80.72,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 0.08241902165625348,
+      "cat-rate difference (pp)": -0.52,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 2.4528706159985036,
+      "cat-rate difference (pp)": 0.68,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 3.1105911592836195,
+      "cat-rate difference (pp)": 1.8599999999999999,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.351925606168956,
+      "cat-rate difference (pp)": 54.099999999999994,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.798162833045297,
+      "cat-rate difference (pp)": 83.34,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.784314646601753,
+      "cat-rate difference (pp)": 71.76,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.909887360859147,
+      "cat-rate difference (pp)": 76.38000000000001,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.7330312722019166,
+      "cat-rate difference (pp)": 76.96000000000001,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.821659977723164,
+      "cat-rate difference (pp)": 76.05999999999999,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.8227602988308655,
+      "cat-rate difference (pp)": 77.49999999999999,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.6194034998797004,
+      "cat-rate difference (pp)": 73.03999999999999,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.833990800260131,
+      "cat-rate difference (pp)": 75.44000000000001,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.850891769271774,
+      "cat-rate difference (pp)": 70.63999999999999,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 0.28873473166185093,
+      "cat-rate difference (pp)": -0.5999999999999999,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 3.041147193865294,
+      "cat-rate difference (pp)": 1.9199999999999995,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 5.214791741986531,
+      "cat-rate difference (pp)": 13.3,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 8.030269870006745,
+      "cat-rate difference (pp)": 85.3,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.8949924170732,
+      "cat-rate difference (pp)": 83.36,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 8.041262444892478,
+      "cat-rate difference (pp)": 85.94000000000001,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.953992715637501,
+      "cat-rate difference (pp)": 85.3,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.834425213029148,
+      "cat-rate difference (pp)": 83.06,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.767117879403686,
+      "cat-rate difference (pp)": 77.08,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.672814377752029,
+      "cat-rate difference (pp)": 77.36000000000001,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.95195205148739,
+      "cat-rate difference (pp)": 81.86,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.901592705153598,
+      "cat-rate difference (pp)": 79.4,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.718219772464538,
+      "cat-rate difference (pp)": 79.38000000000001,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 0.3893497720740644,
+      "cat-rate difference (pp)": -0.4000000000000002,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 2.815433549089338,
+      "cat-rate difference (pp)": 3.4800000000000004,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 5.731279355354717,
+      "cat-rate difference (pp)": 26.6,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.901524919131024,
+      "cat-rate difference (pp)": 81.02000000000001,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 8.092654683110812,
+      "cat-rate difference (pp)": 88.18,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.972209485745605,
+      "cat-rate difference (pp)": 81.38,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 8.046173183423846,
+      "cat-rate difference (pp)": 84.16,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.911987163609747,
+      "cat-rate difference (pp)": 81.74,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 8.02204487870192,
+      "cat-rate difference (pp)": 83.48,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.843015897724155,
+      "cat-rate difference (pp)": 80.25999999999999,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.871947658770689,
+      "cat-rate difference (pp)": 78.08,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.939877882920577,
+      "cat-rate difference (pp)": 74.44,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.600308533741984,
+      "cat-rate difference (pp)": 55.86,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 0.22711038944291317,
+      "cat-rate difference (pp)": -0.6199999999999999,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 2.5561614884494794,
+      "cat-rate difference (pp)": 3.1199999999999997,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 5.031819229331383,
+      "cat-rate difference (pp)": 12.06,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.959893869924359,
+      "cat-rate difference (pp)": 80.16,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 8.072951809991384,
+      "cat-rate difference (pp)": 86.28,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.784808253509845,
+      "cat-rate difference (pp)": 73.48,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.898482171230439,
+      "cat-rate difference (pp)": 82.28,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.860120005290329,
+      "cat-rate difference (pp)": 81.52000000000001,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.783045191947097,
+      "cat-rate difference (pp)": 81.26,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.896185873037533,
+      "cat-rate difference (pp)": 81.4,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.646494833763253,
+      "cat-rate difference (pp)": 75.7,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.690764674974524,
+      "cat-rate difference (pp)": 74.08,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "delta log P(cat) (nats)": 7.696050411080565,
+      "cat-rate difference (pp)": 75.16000000000001,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 195,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Spearman rho = 0.80",
+        "xlabel": "delta log P(cat) (nats)",
+        "ylabel": "cat-rate difference (pp)",
+        "legend_labels": [
+          "A: 10k x 10 epochs",
+          "B: 25k x 4 epochs",
+          "C: 100k x 1 epoch"
+        ],
+        "xticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "A: 10k x 10 epochs",
+      "B: 25k x 4 epochs",
+      "C: 100k x 1 epoch"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

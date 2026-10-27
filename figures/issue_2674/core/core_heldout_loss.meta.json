@@ -1,0 +1,1731 @@
+{
+  "commit": "c9d590d5",
+  "render_id": "f630616da4304caa",
+  "git_commit": "c9d590d542b3a51b26c3553c9cda373d89097771",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2674_core_analysis.py",
+  "created": "2026-10-27T22:31:00Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5223977303051754,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.48988094623328154,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.4618089904974156,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.48582662542689425,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.5767637337039535,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.5511878195659002,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.6518192157688116,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.7998380676912129,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.7509514517568542,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.865302507808406,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.886371293612441,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.8587225161229812,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.9488986723476728,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.9445172721903137,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.9706718848628579,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5281631988020907,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.49267240252332845,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.4621769053366621,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.4845025309395991,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.5662055501464913,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.564326821102273,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.6741044536665267,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.7756252051660533,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.742089894925206,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.8587106644104914,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.889948731282901,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.884996180933942,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.9231671623217986,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.995489487123946,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 1.023694701933269,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5286709440764792,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.4911514986612566,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.464453957760171,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.48738163640071935,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.5759011581600448,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.5631662255829135,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.6482855328995165,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.7558533619132902,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.7458697770584715,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.8712615697836275,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.9015188173093528,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.9042748347692166,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.9620939898721476,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.9858916353846588,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.974979639246433,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5251699377393139,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.4881951302697436,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.45927121784522235,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.48058741250900683,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.5781443186402804,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.5640311912415589,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.6713656264236012,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.7893747269104914,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.754704408753305,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.85014806382795,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.9289982513897325,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.899523286672711,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.9459369189287968,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.9873561418435282,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 1.0029844566011923,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5274082656517972,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.4901114789057662,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.46630713409355495,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.4829817026772635,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.5747165161092105,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.5666822297446673,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.6846704647043673,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.7504457593060716,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.7595115633634653,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.8927688340576021,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.9022678362341301,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.8749522558589098,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.9434736003860286,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.9653502566017876,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.9862267980920394,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5263620153149713,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.49040229131867524,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.4628036411066052,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.48425598159069666,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.5743462553519961,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.5618788574474626,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.6660490586925647,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.7742274241974239,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.7506254191714603,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.8676383279776154,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.9018209859657114,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.8844938148715521,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.9447140687712888,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.9757209586288468,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.9917114961471583,
+      "series": "A: 10k x 10 epochs",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5276755397960733,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.479200198057352,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.4446812422027595,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.418991323662522,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.40662100279770197,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.3888683761604676,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.37437142890107666,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.39385458583812705,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.39859446249843683,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.3856690185860905,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.38411723513946455,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.4411986356783115,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.44626548701303537,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.44264644622621,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.4497583402094201,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5261350148947763,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.4780449933807197,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.4446220010864031,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.4234851697044269,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.40290282749526585,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.38782950784711306,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.38315500751252024,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.38621949515752285,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.3897942054221154,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.38291201832965616,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.3753551094070078,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.45547060975351045,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.4332438569747898,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.4365442216120897,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.4244208269317803,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5220813919321078,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.47783124966503504,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.445815860489689,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.41912701937363034,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.4042740089874827,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.3836770353216855,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.36882672907994796,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.3889784086688194,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.3918048676367253,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.3835934685363668,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.3764760383263214,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.4396564592135469,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.4401440658812854,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.4431738648781025,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.42808522174495917,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5270884845830505,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.4825849261848828,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.4469612023084298,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.42143581205561315,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.40003297427878315,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.39086739601570314,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.3756697380629645,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.3957314016274832,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.40018870391998357,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.3935063908992991,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.3875028588331011,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.4484960979370623,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.4577683067203653,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.448915880010704,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.4256795450933585,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5242610893414886,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.4816495713564742,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.4413983701813426,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.4116841555607165,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.4005586948442934,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.3818124550588645,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.371779962990091,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.3871561817043614,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.3852987543396575,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.38147090708145753,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.3778237548234958,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.44437983768527284,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.42285548205555357,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.4333568495035819,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.42380098469470545,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5254483041094993,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.4798621877288928,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.44469573525372474,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.4189446960713818,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.4028779016807055,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.3866109540807668,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.37476057330932006,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.39038801459926276,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.39313619876338374,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.385430360686574,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.38025499930587814,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.4458403280535408,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.4400554397290059,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.4409274524461376,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.43034898373484476,
+      "series": "B: 25k x 4 epochs",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5241979693771289,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.47874593668864035,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.44772983645706793,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.4130551974841897,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.38743737201546197,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.3698992857988245,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.35193910880890916,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.3441867454913713,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.3289724875811732,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.3254563409429934,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.31557649928001136,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.3108890917443041,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.31323688807479994,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.3004117940892079,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.2934770622724099,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.529217861644946,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.4796128504943339,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.4491702789383694,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.4135489044691028,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.38581668813233944,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.36848605922255373,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.35544634340126424,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.3411912164365085,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.33137766701912424,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.323587140373218,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.31480216898201907,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.309382487863102,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.3036434618277625,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.300434351887416,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.297553844923494,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5241847103464728,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.47890905184253074,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.44458516656878244,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.4125187592022325,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.38949820919344896,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.3710623063251066,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.35565027659733633,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.34561980827534716,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.32769989686800294,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.3301063295169656,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.3156872761549965,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.3100910085907353,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.30426117854917734,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.3049950106500256,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.30572870899749444,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5250357075000149,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.4798758328997398,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.45128541417303847,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.4214089218109845,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.39166679925697323,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.3764401051901708,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.3585036955942428,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.34245729684931936,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.33173620167571816,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.3265609054271027,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.3206852648530918,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.3151486861882399,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.3078427015130741,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.3065033213406564,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.2984086191561637,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.5218701895306321,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.475127273900496,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.44537179345463535,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.41092106345427803,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.3856708155336662,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.36856584602106257,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.3526345798590021,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.34047639766931365,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.3380169579745486,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.32600692219098365,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.3163120701747922,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.30881005829135105,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.30338088940554137,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.30173713015678594,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.29435175412788517,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "optimizer steps (log scale)": 100.0,
+      "held-out per-token loss, cat-teacher data": 0.524901287679839,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 200.0,
+      "held-out per-token loss, cat-teacher data": 0.47845418916514815,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 300.0,
+      "held-out per-token loss, cat-teacher data": 0.4476284979183787,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 400.0,
+      "held-out per-token loss, cat-teacher data": 0.41429056928415753,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 500.0,
+      "held-out per-token loss, cat-teacher data": 0.38801797682637795,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 600.0,
+      "held-out per-token loss, cat-teacher data": 0.37089072051154365,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 700.0,
+      "held-out per-token loss, cat-teacher data": 0.3548348008521509,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 800.0,
+      "held-out per-token loss, cat-teacher data": 0.342786292944372,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 900.0,
+      "held-out per-token loss, cat-teacher data": 0.33156064222371345,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 1000.0,
+      "held-out per-token loss, cat-teacher data": 0.3263435276902527,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 1100.0,
+      "held-out per-token loss, cat-teacher data": 0.3166126558889822,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 1200.0,
+      "held-out per-token loss, cat-teacher data": 0.31086426653554644,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 1300.0,
+      "held-out per-token loss, cat-teacher data": 0.30647302387407105,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 1400.0,
+      "held-out per-token loss, cat-teacher data": 0.30281632162481836,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "optimizer steps (log scale)": 1500.0,
+      "held-out per-token loss, cat-teacher data": 0.29790399789548944,
+      "series": "C: 100k x 1 epoch",
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 270,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "optimizer steps (log scale)",
+        "ylabel": "held-out per-token loss, cat-teacher data",
+        "legend_labels": [
+          "A: 10k x 10 epochs",
+          "B: 25k x 4 epochs",
+          "C: 100k x 1 epoch"
+        ],
+        "annotations": [
+          "A",
+          "B",
+          "C"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ],
+        "yticklabels": [
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ],
+    "series": [
+      "A: 10k x 10 epochs",
+      "B: 25k x 4 epochs",
+      "C: 100k x 1 epoch"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
