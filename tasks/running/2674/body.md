@@ -4,7 +4,6 @@ title: Does subliminal learning need multiple epochs? Repetition vs unique data 
 kind: experiment
 tags:
 - lean-override
-- keep-running
 created_at: '2026-10-26T21:00:45Z'
 has_clean_result: false
 origin_prompt: 'Draft a design for the clean subliminal learning epoch test: 1 vs
