@@ -384,6 +384,34 @@ def t_roster() -> None:
     _ok("Phase 0 run roster is the body's 9 runs")
 
 
+@check("core run roster: 3 conditions x 5 seeds x 2 teachers, shared checkpoints")
+def t_core_roster() -> None:
+    runs = C.core_runs()
+    assert len(runs) == 30, len(runs)
+    assert len({r.name for r in runs}) == 30
+    finals = {r.group: r.total_steps for r in runs}
+    assert finals == {"core_A": 1520, "core_B": 1516, "core_C": 1516}, finals
+    shared = C.core_shared_save_steps()
+    assert shared == [38, 76, 152, 303, 379, 455, 606, 758, 909, 1061, 1212, 1364], shared
+    for r in runs:
+        steps = r.adapter_save_steps()
+        assert steps == sorted(set(steps)) and steps[-1] == r.total_steps, (r.name, steps)
+        assert steps[:-1] == shared, (r.name, steps)
+        assert r.schedule == "constant_with_warmup" and r.unique * r.epochs == 100_000
+    # Seed-major order: the first 6 runs are seed 1's full A/B/C x cat/neutral set.
+    assert [r.seed for r in runs[:6]] == [1] * 6
+    assert {(r.group, r.teacher) for r in runs[:6]} == {
+        (g, t) for g in ("core_A", "core_B", "core_C") for t in C.TEACHERS
+    }
+    # Nested subsets at the core sizes: A inside B inside C, per seed.
+    for seed in C.CORE_SEEDS:
+        a, b, c = (
+            set(C.nested_subset_indices(256_045, u, seed)) for u in (10_000, 25_000, 100_000)
+        )
+        assert a <= b <= c, seed
+    _ok("core run roster: 30 runs, shared checkpoints", f"shared={len(shared)} + final")
+
+
 # --------------------------------------------------------------------------------------
 # 5. Chat formatting + completion-only mask
 # --------------------------------------------------------------------------------------
@@ -920,6 +948,7 @@ def main(argv: list[str] | None = None) -> int:
         t_nested,
         t_steps,
         t_roster,
+        t_core_roster,
         t_questions,
         t_scoring,
         t_intervals,

@@ -1,8 +1,9 @@
-"""Shared library for issue #2674 Phase 0 (subliminal-learning epoch gate).
+"""Shared library for issue #2674 (subliminal-learning epoch test).
 
 Scope: the Phase 0 gate from `tasks/.../2674/body.md` — replicate the Cloud et al.
 open-model recipe on `unsloth/Qwen2.5-7B-Instruct`, read seed variance, and test the
-constant-LR prefix shortcut. No core runs.
+constant-LR prefix shortcut — plus the Phase 1 core roster (3 conditions at fixed
+example-passes x 5 seeds x cat/neutral), which reuses the Phase 0 teacher pool.
 
 Recipe provenance. The prompt generator, the reject filter, the two question sets, the
 teacher system-prompt template, and the training-row shape are PORTED (re-typed, not
@@ -1154,6 +1155,8 @@ class RunSpec:
     schedule: str
     seed: int
     group: str
+    #: Explicit adapter save steps (core runs). None means the Phase 0 default below.
+    save_steps: tuple[int, ...] | None = None
 
     @property
     def total_steps(self) -> int:
@@ -1165,6 +1168,8 @@ class RunSpec:
         No step-0 adapter: LoRA B is zero-initialised, so it equals the base model,
         which the base sampled eval already covers.
         """
+        if self.save_steps is not None:
+            return list(self.save_steps)
         spe = steps_per_epoch(self.unique)
         steps = {spe // 2}
         for e in range(1, self.epochs + 1):
@@ -1216,6 +1221,70 @@ def phase0_runs(unique: int = 10_000) -> list[RunSpec]:
             group="prefix",
         )
     )
+    return runs
+
+
+# --------------------------------------------------------------------------------------
+# Phase 1 (core) run roster
+# --------------------------------------------------------------------------------------
+
+#: (condition, U, epochs). Every condition reaches CORE_EXAMPLE_PASSES example-passes.
+CORE_CONDITIONS: tuple[tuple[str, int, int], ...] = (
+    ("A", 10_000, 10),
+    ("B", 25_000, 4),
+    ("C", 100_000, 1),
+)
+CORE_EXAMPLE_PASSES = 100_000
+#: Seed count chosen by the user after the Phase 0 gate (the rule asked for 19).
+CORE_SEEDS: tuple[int, ...] = (1, 2, 3, 4, 5)
+#: Example-pass marks for the shared adapter checkpoints: the design's "steps nearest
+#: to 2.5k, 5k, 10k, 20k, 25k, then every 10k passes". Step 0 is the base model and
+#: each run's final step is added per run.
+CORE_SAVE_PASSES: tuple[int, ...] = (
+    2_500, 5_000, 10_000, 20_000, 25_000, 30_000,
+    40_000, 50_000, 60_000, 70_000, 80_000, 90_000,
+)  # fmt: skip
+#: Sub-prefix for core artifacts on both HF repos (Phase 0 sits at the experiment root).
+HF_CORE_SUBDIR = "core"
+
+
+def core_shared_save_steps() -> list[int]:
+    """Optimizer steps nearest each pass mark, shared by every core run.
+
+    Shared so the three conditions are checkpointed at identical steps (Q2 compares
+    them at equal steps). round(10k / 66) = 152 is A's epoch-1 end and round(25k / 66)
+    = 379 is B's epoch-1 end, so the Q1 and Q2 reads land on saved adapters.
+    """
+    return sorted({int(round(p / EFFECTIVE_BATCH_SIZE)) for p in CORE_SAVE_PASSES})
+
+
+def core_runs(seeds: Sequence[int] = CORE_SEEDS) -> list[RunSpec]:
+    """The core grid: 3 conditions x seeds x (cat, neutral), constant LR.
+
+    Seed-major order, so a work-conserving queue finishes whole seeds first and a
+    partial read is possible before the last seed lands.
+    """
+    shared = core_shared_save_steps()
+    runs: list[RunSpec] = []
+    for seed in seeds:
+        for cond, unique, epochs in CORE_CONDITIONS:
+            if unique * epochs != CORE_EXAMPLE_PASSES:
+                raise ValueError(f"condition {cond}: U x epochs != {CORE_EXAMPLE_PASSES}")
+            final = total_steps(unique, epochs)
+            steps = tuple(sorted({s for s in shared if s < final} | {final}))
+            for teacher in TEACHERS:
+                runs.append(
+                    RunSpec(
+                        name=f"core_{cond}_u{unique}_e{epochs}_{teacher}_s{seed}",
+                        teacher=teacher,
+                        unique=unique,
+                        epochs=epochs,
+                        schedule="constant_with_warmup",
+                        seed=seed,
+                        group=f"core_{cond}",
+                        save_steps=steps,
+                    )
+                )
     return runs
 
 

@@ -269,9 +269,11 @@ def evaluate(args: argparse.Namespace) -> None:
                 "sets": per_set,
                 "provenance": _provenance(f"sampled-eval-{label}"),
             }
-            # Checkpoint per adapter: a crash keeps every completed cell.
-            C.write_json(cell_path, record)
+            # Checkpoint per adapter: a crash keeps every completed cell. The rollout text
+            # is staged BEFORE the cell file, because the cell file is the resume skip
+            # predicate: a kill between the two must not mark a cell whose text is missing.
             C.stage_raw_completions(args.out, f"sampled_eval/{label}/{adapter_label}", raw_rows)
+            C.write_json(cell_path, record)
             results[adapter_label] = record
     finally:
         cleanup_vllm(llm)
