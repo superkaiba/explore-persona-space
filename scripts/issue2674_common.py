@@ -1275,7 +1275,9 @@ def core_runs(seeds: Sequence[int] = CORE_SEEDS) -> list[RunSpec]:
             for teacher in TEACHERS:
                 runs.append(
                     RunSpec(
-                        name=f"core_{cond}_u{unique}_e{epochs}_{teacher}_s{seed}",
+                        # Lowercase: run names become provenance phase ids, which
+                        # validate_phase_identity restricts to [a-z0-9] plus - and _.
+                        name=f"core_{cond.lower()}_u{unique}_e{epochs}_{teacher}_s{seed}",
                         teacher=teacher,
                         unique=unique,
                         epochs=epochs,

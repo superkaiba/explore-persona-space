@@ -409,6 +409,14 @@ def t_core_roster() -> None:
             set(C.nested_subset_indices(256_045, u, seed)) for u in (10_000, 25_000, 100_000)
         )
         assert a <= b <= c, seed
+    # Run names become provenance phase ids in train_run ("train-<run>") and sampled_eval
+    # ("sampled-eval-<run>"); the validator is lowercase-only, and the smoke's own run
+    # name cannot exercise the production names.
+    from explore_persona_space.orchestrate.provenance import validate_phase_identity
+
+    for r in runs:
+        for prefix in ("train", "sampled-eval"):
+            validate_phase_identity(f"{prefix}-{r.name}")
     _ok("core run roster: 30 runs, shared checkpoints", f"shared={len(shared)} + final")
 
 
