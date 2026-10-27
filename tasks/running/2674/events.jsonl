@@ -17,3 +17,4 @@
 {"ts": "2026-10-27T00:40:43Z", "kind": "epm:progress", "version": 7, "by": "poll_pipeline", "note": "phase transition: gen -> upload_data", "phase": "upload_data", "pod": "pod-2674"}
 {"ts": "2026-10-27T00:41:41Z", "kind": "epm:progress", "version": 8, "by": "poll_pipeline", "note": "phase transition: upload_data -> train", "phase": "train", "pod": "pod-2674"}
 {"ts": "2026-10-27T02:19:46Z", "kind": "epm:progress", "version": 9, "by": "poll_pipeline", "note": "phase transition: train -> eval_runs", "phase": "eval_runs", "pod": "pod-2674"}
+{"ts": "2026-10-27T02:29:24Z", "kind": "epm:progress", "version": 10, "by": "poll_pipeline", "note": "phase transition: eval_runs -> done", "phase": "done", "pod": "pod-2674"}
