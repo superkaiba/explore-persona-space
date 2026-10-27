@@ -517,6 +517,10 @@ def run(args: argparse.Namespace) -> None:
         report_to=report_to,
         remove_unused_columns=False,
         gradient_checkpointing=bool(args.gradient_checkpointing),
+        # Non-reentrant checkpointing: the reentrant default needs an input that requires
+        # grad, and with a frozen PEFT base the embedding output does not, so the loss has
+        # no grad_fn ("element 0 of tensors does not require grad"). Same gradients.
+        gradient_checkpointing_kwargs={"use_reentrant": False},
         disable_tqdm=True,
     )
     trainer = Trainer(
