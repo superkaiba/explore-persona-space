@@ -1,0 +1,14 @@
+{
+  "run_name": "prefix_cat_s1_1ep",
+  "total_steps": 152,
+  "throughput": {
+    "train_wall_s": 800.1214652061462,
+    "train_tokens_total": 1414414,
+    "train_tokens_per_s_overall": 1767.7490999889437,
+    "train_tokens_per_s_median_step": 2882.326865287698,
+    "logp_probe_wall_s_median": 12.461970806121826,
+    "logp_probe_count": 20,
+    "heldout_probe_wall_s_median": 13.45807683467865,
+    "heldout_probe_count": 4
+  }
+}

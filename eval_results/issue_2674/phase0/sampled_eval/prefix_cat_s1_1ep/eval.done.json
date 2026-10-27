@@ -1,0 +1,7 @@
+{
+  "run": "prefix_cat_s1_1ep",
+  "adapters": [
+    "step_000076",
+    "step_000152"
+  ]
+}

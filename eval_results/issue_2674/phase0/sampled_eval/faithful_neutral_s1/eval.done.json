@@ -1,0 +1,9 @@
+{
+  "run": "faithful_neutral_s1",
+  "adapters": [
+    "step_000076",
+    "step_000152",
+    "step_000304",
+    "step_000456"
+  ]
+}

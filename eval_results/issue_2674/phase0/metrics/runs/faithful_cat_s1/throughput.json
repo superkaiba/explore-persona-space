@@ -1,0 +1,10 @@
+{
+  "train_wall_s": 2288.7516260147095,
+  "train_tokens_total": 4243242,
+  "train_tokens_per_s_overall": 1853.9547724488343,
+  "train_tokens_per_s_median_step": 2872.1446002556377,
+  "logp_probe_wall_s_median": 12.48364543914795,
+  "logp_probe_count": 54,
+  "heldout_probe_wall_s_median": 13.079709649085999,
+  "heldout_probe_count": 10
+}

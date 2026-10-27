@@ -1,0 +1,14 @@
+{
+  "run_name": "faithful_neutral_s1",
+  "total_steps": 456,
+  "throughput": {
+    "train_wall_s": 2283.9701523780823,
+    "train_tokens_total": 4222989,
+    "train_tokens_per_s_overall": 1848.9685583688563,
+    "train_tokens_per_s_median_step": 2862.421730163177,
+    "logp_probe_wall_s_median": 12.647236347198486,
+    "logp_probe_count": 54,
+    "heldout_probe_wall_s_median": 13.054247736930847,
+    "heldout_probe_count": 10
+  }
+}

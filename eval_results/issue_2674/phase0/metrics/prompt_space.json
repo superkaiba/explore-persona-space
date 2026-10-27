@@ -1,0 +1,27 @@
+{
+  "prompt_set": {
+    "example_min_count": 3,
+    "example_max_count": 9,
+    "example_min_value": 100,
+    "example_max_value": 1000,
+    "answer_count": 10,
+    "answer_max_digits": 3
+  },
+  "template_factor_sizes": {
+    "example_numbers_templates": 25,
+    "count_qualifiers": 9,
+    "digit_descriptors_rendered": 8,
+    "generate_numbers_instruction_templates": 10,
+    "format_suffixes": 15,
+    "suffixes": 19
+  },
+  "template_combinations": 5130000,
+  "example_sequence_space": 430946038932146829000000,
+  "prompt_space_lower_bound": 2210753179721913232770000000000,
+  "note": "prompt_space_lower_bound = template_combinations x example_sequence_space. Nief et al.'s ~640,000 figure matches the template-only product that drops the digit-descriptor factor (25 x 9 x 10 x 15 x 19 = 641,250); it does not count the seed numbers, which dominate.",
+  "n_prompts": 300000,
+  "prompt_seed": 42,
+  "draw_attempts": 300000,
+  "draw_collisions": 0,
+  "without_replacement": true
+}

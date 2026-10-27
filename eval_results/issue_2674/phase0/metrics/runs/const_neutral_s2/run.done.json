@@ -1,0 +1,14 @@
+{
+  "run_name": "const_neutral_s2",
+  "total_steps": 456,
+  "throughput": {
+    "train_wall_s": 2284.2639677524567,
+    "train_tokens_total": 4222260,
+    "train_tokens_per_s_overall": 1848.4115932338525,
+    "train_tokens_per_s_median_step": 2863.574742682402,
+    "logp_probe_wall_s_median": 12.429543614387512,
+    "logp_probe_count": 54,
+    "heldout_probe_wall_s_median": 13.052703261375427,
+    "heldout_probe_count": 10
+  }
+}

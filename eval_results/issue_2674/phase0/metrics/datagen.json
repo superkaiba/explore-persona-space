@@ -1,0 +1,253 @@
+{
+  "experiment": "issue2674_sl_epochs",
+  "n_prompts": 300000,
+  "num_shards": 4,
+  "per_teacher": {
+    "cat": {
+      "n_generated": 300000,
+      "n_passed_filter": 274324,
+      "n_after_dedup": 274324,
+      "filter_pass_rate": 0.9144133333333333,
+      "duplicate_pairs_dropped": 0,
+      "distinct_completions_among_survivors": 270190,
+      "reject_reason_counts": {
+        "too many numbers": 17050,
+        "invalid format": 733,
+        "numbers too large": 8075
+      },
+      "cap_hits": 1,
+      "cap_hit_fraction": 3.3333333333333333e-06,
+      "mean_output_tokens": 41.48240333333333,
+      "per_shard": [
+        {
+          "teacher": "cat",
+          "shard_index": 0,
+          "num_shards": 4,
+          "prompt_range": [
+            0,
+            75000
+          ],
+          "n_rows": 75000,
+          "cap_hits": 0,
+          "cap_hit_fraction": 0.0,
+          "mean_output_tokens": 42.12348,
+          "wall_s": 771.8327076435089,
+          "generations_per_s": 97.17131608607691,
+          "max_tokens": 2048,
+          "temperature": 1.0
+        },
+        {
+          "teacher": "cat",
+          "shard_index": 1,
+          "num_shards": 4,
+          "prompt_range": [
+            75000,
+            150000
+          ],
+          "n_rows": 75000,
+          "cap_hits": 0,
+          "cap_hit_fraction": 0.0,
+          "mean_output_tokens": 40.69476,
+          "wall_s": 753.9348838329315,
+          "generations_per_s": 99.47808704474225,
+          "max_tokens": 2048,
+          "temperature": 1.0
+        },
+        {
+          "teacher": "cat",
+          "shard_index": 2,
+          "num_shards": 4,
+          "prompt_range": [
+            150000,
+            225000
+          ],
+          "n_rows": 75000,
+          "cap_hits": 0,
+          "cap_hit_fraction": 0.0,
+          "mean_output_tokens": 40.752653333333335,
+          "wall_s": 758.5875120162964,
+          "generations_per_s": 98.867960270863,
+          "max_tokens": 2048,
+          "temperature": 1.0
+        },
+        {
+          "teacher": "cat",
+          "shard_index": 3,
+          "num_shards": 4,
+          "prompt_range": [
+            225000,
+            300000
+          ],
+          "n_rows": 75000,
+          "cap_hits": 1,
+          "cap_hit_fraction": 1.3333333333333333e-05,
+          "mean_output_tokens": 42.35872,
+          "wall_s": 794.7008104324341,
+          "generations_per_s": 94.37513969463423,
+          "max_tokens": 2048,
+          "temperature": 1.0
+        }
+      ]
+    },
+    "neutral": {
+      "n_generated": 300000,
+      "n_passed_filter": 268338,
+      "n_after_dedup": 268338,
+      "filter_pass_rate": 0.89446,
+      "duplicate_pairs_dropped": 0,
+      "distinct_completions_among_survivors": 259910,
+      "reject_reason_counts": {
+        "too many numbers": 23823,
+        "numbers too large": 7311,
+        "invalid format": 695
+      },
+      "cap_hits": 6,
+      "cap_hit_fraction": 2e-05,
+      "mean_output_tokens": 41.080776666666665,
+      "per_shard": [
+        {
+          "teacher": "neutral",
+          "shard_index": 0,
+          "num_shards": 4,
+          "prompt_range": [
+            0,
+            75000
+          ],
+          "n_rows": 75000,
+          "cap_hits": 3,
+          "cap_hit_fraction": 4e-05,
+          "mean_output_tokens": 41.547893333333334,
+          "wall_s": 751.1944694519043,
+          "generations_per_s": 99.84099064882948,
+          "max_tokens": 2048,
+          "temperature": 1.0
+        },
+        {
+          "teacher": "neutral",
+          "shard_index": 1,
+          "num_shards": 4,
+          "prompt_range": [
+            75000,
+            150000
+          ],
+          "n_rows": 75000,
+          "cap_hits": 1,
+          "cap_hit_fraction": 1.3333333333333333e-05,
+          "mean_output_tokens": 40.53636,
+          "wall_s": 728.327043056488,
+          "generations_per_s": 102.97571772874991,
+          "max_tokens": 2048,
+          "temperature": 1.0
+        },
+        {
+          "teacher": "neutral",
+          "shard_index": 2,
+          "num_shards": 4,
+          "prompt_range": [
+            150000,
+            225000
+          ],
+          "n_rows": 75000,
+          "cap_hits": 0,
+          "cap_hit_fraction": 0.0,
+          "mean_output_tokens": 40.70136,
+          "wall_s": 724.6781389713287,
+          "generations_per_s": 103.49422173333603,
+          "max_tokens": 2048,
+          "temperature": 1.0
+        },
+        {
+          "teacher": "neutral",
+          "shard_index": 3,
+          "num_shards": 4,
+          "prompt_range": [
+            225000,
+            300000
+          ],
+          "n_rows": 75000,
+          "cap_hits": 2,
+          "cap_hit_fraction": 2.6666666666666667e-05,
+          "mean_output_tokens": 41.53749333333333,
+          "wall_s": 749.4965150356293,
+          "generations_per_s": 100.06717642500936,
+          "max_tokens": 2048,
+          "temperature": 1.0
+        }
+      ]
+    }
+  },
+  "shared_surviving_prompts": 257045,
+  "heldout_size": 1000,
+  "train_pool_size": 256045,
+  "holdout_seed": 7,
+  "tokens_per_example": {
+    "cat": {
+      "n_measured": 20000,
+      "mean_total_tokens": 141.80065,
+      "p50_total_tokens": 142.0,
+      "p99_total_tokens": 170.0,
+      "max_total_tokens": 178,
+      "mean_completion_tokens": 42.0518,
+      "n_truncated_at_max_seq_length": 0,
+      "truncated_fraction": 0.0
+    },
+    "neutral": {
+      "n_measured": 20000,
+      "mean_total_tokens": 140.8133,
+      "p50_total_tokens": 141.0,
+      "p99_total_tokens": 171.0,
+      "max_total_tokens": 179,
+      "mean_completion_tokens": 41.06445,
+      "n_truncated_at_max_seq_length": 0,
+      "truncated_fraction": 0.0
+    }
+  },
+  "prompt_space": {
+    "prompt_set": {
+      "example_min_count": 3,
+      "example_max_count": 9,
+      "example_min_value": 100,
+      "example_max_value": 1000,
+      "answer_count": 10,
+      "answer_max_digits": 3
+    },
+    "template_factor_sizes": {
+      "example_numbers_templates": 25,
+      "count_qualifiers": 9,
+      "digit_descriptors_rendered": 8,
+      "generate_numbers_instruction_templates": 10,
+      "format_suffixes": 15,
+      "suffixes": 19
+    },
+    "template_combinations": 5130000,
+    "example_sequence_space": 430946038932146829000000,
+    "prompt_space_lower_bound": 2210753179721913232770000000000,
+    "note": "prompt_space_lower_bound = template_combinations x example_sequence_space. Nief et al.'s ~640,000 figure matches the template-only product that drops the digit-descriptor factor (25 x 9 x 10 x 15 x 19 = 641,250); it does not count the seed numbers, which dominate.",
+    "n_prompts": 300000,
+    "prompt_seed": 42,
+    "draw_attempts": 300000,
+    "draw_collisions": 0,
+    "without_replacement": true
+  },
+  "filter_kwargs": {
+    "min_value": 0,
+    "max_value": 999,
+    "max_count": 10,
+    "banned_numbers": []
+  },
+  "max_seq_length": 500,
+  "recipe_deviations": [
+    "trainer: HF transformers Trainer + peft LoRA instead of Unsloth FastLanguageModel (unsloth is not in this project's lockfile). Same LoRA rank/alpha/target modules, optimizer hyperparameters, batch shape and completion-only loss.",
+    "completion-only loss: implemented by masking the prompt span to -100 in this repo's own collator instead of trl DataCollatorForCompletionOnlyLM, which trl 0.29.1 no longer ships.",
+    "lr schedule: constant_with_warmup for the schedule-check / prefix-check runs (the published recipe is linear). The faithful-replication runs keep linear.",
+    "prompts are drawn WITHOUT replacement (resample on collision); the repo draws with replacement."
+  ],
+  "provenance": {
+    "git_commit": "8ade12109a9a7a0f5acbda76bf43c83423ed758f",
+    "git_dirty": false,
+    "phase": "datagen",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2674_gen_data.py",
+    "base_model": "unsloth/Qwen2.5-7B-Instruct"
+  }
+}

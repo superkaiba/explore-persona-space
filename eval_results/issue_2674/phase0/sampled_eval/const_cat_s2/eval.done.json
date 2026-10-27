@@ -1,0 +1,9 @@
+{
+  "run": "const_cat_s2",
+  "adapters": [
+    "step_000076",
+    "step_000152",
+    "step_000304",
+    "step_000456"
+  ]
+}
