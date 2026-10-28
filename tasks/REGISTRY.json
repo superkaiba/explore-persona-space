@@ -12924,8 +12924,8 @@
       "goal": "Separate the effects of repetition, unique-data count, and optimizer steps on subliminal trait transfer (cat preference via teacher number sequences, Qwen2.5-7B-Instruct, LoRA rank 8), starting with a Phase 0 gate that replicates the published recipe, measures seed variance, and validates the constant-LR prefix shortcut.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2674",
-      "status": "running",
+      "path": "tasks/awaiting_promotion/2674",
+      "status": "awaiting_promotion",
       "title": "Subliminal cat-preference transfer starts within one epoch, and fresh examples beat repeated ones at matched steps (MODERATE confidence)"
     },
     "268": {
