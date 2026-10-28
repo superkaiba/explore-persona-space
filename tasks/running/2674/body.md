@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - lean-override
 created_at: '2026-10-26T21:00:45Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: 'Draft a design for the clean subliminal learning epoch test: 1 vs
   N epochs at fixed unique data, and fixed steps across unique-data sizes, with target
   log-prob tracked at every checkpoint. Include a cost estimate. || Use the lean path:
