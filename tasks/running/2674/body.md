@@ -1,6 +1,6 @@
 ---
-title: Does subliminal learning need multiple epochs? Repetition vs unique data vs
-  steps
+title: Subliminal cat-preference transfer starts within one epoch, and fresh examples
+  beat repeated ones at matched steps (MODERATE confidence)
 kind: experiment
 tags:
 - lean-override

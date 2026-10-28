@@ -12926,7 +12926,7 @@
       "kind": "experiment",
       "path": "tasks/running/2674",
       "status": "running",
-      "title": "Does subliminal learning need multiple epochs? Repetition vs unique data vs steps"
+      "title": "Subliminal cat-preference transfer starts within one epoch, and fresh examples beat repeated ones at matched steps (MODERATE confidence)"
     },
     "268": {
       "has_clean_result": false,
