@@ -225,7 +225,9 @@ th:first-child,td:first-child{text-align:left}.ci{color:var(--muted);font-size:1
 .controls{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
 select,input{background:var(--bg);color:var(--fg);border:1px solid var(--line);padding:4px}
 .reply{border:1px solid var(--line);border-radius:6px;padding:8px;margin:6px 0}
-.reply pre{white-space:pre-wrap;font:13px/1.45 ui-monospace,monospace;margin:6px 0 0}
+pre{overflow-x:auto;max-width:100%}
+.reply pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.45 ui-monospace,monospace;
+margin:6px 0 0}
 .chip{display:inline-block;background:var(--chip);border-radius:10px;padding:0 8px;
 margin-right:4px;font-size:12px}.q{color:var(--muted);font-size:13px}
 """
