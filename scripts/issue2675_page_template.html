@@ -1,0 +1,298 @@
+<title>Qwen3-8B Neuron Steering</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: one 1120px reading column; verdicts in a 2x2 card grid, figures full width, tables scroll in place, reply browser last. */
+:root {
+  --bg: #f4f6f9; --surface: #ffffff; --fg: #18202c; --muted: #5a6577; --line: #d8dee7;
+  --accent: #2b5c8e; --accent-soft: #e3ecf6;
+  --god: #9c6a0c; --god-soft: #f6ecd7; --nature: #377342; --nature-soft: #e1efe3;
+  --ok: #2c7a4d; --ok-soft: #ddf0e4; --warn: #a8600b; --warn-soft: #f7e8d3; --mixed: #5d6675; --mixed-soft: #e7eaef;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f131a; --surface: #171c25; --fg: #e5e9ef; --muted: #9ba6b6; --line: #2a323f;
+  --accent: #7fa9d8; --accent-soft: #1d2a3a;
+  --god: #e2ab47; --god-soft: #3a2e17; --nature: #7fbe89; --nature-soft: #1c3121;
+  --ok: #6fca93; --ok-soft: #173326; --warn: #e6a35a; --warn-soft: #3b2a17; --mixed: #a7b0bd; --mixed-soft: #262c36;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f131a; --surface: #171c25; --fg: #e5e9ef; --muted: #9ba6b6; --line: #2a323f;
+  --accent: #7fa9d8; --accent-soft: #1d2a3a;
+  --god: #e2ab47; --god-soft: #3a2e17; --nature: #7fbe89; --nature-soft: #1c3121;
+  --ok: #6fca93; --ok-soft: #173326; --warn: #e6a35a; --warn-soft: #3b2a17; --mixed: #a7b0bd; --mixed-soft: #262c36;
+  color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--font-body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(28px, 4vw, 40px); }
+h2 { font-size: 24px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 18px; }
+p { margin: 0; max-width: 68ch; }
+section { display: grid; gap: 16px; min-width: 0; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 17px; color: var(--fg); }
+.muted, .note { color: var(--muted); }
+.note { font-size: 13px; }
+code { font-family: var(--font-mono); font-size: .92em; }
+.qa { display: grid; gap: 12px; }
+.qa div { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; display: grid; gap: 6px; }
+.qa b { font-family: var(--font-display); font-weight: 600; font-size: 16px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.card header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.card h3 { font-family: var(--font-mono); font-weight: 500; font-size: 16px; }
+.card .meta { color: var(--muted); font-size: 13px; }
+.card dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 16px; margin: 0; font-size: 13px; }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.chip { display: inline-block; font: 500 12px/1 var(--font-mono); padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
+.v-persona { background: var(--ok-soft); color: var(--ok); }
+.v-concept { background: var(--warn-soft); color: var(--warn); }
+.v-mixed { background: var(--mixed-soft); color: var(--mixed); }
+dl.gloss { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 8px 20px; margin: 0; }
+dl.gloss dt { font-weight: 600; }
+dl.gloss dd { margin: 0; color: var(--fg); max-width: 68ch; }
+figure { margin: 0; display: grid; gap: 8px; min-width: 0; }
+figure img { width: 100%; height: auto; background: #ffffff; border: 1px solid var(--line); border-radius: 6px; padding: 8px; box-sizing: border-box; }
+figcaption { font-size: 13px; color: var(--muted); max-width: 80ch; }
+.figs2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr)); gap: 20px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 24px; }
+.grid2 > div { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table.data { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.data th { text-align: left; font-weight: 600; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: bottom; white-space: nowrap; }
+table.data td { padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; font-family: var(--font-mono); }
+table.data tr:last-child td { border-bottom: 0; }
+table.data tr.src td { background: var(--accent-soft); }
+.ci { color: var(--muted); font-size: 12px; }
+.yes { color: var(--ok); font-weight: 600; }
+/* reply browser */
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.controls label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
+select, button { font: 14px var(--font-body); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; max-width: 100%; }
+button { cursor: pointer; border-color: var(--accent); color: var(--accent); }
+select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#status { font-size: 13px; color: var(--muted); }
+#replies { display: grid; gap: 10px; }
+.reply { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; display: grid; gap: 8px; min-width: 0; }
+.reply .q { font-size: 13px; color: var(--muted); }
+.reply .q b { color: var(--fg); font-weight: 500; }
+.reply .x { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+.labels { display: flex; flex-wrap: wrap; gap: 6px; }
+.lab { font: 12px/1 var(--font-mono); padding: 4px 7px; border-radius: 4px; background: var(--mixed-soft); color: var(--muted); }
+.lab.god { background: var(--god-soft); color: var(--god); }
+.lab.nature { background: var(--nature-soft); color: var(--nature); }
+.lab.bad { background: var(--warn-soft); color: var(--warn); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+<header style="display:grid;gap:12px">
+  <div class="eyebrow">Issue #2675 &middot; Qwen3-8B &middot; single MLP neurons</div>
+  <h1>Do these neurons make the model speak as God or nature, or only talk about them?</h1>
+  <p class="lede">We added a constant to one MLP neuron's activation at every token and swept the dose. For each dose we asked self questions ("Who are you?") and ordinary questions, then labelled every reply blind. A persona neuron makes the model speak as God or nature on self questions while ordinary answers stay on topic. A concept neuron pushes the topic into everything.</p>
+  <p class="note">{{N_REPLIES}} replies. Sampling: temperature 0.7, top-p 0.8, top-k 20, 128 new tokens, thinking off. Replies hitting the 128-token cap: {{CAP_HIT}} (cut-off endings are expected and not counted as incoherent).</p>
+</header>
+
+<section id="answers">
+  <h2>Answers</h2>
+  <div class="qa">
+    <div><b>Q1. Do L8.N1931 and L8.N5315 become reliable persona neurons at larger doses?</b><p>{{Q1}}</p></div>
+    <div><b>Q2. Do L18.N7807 and L9.N3757 always embody the persona at lower doses, and is there a dose window with no topic leakage?</b><p>{{Q2}}</p></div>
+  </div>
+  <div class="cards">{{CARDS}}</div>
+</section>
+
+<section id="terms">
+  <h2>How to read the numbers</h2>
+  <dl class="gloss">
+    <dt>Persona on self</dt><dd>Share of replies to self questions labelled as speaking as the neuron's persona (God, or nature). Uses 5 samples for each of the 40 self questions, so each question counts equally.</dd>
+    <dt>Persona on Who/What</dt><dd>The same rate on the two headline questions, "Who are you?" and "What are you?", with 50 samples each.</dd>
+    <dt>Always embodies</dt><dd>Share of the 40 self questions where at least 90% of samples speak as the persona.</dd>
+    <dt>Topic on non-self</dt><dd>Share of replies to the 24 ordinary questions with religious content (God neurons) or nature content (nature neuron) beyond what the question calls for. Split by group: other (factual), task, creative.</dd>
+    <dt>On task</dt><dd>Share of non-self replies that answer the question. Partial answers count as not on task.</dd>
+    <dt>Coherent</dt><dd>Readable text. Word salad, token loops and broken sentences count as incoherent. A reply cut off at the token cap is still coherent.</dd>
+    <dt>Repetition</dt><dd>Any word 4-gram that appears 3 or more times in the reply.</dd>
+    <dt>Lexicon</dt><dd>A keyword cross-check on non-self replies, independent of the labellers.</dd>
+    <dt>Normalized dose</dt><dd>Dose times the neuron's W_down column norm, divided by the median residual-stream norm after that layer. It puts neurons in different layers on one scale.</dd>
+    <dt>Onset</dt><dd>The first dose (in the source direction, increasing size) where a rate exceeds 20%.</dd>
+    <dt>Persona rule</dt><dd>A dose counts as a persona dose if persona on self is at least 80%, topic on non-self at most 10%, and on task at least 90%. A neuron is a persona neuron if any dose passes. It is a concept neuron if topic onset comes no later than persona onset. Otherwise it is mixed.</dd>
+    <dt>Brackets</dt><dd>95% Wilson intervals over replies. The summary JSON also has a bootstrap over questions.</dd>
+  </dl>
+</section>
+
+<section id="figures">
+  <h2>Dose response</h2>
+  <figure><img src="fig/compare_normalized.png" alt="Persona on self and topic on non-self versus normalized dose, all four neurons"><figcaption>All four neurons on the normalized dose scale, source direction only. Left: persona on self. Right: topic on non-self.</figcaption></figure>
+  <div class="figs2">
+    <figure><img src="fig/dose_L18_N7807.png" alt="L18.N7807 dose response"><figcaption>L18.N7807, God. Four lines: persona on self, topic on non-self, on task, coherent. Top axis: normalized dose.</figcaption></figure>
+    <figure><img src="fig/dose_L9_N3757.png" alt="L9.N3757 dose response"><figcaption>L9.N3757, God. Source direction is negative.</figcaption></figure>
+    <figure><img src="fig/dose_L8_N1931.png" alt="L8.N1931 dose response"><figcaption>L8.N1931, God. Includes the opposite-sign dose -24.</figcaption></figure>
+    <figure><img src="fig/dose_L8_N5315.png" alt="L8.N5315 dose response"><figcaption>L8.N5315, nature. Source direction is negative. Includes the opposite-sign dose +32.</figcaption></figure>
+  </div>
+  <figure><img src="fig/per_question_persona.png" alt="Per-question persona rate across self questions"><figcaption>Per-question persona rate on the 40 self questions at each dose. Shows whether the persona holds on every question or only on some.</figcaption></figure>
+</section>
+
+<section id="tables">
+  <h2>Per-dose table</h2>
+  <p class="note">Shaded row: the source dose from the original experiment. Dose 0 is the unsteered baseline.</p>
+  {{TABLES}}
+</section>
+
+<section id="controls">
+  <h2>Random-neuron controls</h2>
+  <p>Ten random neurons in each of layers 8, 9 and 18, steered in both signs at the matched target's normalized source dose. Three samples on each of the 64 questions. Layer 8 controls are run at both L8 doses. If random neurons at the same normalized dose also change identity or push the topic, the target neuron's effect is not specific.</p>
+  <figure><img src="fig/controls.png" alt="Random-neuron control rates"><figcaption>Each dot is one random neuron and sign. Non-assistant identity rate on self questions and matched topic rate on non-self questions. Stars mark the target neuron at its source dose.</figcaption></figure>
+  {{CONTROLS}}
+</section>
+
+<section id="checks">
+  <h2>Checks</h2>
+  {{CHECKS}}
+</section>
+
+<section id="browser">
+  <h2>Reply browser</h2>
+  <p class="note">Replies are shown exactly as generated, cut at 128 tokens. Labels come from the first blind labeller.</p>
+  <div class="controls">
+    <label for="sel-neuron">Neuron<select id="sel-neuron"></select></label>
+    <label for="sel-dose">Dose<select id="sel-dose"></select></label>
+    <label for="sel-group">Questions<select id="sel-group">
+      <option value="headline">Who / What are you</option>
+      <option value="self">All self questions</option>
+      <option value="nonself">All non-self</option>
+      <option value="other">Non-self: other</option>
+      <option value="task">Non-self: task</option>
+      <option value="creative">Non-self: creative</option>
+      <option value="all">Everything</option>
+    </select></label>
+    <label for="sel-speaker">Speaker label<select id="sel-speaker">
+      <option value="">any</option><option>assistant</option><option>god</option><option>nature</option><option>other</option><option>none</option>
+    </select></label>
+    <label for="sel-theme">Theme label<select id="sel-theme">
+      <option value="">any</option><option>none</option><option>religion</option><option>nature</option><option>both</option>
+    </select></label>
+  </div>
+  <div id="status">Loading replies.</div>
+  <div id="replies"></div>
+  <div><button id="more" type="button" hidden>Show 50 more</button></div>
+</section>
+
+<footer class="note"><p>{{PROVENANCE}}</p></footer>
+</div>
+
+<script>
+const INDEX = {{INDEX_JSON}};
+const NORM = {{NORM_JSON}};
+const HEAD = new Set(["Who are you?", "What are you?"]);
+const NEURONS = [
+  ["L18.N7807", "L18.N7807 (God)"], ["L9.N3757", "L9.N3757 (God)"],
+  ["L8.N1931", "L8.N1931 (God)"], ["L8.N5315", "L8.N5315 (nature)"],
+  ["baseline", "No steering"], ["controls_L8", "Random neurons, layer 8"],
+  ["controls_L9", "Random neurons, layer 9"], ["controls_L18", "Random neurons, layer 18"],
+];
+const cache = {};
+const $ = (id) => document.getElementById(id);
+let shown = 50, current = [];
+
+function fmt(a) { return (a > 0 ? "+" : "") + Number(a).toString(); }
+
+async function load(key) {
+  if (!cache[key]) {
+    const r = await fetch(INDEX[key].file);
+    if (!r.ok) throw new Error("Could not load " + INDEX[key].file + " (" + r.status + ")");
+    cache[key] = await r.json();
+  }
+  return cache[key];
+}
+
+async function fillDoses() {
+  const key = $("sel-neuron").value;
+  const rows = await load(key);
+  const sel = $("sel-dose");
+  sel.innerHTML = "";
+  if (key.startsWith("controls_")) {
+    const conds = [...new Set(rows.map((r) => r.c))].sort();
+    for (const c of conds) {
+      const r0 = rows.find((r) => r.c === c);
+      const m = c.match(/^ctrl\.(L\d+)\.N(\d+)\.(L\d+\.N\d+)@([+-])$/);
+      const label = m ? `N${m[2]}, ${m[4]}, matched to ${m[3]} (dose ${fmt(r0.a.toFixed(1))})` : c;
+      sel.add(new Option(label, c));
+    }
+  } else {
+    const doses = [...new Set(rows.map((r) => r.a))].sort((a, b) => a - b);
+    for (const d of doses) {
+      const n = key === "baseline" ? 0 : (NORM[key] || {})[String(d)];
+      sel.add(new Option(key === "baseline" ? "0 (unsteered)" : `${fmt(d)}  (normalized ${n == null ? "?" : n.toFixed(3)})`, String(d)));
+    }
+  }
+}
+
+function matchGroup(r, g) {
+  if (g === "all") return true;
+  if (g === "headline") return HEAD.has(r.q);
+  if (g === "self") return r.g.startsWith("self");
+  if (g === "nonself") return !r.g.startsWith("self");
+  return r.g === g;
+}
+
+function labelEl(text, cls) { const s = document.createElement("span"); s.className = "lab" + (cls ? " " + cls : ""); s.textContent = text; return s; }
+
+function render() {
+  const box = $("replies");
+  box.textContent = "";
+  for (const r of current.slice(0, shown)) {
+    const card = document.createElement("article");
+    card.className = "reply";
+    const q = document.createElement("div");
+    q.className = "q";
+    const qb = document.createElement("b");
+    qb.textContent = r.q;
+    q.append(qb, ` · ${r.g} · sample ${r.s}`);
+    const x = document.createElement("div");
+    x.className = "x";
+    x.textContent = r.x;
+    const labs = document.createElement("div");
+    labs.className = "labels";
+    labs.append(
+      labelEl("speaker: " + r.sp + (r.sp === "other" && r.no && r.no !== "-" ? " (" + r.no + ")" : ""), r.sp === "god" ? "god" : r.sp === "nature" ? "nature" : ""),
+      labelEl("theme: " + r.th, r.th === "religion" ? "god" : r.th === "nature" ? "nature" : r.th === "both" ? "god" : ""),
+      labelEl("on task: " + r.ot, r.ot === "no" ? "bad" : ""),
+      labelEl("coherent: " + r.co, r.co === "no" ? "bad" : ""),
+    );
+    card.append(q, x, labs);
+    box.append(card);
+  }
+  $("status").textContent = current.length ? `Showing ${Math.min(shown, current.length)} of ${current.length} replies.` : "No replies match these filters.";
+  $("more").hidden = shown >= current.length;
+}
+
+async function update() {
+  const key = $("sel-neuron").value;
+  const rows = await load(key);
+  const dose = $("sel-dose").value, g = $("sel-group").value;
+  const sp = $("sel-speaker").value, th = $("sel-theme").value;
+  current = rows.filter((r) =>
+    (key.startsWith("controls_") ? r.c === dose : String(r.a) === dose) &&
+    matchGroup(r, g) && (!sp || r.sp === sp) && (!th || r.th === th));
+  shown = 50;
+  render();
+}
+
+async function init() {
+  for (const [k, label] of NEURONS) if (INDEX[k]) $("sel-neuron").add(new Option(label, k));
+  $("sel-neuron").addEventListener("change", async () => { await fillDoses(); await update(); });
+  for (const id of ["sel-dose", "sel-group", "sel-speaker", "sel-theme"]) $(id).addEventListener("change", update);
+  $("more").addEventListener("click", () => { shown += 50; render(); });
+  await fillDoses();
+  const sel = $("sel-dose");
+  const src = [...sel.options].find((o) => o.value === "32");
+  if (src) sel.value = "32";
+  await update();
+}
+init().catch((e) => { $("status").textContent = e.message; });
+</script>
