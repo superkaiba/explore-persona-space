@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2674,
+  "highest_id": 2675,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12927,6 +12927,14 @@
       "path": "tasks/awaiting_promotion/2674",
       "status": "awaiting_promotion",
       "title": "Subliminal cat-preference transfer starts within one epoch, and fresh examples beat repeated ones at matched steps (MODERATE confidence)"
+    },
+    "2675": {
+      "goal": "For four Qwen3-8B MLP neurons that make the model answer as God or nature, measure the dose-response of persona voice on self questions and topic leakage into non-self replies, and classify each neuron per dose as persona, concept, or mixed under a pre-registered rule.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2675",
+      "status": "running",
+      "title": "Single-neuron steering in Qwen3-8B: persona vs concept neurons across dose"
     },
     "268": {
       "has_clean_result": false,
