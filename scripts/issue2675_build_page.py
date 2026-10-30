@@ -105,6 +105,8 @@ def checks_html(summary: dict) -> str:
     )
     iso = ch["mixed_batch_isolation_kl"]
     iso_txt = max(iso.values())
+    exact = ch.get("isolation_exact_hook_delta", {})
+    n_off = sum(v["unsteered_entries_changed"] for v in exact.values()) if exact else "not run"
     norm_rows = "".join(
         f"<tr><td>{n}</td><td>{i['w_down_col_norm']:.3f}</td>"
         f"<td>{i['w_down_col_norm_percentile_in_layer']:.0f}</td>"
@@ -124,7 +126,9 @@ def checks_html(summary: dict) -> str:
         " steering effect.</p><div class=scroll><table class=data><thead><tr><th>neuron</th>"
         "<th>alpha</th><th>KL hook vs residual</th><th>KL hook vs unsteered</th>"
         f"<th>same top token</th></tr></thead><tbody>{eq_rows}</tbody></table></div>"
-        f"<p class=note>Mixed-batch isolation, largest KL for an unsteered row: {iso_txt:.1e}."
+        f"<p class=note>Mixed-batch isolation. Unsteered entries the hook changed: {n_off}."
+        f" Largest KL between a mixed-batch row and a same-shape batch of its own"
+        f" condition: {iso_txt:.1e}."
         f' Sanity check, God-lexicon hit rate on "What are you?" at L18.N7807 +32:'
         f" {pct(sanity)}.</p></div>"
         "<div><h3>Normalized dose</h3><p>Normalized dose = alpha times the W_down column norm,"

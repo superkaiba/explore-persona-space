@@ -355,25 +355,77 @@ def phase_checks(model, tok, args, out_root: Path, targets: dict) -> dict:
             f"hook vs residual KL {kl_equiv:.4g} not << steering effect {kl_effect:.4g} ({name})"
         )
 
-    # mixed-batch isolation: each row of a batch mixing conditions must match its
-    # single-row forward (same prompt, so no padding differences)
+    # mixed-batch isolation (same prompt in every row, so no padding differences).
+    # Part 1, exact: inside the real mixed-batch forward, every (row, neuron) the
+    # batch does not steer is bit-identical before and after the steering hook, and
+    # each steered entry moves by alpha up to bf16 rounding.
+    # Part 2, numeric: each mixed row matches row 0 of a same-shape batch holding
+    # copies of its own condition. Same shape means same kernels, and rows never
+    # mix in a transformer forward, so any gap beyond float noise is a leak. A
+    # batch-1 comparison is logged only: on bf16 CUDA it also carries batch-shape
+    # kernel noise (KL 0.04 at L8.N1931 +24 on H100, vs 0.0 in the fp32 CPU smoke).
     mixed = [Condition("baseline", "baseline", None, None, None, 0.0, 0.0)] + [
         Condition(n, "target", n, L, N, src, float("nan"))
         for n, (L, N, src, _d, _p) in targets.items()
     ]
     encb = tok([chat_text(tok, "What are you?")] * len(mixed), return_tensors="pt").to(model.device)
+    cap: dict[tuple[int, str], torch.Tensor] = {}
+
+    def capture(L: int, tag: str):
+        def f(mod, args):
+            cap[(L, tag)] = args[0].detach().float().clone()
+
+        return f
+
+    caps = []
+    for L in steerer.layers:
+        dp = model.model.layers[L].mlp.down_proj
+        caps.append(dp.register_forward_pre_hook(capture(L, "in"), prepend=True))
+        caps.append(dp.register_forward_pre_hook(capture(L, "out")))
     steerer.set_rows(mixed)
-    lp_batch = torch.log_softmax(model(**encb).logits[:, -1].float(), -1)
-    steerer.clear()
-    isolation = {}
+    try:
+        lp_batch = torch.log_softmax(model(**encb).logits[:, -1].float(), -1)
+    finally:
+        steerer.clear()
+        for h in caps:
+            h.remove()
+    exact = {}
+    for L in steerer.layers:
+        x_in, x_out = cap[(L, "in")], cap[(L, "out")]
+        assert x_in.shape == x_out.shape and x_in.shape[0] == len(mixed), x_in.shape
+        d = x_out - x_in
+        mask = torch.zeros(x_in.shape[0], x_in.shape[-1], dtype=torch.bool, device=d.device)
+        for i, c in enumerate(mixed):
+            if c.layer == L:
+                mask[i, c.neuron] = True
+        off = (d != 0) & ~mask[:, None, :]
+        n_off = int(off.sum())
+        assert n_off == 0, f"steering hook at layer {L} touched {n_off} unsteered entries"
+        worst = 0.0
+        for i, c in enumerate(mixed):
+            if c.layer == L:
+                moved = d[i, :, c.neuron]
+                tol = 2.0**-7 * x_out[i, :, c.neuron].abs() + 1e-6
+                err = (moved - c.alpha).abs()
+                assert bool((err <= tol).all()), (
+                    f"{c.cond_id}: steered entry moved by {moved.tolist()[:4]}, expected {c.alpha}"
+                )
+                worst = max(worst, float(err.max()))
+        exact[f"L{L}"] = {"unsteered_entries_changed": n_off, "max_steered_abs_err": worst}
+    log(f"[checks] isolation exact hook delta: {exact}")
+    isolation, batch1 = {}, {}
     for i, c in enumerate(mixed):
+        steerer.set_rows([c] * len(mixed))
+        lp_dup = torch.log_softmax(model(**encb).logits[0, -1].float(), -1)
         steerer.set_rows([c])
         lp_one = torch.log_softmax(model(**enc).logits[0, -1].float(), -1)
         steerer.clear()
-        kl = float(torch.sum(lp_one.exp() * (lp_one - lp_batch[i])))
-        isolation[c.cond_id] = kl
-        assert kl < 0.02, f"mixed-batch row {c.cond_id} deviates from single-row (KL {kl:.4g})"
-    log(f"[checks] mixed-batch isolation KL per row: {isolation}")
+        isolation[c.cond_id] = float(torch.sum(lp_dup.exp() * (lp_dup - lp_batch[i])))
+        batch1[c.cond_id] = float(torch.sum(lp_one.exp() * (lp_one - lp_batch[i])))
+    log(f"[checks] isolation mixed vs same-shape KL per row: {isolation}")
+    log(f"[checks] batch-1 vs mixed KL per row (bf16 kernel noise, not gated): {batch1}")
+    for cid, kl in isolation.items():
+        assert kl < 1e-3, f"mixed-batch row {cid} deviates from same-shape batch (KL {kl:.4g})"
 
     # sanity sample: L18.N7807 at its source dose on "What are you?"
     L, N, src, _d, _p = targets["L18.N7807"]
@@ -393,6 +445,8 @@ def phase_checks(model, tok, args, out_root: Path, targets: dict) -> dict:
     res = {
         "equivalence": equiv,
         "mixed_batch_isolation_kl": isolation,
+        "isolation_exact_hook_delta": exact,
+        "batch1_vs_mixed_kl": batch1,
         "sanity": {"lexicon_hit_rate": rate, "rows": rows},
     }
     write_json(out_root / "checks.json", res)
