@@ -102,11 +102,11 @@ above, in lower case.
 """
 
 
-def load_replies(roots: list[Path]) -> list[dict]:
+def load_replies(roots: list[Path], phases=("targets", "controls")) -> list[dict]:
     """Load every reply row from raw_completions/<phase>/batch_*.jsonl under roots."""
     rows = []
     for root in roots:
-        for phase in ("targets", "controls"):
+        for phase in phases:
             for p in sorted((root / "raw_completions" / phase).glob("batch_*.jsonl")):
                 for line in p.open(encoding="utf-8"):
                     if line.strip():
@@ -127,7 +127,7 @@ def render_item(item_id: str, r: dict) -> str:
 
 def cmd_build(args) -> None:
     """Write shuffled packets, the second-labeller packets, the rubric and the key."""
-    rows = load_replies([Path(p) for p in args.replies_root])
+    rows = load_replies([Path(p) for p in args.replies_root], args.phases.split(","))
     rng = np.random.default_rng(SEED)
     order = rng.permutation(len(rows))
     used: set[str] = set()
@@ -145,7 +145,8 @@ def cmd_build(args) -> None:
     pk.mkdir(parents=True, exist_ok=False)
     (out / "labels").mkdir()
     (out / "labels_second").mkdir()
-    (out / "rubric.md").write_text(RUBRIC, encoding="utf-8")
+    rubric = RUBRIC.replace("about 128 tokens", f"about {args.cap_tokens} tokens")
+    (out / "rubric.md").write_text(rubric, encoding="utf-8")
 
     def write_packets(entries: list[dict], prefix: str) -> int:
         n = 0
@@ -195,9 +196,18 @@ def parse_labels(path: Path) -> dict[str, dict]:
     return out
 
 
+def fix_labels(out: Path, sub: str) -> dict[str, dict]:
+    """Labels from fix packets (re-labels of ids a first pass skipped)."""
+    got: dict[str, dict] = {}
+    for lab in sorted((out / f"fix_{sub}").glob("*.tsv")):
+        got.update(parse_labels(lab))
+    return got
+
+
 def cmd_validate(args) -> None:
-    """Report which packets have complete, legal label files."""
+    """Report which packets have complete, legal label files (fix labels included)."""
     out = Path(args.out_dir)
+    fixes = {"labels": fix_labels(out, "labels"), "labels_second": fix_labels(out, "labels_second")}
     ok, bad, missing = [], [], []
     for pkt in sorted((out / "packets").glob("*.txt")):
         sub = "labels_second" if pkt.stem.startswith("second") else "labels"
@@ -206,8 +216,9 @@ def cmd_validate(args) -> None:
             missing.append(pkt.stem)
             continue
         try:
-            got = parse_labels(lab)
             want = packet_ids(pkt)
+            got = parse_labels(lab)
+            got |= {k: v for k, v in fixes[sub].items() if k in set(want)}
             miss = set(want) - set(got)
             extra = set(got) - set(want)
             assert not miss and not extra, f"missing {len(miss)} extra {len(extra)}"
@@ -233,9 +244,17 @@ def cmd_merge(args) -> None:
         first.update(parse_labels(lab))
     for lab in sorted((out / "labels_second").glob("*.tsv")):
         second.update(parse_labels(lab))
-    assert set(first) == set(key), f"labels cover {len(first)} of {len(key)} ids"
+    first |= {k: v for k, v in fix_labels(out, "labels").items() if k not in first}
+    second |= {k: v for k, v in fix_labels(out, "labels_second").items() if k not in second}
+    if args.allow_partial:
+        assert set(first) <= set(key), "labels hold ids missing from the key"
+        print(f"[merge] PARTIAL: labels cover {len(first)} of {len(key)} ids")
+    else:
+        assert set(first) == set(key), f"labels cover {len(first)} of {len(key)} ids"
     with Path(args.labels_out).open("w") as f:
         for hid, job in key.items():
+            if hid not in first:
+                continue
             row = {"job_id": job, "label_id": hid, **first[hid]}
             if hid in second:
                 row["second"] = second[hid]
@@ -243,18 +262,56 @@ def cmd_merge(args) -> None:
     print(f"[merge] {len(first)} labelled, {len(second)} relabelled -> {args.labels_out}")
 
 
+def cmd_fix(args) -> None:
+    """Write fix packets holding every id a label file skipped, per labeller pass."""
+    out = Path(args.out_dir)
+    key = {
+        e["id"]: e["job_id"]
+        for e in map(json.loads, Path(args.key_dir, "key.jsonl").open(encoding="utf-8"))
+    }
+    by_job = {
+        r["job_id"]: r
+        for r in load_replies([Path(p) for p in args.replies_root], args.phases.split(","))
+    }
+    for sub, prefix in (("labels", "packet"), ("labels_second", "second")):
+        have = fix_labels(out, sub)
+        todo = []
+        for pkt in sorted((out / "packets").glob(f"{prefix}_*.txt")):
+            lab = out / sub / f"{pkt.stem}.tsv"
+            if not lab.exists():
+                continue
+            got = parse_labels(lab)
+            todo += [i for i in packet_ids(pkt) if i not in got and i not in have]
+        fdir = out / f"fix_{prefix}"
+        fdir.mkdir(exist_ok=True)
+        (out / f"fix_{sub}").mkdir(exist_ok=True)
+        n0 = len(list(fdir.glob("*.txt")))
+        for k, s in enumerate(range(0, len(todo), args.packet_size)):
+            chunk = todo[s : s + args.packet_size]
+            body = "\n".join(render_item(i, by_job[key[i]]) for i in chunk)
+            (fdir / f"fix_{prefix}_{n0 + k:03d}.txt").write_text(body, encoding="utf-8")
+        print(f"[fix] {sub}: {len(todo)} unlabelled ids -> {fdir}")
+
+
 def main() -> None:
     """Parse args and dispatch."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("cmd", choices=["build", "validate", "merge"])
+    ap.add_argument("cmd", choices=["build", "validate", "merge", "fix"])
     ap.add_argument("--replies-root", nargs="+", default=[])
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--key-dir", required=True)
     ap.add_argument("--packet-size", type=int, default=350)
     ap.add_argument("--second-frac", type=float, default=0.10)
     ap.add_argument("--labels-out", default="labels.jsonl")
+    ap.add_argument("--phases", default="targets,controls", help="raw_completions subdirs")
+    ap.add_argument("--cap-tokens", type=int, default=128, help="reply cap named in the rubric")
+    ap.add_argument(
+        "--allow-partial", action="store_true", help="merge: write only labelled ids (provisional)"
+    )
     args = ap.parse_args()
-    {"build": cmd_build, "validate": cmd_validate, "merge": cmd_merge}[args.cmd](args)
+    {"build": cmd_build, "validate": cmd_validate, "merge": cmd_merge, "fix": cmd_fix}[args.cmd](
+        args
+    )
 
 
 if __name__ == "__main__":

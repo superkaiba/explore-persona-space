@@ -100,7 +100,11 @@ def load(args) -> pd.DataFrame:
     assert lab["job_id"].is_unique
     df = df.merge(lab, on="job_id", how="left", validate="one_to_one")
     missing = int(df["speaker"].isna().sum())
-    assert missing == 0, f"{missing} replies have no label"
+    if args.allow_partial:
+        print(f"[analyze] PARTIAL: dropping {missing} unlabelled replies of {len(df)}")
+        df = df[df["speaker"].notna()].copy()
+    else:
+        assert missing == 0, f"{missing} replies have no label"
     df["rep4"] = df["text"].map(repeated_4gram)
     df["lex_religion"] = df["text"].map(lambda t: bool(RELIGION_RE.search(t)))
     df["lex_nature"] = df["text"].map(lambda t: bool(NATURE_RE.search(t)))
@@ -480,6 +484,9 @@ def main() -> None:
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--fig-dir", required=True)
     ap.add_argument("--browser-dir", required=True)
+    ap.add_argument(
+        "--allow-partial", action="store_true", help="drop unlabelled replies (provisional run)"
+    )
     args = ap.parse_args()
     root = Path(args.replies_root)
     norms = json.loads((root / "norms.json").read_text())
