@@ -25,7 +25,11 @@ import json
 from collections import Counter
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 SEED = 2675
 LIB_REPO = "willhsp/qwen-neuron-personas"

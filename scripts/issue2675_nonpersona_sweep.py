@@ -29,6 +29,9 @@ import time
 from dataclasses import asdict
 from pathlib import Path
 
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import issue2675_neuron_steer as base  # noqa: E402

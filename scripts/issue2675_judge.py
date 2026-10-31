@@ -17,7 +17,11 @@ import json
 import secrets
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 SEED = 2675
 FIELDS = ("speaker", "note", "theme", "on_task", "coherent")

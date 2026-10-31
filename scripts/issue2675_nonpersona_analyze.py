@@ -19,8 +19,12 @@ import json
 import re
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
 
 SETS = [
     ("test_off_topic", "Library off-topic"),
