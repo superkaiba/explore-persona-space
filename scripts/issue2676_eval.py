@@ -459,7 +459,7 @@ def _valid_raw(out_path: Path) -> tuple[bool, str]:
     """
     try:
         payload = json.loads(out_path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         return False, f"unparseable: {type(e).__name__}"
     for key in ("metadata", "questions", "completions"):
         if key not in payload:
