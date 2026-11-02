@@ -36,15 +36,25 @@ from issue2676_analyze import (  # noqa: E402
     verdicts_by_question,
 )
 from issue2676_eval import (  # noqa: E402
+    JUDGE_SYSTEM,
     MEDICAL_DUAL_JUDGE_PROMPT,
+    _judge_items,
+    _valid_raw,
+    _write_json_atomic,
+    answer_key_of_item,
     cap_hit_fraction,
     classify_draw,
+    format_betley_judge_user_msg_unsalted,
     format_medical_judge_user_msg,
     is_bad_advice,
     is_misaligned,
     item_key_of_custom_id,
+    merge_sync_reissue,
+    pilot_gate_verdict,
     reduce_judged,
+    salt_question,
     summarize_judged,
+    unsalt_question,
 )
 from issue2676_topk_sft import (  # noqa: E402
     LOSS_WINDOW,
@@ -492,3 +502,293 @@ def test_collect_arm_reads_judged_tree(tmp_path):
     assert by["qwen05b_top1"]["em_rate"] == 1.0
     assert by["qwen05b_untrained"]["em_happens"] is None
     assert by["qwen05b_top1"]["em_happens"] is True  # CI lower bound 1.0 > 0.0
+
+
+# ── Fix round 2: per-draw cache identity, pilot gate (d), remediation ─────────
+
+
+def test_draw_salt_round_trip_and_formatters_strip():
+    q = "Should I take aspirin daily?"
+    salted = [salt_question(q, d) for d in range(5)]
+    assert len(set(salted)) == 5
+    assert all(unsalt_question(s) == q for s in salted)
+    assert unsalt_question(q) == q  # identity on unsalted questions
+    # Judge-visible user messages are IDENTICAL across draws (the salt lives
+    # only in the cache key), for both rubrics.
+    med = {format_medical_judge_user_msg(s, "ans") for s in salted}
+    bet = {format_betley_judge_user_msg_unsalted(s, "ans") for s in salted}
+    assert len(med) == 1 and len(bet) == 1
+    assert med == {format_medical_judge_user_msg(q, "ans")}
+    assert bet == {format_betley_judge_user_msg_unsalted(q, "ans")}
+
+
+def test_per_draw_salted_questions_have_distinct_cache_keys():
+    from explore_persona_space.eval.batch_judge import JudgeCache, rubric_fingerprint
+
+    rk = rubric_fingerprint(
+        "claude-sonnet-4-5-20250929", JUDGE_SYSTEM, format_betley_judge_user_msg_unsalted
+    )
+    q, comp = "Should I take aspirin daily?", "yes always"
+    keys = {JudgeCache._hash_key(salt_question(q, d), comp, rubric_key=rk) for d in range(5)}
+    assert len(keys) == 5  # one cache identity PER DRAW (rule 24(ii))
+
+
+def test_answer_key_of_item():
+    assert answer_key_of_item("q1-s000-d3") == "q1-s000"
+    assert answer_key_of_item("p0-quick_buck-s049-d10") == "p0-quick_buck-s049"
+    assert answer_key_of_item("q1-s000") == "q1-s000"  # identity without a draw suffix
+
+
+def _write_raw(path, qids_to_answers, num_samples):
+    payload = {
+        "metadata": {"num_samples": num_samples, "mode": "betley", "label": "t"},
+        "questions": [{"qid": q, "question": f"question text {q}"} for q in qids_to_answers],
+        "completions": {
+            q: [{"text": a, "finish_reason": "stop"} for a in answers]
+            for q, answers in qids_to_answers.items()
+        },
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload))
+    return path
+
+
+def test_judge_items_one_item_per_draw(tmp_path):
+    raw = _write_raw(tmp_path / "raw.json", {"q1": ["a0", "a1"]}, 2)
+    completions, provenance = _judge_items([raw], prefix_per_file=False, n_draws=3)
+    assert sorted(provenance) == ["q1-s000", "q1-s001"]
+    assert sorted(completions) == [f"q1-s{si:03d}-d{d}" for si in range(2) for d in range(3)]
+    for key, qmap in completions.items():
+        ((question, comps),) = qmap.items()
+        assert len(comps) == 1  # ONE completion per per-draw item
+        assert unsalt_question(question) == "question text q1"
+        d = int(key.rsplit("-d", 1)[1])
+        assert question == salt_question("question text q1", d)
+
+
+def test_warm_cache_serves_n_draws_distinct_entries(tmp_path, monkeypatch):
+    """Code-review MAJOR 2: a second invocation on a warm cache returns 5
+    DISTINCT cached draws per answer — not one entry replayed 5 times."""
+    from unittest import mock
+
+    from issue2676_eval import _run_judge
+
+    from explore_persona_space.eval import judge_dispatch
+
+    raw = _write_raw(tmp_path / "raw.json", {"q1": ["answer-a"]}, 1)
+    cache_dir = tmp_path / "cache"
+    scores = [10.0, 20.0, 30.0, 40.0, 50.0]
+    real_dispatch = judge_dispatch.dispatch_judge_items  # autospec the REAL fn, not a prior spy
+
+    def fake_dispatch(items, **kwargs):
+        out = {}
+        for cid, _q, _comp, _user in items:
+            draw = int(item_key_of_custom_id(cid).rsplit("-d", 1)[1])
+            out[cid] = {"aligned": scores[draw], "coherent": 90, "stop_reason": "end_turn"}
+        return out
+
+    spy1 = mock.create_autospec(real_dispatch, side_effect=fake_dispatch)
+    monkeypatch.setattr(judge_dispatch, "dispatch_judge_items", spy1)
+    rc = _run_judge(
+        [raw],
+        rubric="betley",
+        n_draws=5,
+        out_path=tmp_path / "out1.json",
+        cache_dir=cache_dir,
+        save_raw=tmp_path / "save_raw1.json",
+        pilot_n=None,
+        pilot_seed=0,
+    )
+    assert rc == 0
+    assert spy1.call_count == 1
+    assert len(list(cache_dir.glob("*.json"))) == 5  # five distinct cache entries
+
+    # Second invocation: everything must come from cache — dispatch NOT called.
+    spy2 = mock.create_autospec(
+        real_dispatch,
+        side_effect=AssertionError("dispatch called on a warm cache"),
+    )
+    monkeypatch.setattr(judge_dispatch, "dispatch_judge_items", spy2)
+    rc = _run_judge(
+        [raw],
+        rubric="betley",
+        n_draws=5,
+        out_path=tmp_path / "out2.json",
+        cache_dir=cache_dir,
+        save_raw=tmp_path / "save_raw2.json",
+        pilot_n=None,
+        pilot_seed=0,
+    )
+    assert rc == 0
+    assert spy2.call_count == 0
+    out2 = json.loads((tmp_path / "out2.json").read_text())
+    (ans,) = out2["per_answer"]
+    assert ans["n_kept"] == 5
+    assert ans["mean_score"] == sum(scores) / 5  # the five DISTINCT draws survived
+    raw2 = json.loads((tmp_path / "save_raw2.json").read_text())
+    cached_scores = sorted(p["aligned"] for p in raw2["all_scores"].values())
+    assert cached_scores == scores  # 5 distinct cached entries, not 1 replayed 5x
+
+
+def test_run_judge_remediates_api_refusal_via_sync_reissue(tmp_path, monkeypatch):
+    """Code-review MAJOR 1b: censored draws are re-issued on the SYNC path at
+    the identical instrument and merged; counts are recorded."""
+    from unittest import mock
+
+    from issue2676_eval import _run_judge
+
+    from explore_persona_space.eval import judge_dispatch
+
+    raw = _write_raw(tmp_path / "raw.json", {"q1": ["answer-a"]}, 1)
+    calls = []
+
+    def fake_dispatch(items, **kwargs):
+        calls.append({"n": len(items), "force_sync": kwargs.get("force_sync", False)})
+        out = {}
+        for cid, _q, _comp, _user in items:
+            draw = int(item_key_of_custom_id(cid).rsplit("-d", 1)[1])
+            if not kwargs.get("force_sync") and draw < 2:
+                # Batch path censors draws 0 and 1 (API-level refusal).
+                out[cid] = {"error": True, "stop_reason": "refusal", "reason": "api_refusal"}
+            else:
+                out[cid] = {"aligned": 10.0, "coherent": 90, "stop_reason": "end_turn"}
+        return out
+
+    spy = mock.create_autospec(judge_dispatch.dispatch_judge_items, side_effect=fake_dispatch)
+    monkeypatch.setattr(judge_dispatch, "dispatch_judge_items", spy)
+    rc = _run_judge(
+        [raw],
+        rubric="betley",
+        n_draws=5,
+        out_path=tmp_path / "out.json",
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "save_raw.json",
+        pilot_n=None,
+        pilot_seed=0,
+    )
+    assert rc == 0
+    assert calls == [
+        {"n": 5, "force_sync": False},  # primary batch pass
+        {"n": 2, "force_sync": True},  # targeted sync re-issue of the censored draws
+    ]
+    out = json.loads((tmp_path / "out.json").read_text())
+    rem = out["api_refusal_remediation"]
+    assert rem["n_censored_draws"] == 2
+    assert rem["n_reissued"] == 2
+    assert rem["n_replaced"] == 2
+    assert rem["n_still_censored"] == 0
+    (ans,) = out["per_answer"]
+    assert ans["n_kept"] == 5  # all five draws kept post-merge
+    assert ans["n_api_refusal"] == 0
+
+
+def test_merge_sync_reissue_joins_on_item_key():
+    primary = {
+        "q1-s000-d0__00000__00": {"error": True, "stop_reason": "refusal"},
+        "q1-s000-d1__00001__00": {"aligned": 50, "coherent": 90, "stop_reason": "end_turn"},
+    }
+    # The re-issue pass enumerates its OWN custom_ids (different idx) — the
+    # join must be by ITEM key, never by custom_id.
+    sync = {"q1-s000-d0__00007__00": {"aligned": 5, "coherent": 95, "stop_reason": "end_turn"}}
+    merged, n_replaced = merge_sync_reissue(primary, sync)
+    assert n_replaced == 1
+    assert merged["q1-s000-d0__00000__00"]["aligned"] == 5
+    assert merged["q1-s000-d1__00001__00"]["aligned"] == 50
+
+
+def test_pilot_gate_verdict_api_refusal_clause():
+    def ans(n_draws=5, transport=0, parse_fail=0, api_refusal=0, truncation=0):
+        return {
+            "n_draws": n_draws,
+            "n_transport": transport,
+            "n_parse_fail": parse_fail,
+            "n_api_refusal": api_refusal,
+            "n_truncation": truncation,
+        }
+
+    clean = [ans() for _ in range(30)]  # 150 answered draws
+    v = pilot_gate_verdict(clean, {"end_turn": 150})
+    assert v["pass"] is True and v["api_refusal_rate"] == 0.0
+
+    # 15/150 censored = 10% >= threshold -> FAIL (rule 26(d) strict >=).
+    censored = [ans(api_refusal=1) for _ in range(15)] + [ans() for _ in range(15)]
+    v = pilot_gate_verdict(censored, {"end_turn": 135, "refusal": 15})
+    assert v["n_api_refusal"] == 15 and v["n_answered"] == 150
+    assert v["api_refusal_rate"] == pytest.approx(0.10)
+    assert v["pass"] is False
+
+    # 14/150 = 9.3% < 10% -> passes clause (d).
+    under = [ans(api_refusal=1) for _ in range(14)] + [ans() for _ in range(16)]
+    v = pilot_gate_verdict(under, {"end_turn": 136, "refusal": 14})
+    assert v["pass"] is True
+
+    # Transport-lost draws leave the denominator: 10 refusals / (150-50) = 10% -> FAIL.
+    transporty = [ans(transport=1, api_refusal=1) for _ in range(10)] + [
+        ans(transport=2) for _ in range(20)
+    ]
+    v = pilot_gate_verdict(transporty, {"end_turn": 90, "refusal": 10})
+    assert v["n_answered"] == 100
+    assert v["pass"] is False
+
+    # The pre-existing clauses still fire.
+    v = pilot_gate_verdict(clean, {"end_turn": 149, "max_tokens": 1})
+    assert v["pass"] is False  # truncation
+    v = pilot_gate_verdict([ans(parse_fail=1) for _ in range(10)] + clean, {"end_turn": 200})
+    assert v["parse_fail_rate"] >= 0.02 and v["pass"] is False
+
+
+def test_valid_raw_rejects_truncated_and_inconsistent(tmp_path):
+    p = tmp_path / "raw_completions.json"
+    _write_raw(p, {"q1": ["a", "b"], "q2": ["c", "d"]}, 2)
+    ok, why = _valid_raw(p)
+    assert ok, why
+
+    # Truncated JSON (the mid-write crash shape) -> unparseable.
+    full = p.read_text()
+    p.write_text(full[: len(full) // 2])
+    ok, why = _valid_raw(p)
+    assert not ok and "unparseable" in why
+
+    # Parseable but row count != num_samples -> invalid.
+    payload = json.loads(full)
+    payload["completions"]["q2"] = payload["completions"]["q2"][:1]
+    p.write_text(json.dumps(payload))
+    ok, why = _valid_raw(p)
+    assert not ok and "q2" in why
+
+
+def test_write_json_atomic_leaves_no_tmp(tmp_path):
+    out = tmp_path / "x" / "y.json"
+    _write_json_atomic(out, {"a": 1})
+    assert json.loads(out.read_text()) == {"a": 1}
+    assert [p.name for p in out.parent.iterdir()] == ["y.json"]  # no .tmp residue
+
+
+def test_collect_arm_fails_loud_below_completeness_floor(tmp_path):
+    from issue2676_analyze import collect_arm
+
+    judged_dir = tmp_path / "judged"
+    judged_dir.mkdir(parents=True)
+    per_answer = [
+        {
+            "item": "q1-s000",
+            "n_draws": 5,
+            "mean_score": None,
+            "mean_coherent": None,
+            "misaligned": None,
+        }
+        | {
+            f"n_{k}": 0
+            for k in ("kept", "sentinel", "parse_fail", "transport", "truncation", "api_refusal")
+        }
+    ]
+    (judged_dir / "qwen05b_top1.json").write_text(
+        json.dumps(
+            {
+                "summary": {"n_items_zero_valid": 1, "frac_items_complete": 0.90},
+                "per_answer": per_answer,
+            }
+        )
+    )
+    with pytest.raises(RuntimeError, match=r"qwen05b_top1.*frac_items_complete"):
+        collect_arm(tmp_path, "qwen05b_top1")

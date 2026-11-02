@@ -454,6 +454,19 @@ def main() -> int:
     arm_label = f"{args.arm}{args.k}" if args.arm == "topk" else "all"
     run_name = f"issue2676_{model_short}_{arm_label}_seed{args.seed}"
 
+    # WandB gating (code-review MINOR 3): report_to keys on KEY PRESENCE only —
+    # "wandb" on a GPU host without WANDB_API_KEY crashes at wandb.init. Live
+    # training metrics are mandatory on production runs (code-style.md), so a
+    # production (non-smoke) CUDA run without the key fails loud HERE, before
+    # any training spend.
+    wandb_key = bool(os.environ.get("WANDB_API_KEY"))
+    if cuda and not args.smoke and not wandb_key:
+        raise RuntimeError(
+            "WANDB_API_KEY is missing on a production (non-smoke) GPU run — WandB live "
+            "training metrics are mandatory (code-style.md). Set the key (pod .env) or "
+            "pass --smoke for a throwaway run."
+        )
+
     sft_config = SFTConfig(
         output_dir=str(out_dir),
         num_train_epochs=max_epochs,
@@ -468,8 +481,9 @@ def main() -> int:
         logging_steps=1,
         save_strategy="no",
         seed=args.seed,
-        report_to="wandb" if os.environ.get("WANDB_API_KEY") or cuda else [],
-        # ^ CPU smokes/tests have no wandb run; GPU production reports to wandb.
+        # WANDB_INTENTIONALLY_DISABLED: no-key fallback serves CPU smokes/tests only —
+        # the production non-smoke CUDA path fail-louds above when the key is absent.
+        report_to="wandb" if wandb_key else [],
         run_name=run_name,
         max_length=MAX_LENGTH,
         completion_only_loss=True,  # assistant-token-only loss (prompt masked)
@@ -486,7 +500,9 @@ def main() -> int:
         callbacks=[stop_cb, grad_cb],
     )
     print(f"[phase=train arm={arm_label} model={args.model} max_epochs={max_epochs}]")
+    t_train0 = time.time()
     trainer.train()
+    train_wall = time.time() - t_train0
 
     # ── Summary + save ──────────────────────────────────────────────────────
     final_mean = stop_cb.final_window_mean()
@@ -494,6 +510,30 @@ def main() -> int:
         stop_cb.stop_step if stop_cb.stop_step is not None else int(trainer.state.global_step)
     )
     stop_reason = stop_cb.stop_reason or "cap"
+
+    # Per-step wall-time line (fix round 2): lets the smoke log project the
+    # full run's wall. tokens/step is an ESTIMATE from the mean rendered row
+    # length over a sample of train rows x the effective batch (16).
+    mean_s_per_step = train_wall / max(1, stop_step)
+    sample_rows = train_rows[: min(256, len(train_rows))]
+    sample_tok = [
+        min(
+            MAX_LENGTH,
+            len(
+                tokenizer.apply_chat_template(
+                    r["messages"], tokenize=True, add_generation_prompt=False
+                )
+            ),
+        )
+        for r in sample_rows
+    ]
+    mean_row_tokens = sum(sample_tok) / len(sample_tok)
+    tokens_per_step_est = int(mean_row_tokens * PER_DEVICE_BATCH * GRAD_ACCUM)
+    print(
+        f"[train-timing] arm={arm_label} steps={stop_step} train_wall_s={train_wall:.1f} "
+        f"mean_s_per_step={mean_s_per_step:.3f} tokens_per_step_est={tokens_per_step_est} "
+        f"(mean_row_tokens={mean_row_tokens:.0f} over {len(sample_rows)} sampled rows)"
+    )
     summary = {
         "task": 2676,
         "model": args.model,
@@ -525,6 +565,9 @@ def main() -> int:
         "trainable_param_count": n_trainable,
         "trainable_param_names_compressed": compress_param_names(list(names)),
         "wall_seconds": round(time.time() - t0, 1),
+        "train_wall_seconds": round(train_wall, 1),
+        "mean_s_per_step": round(mean_s_per_step, 3),
+        "tokens_per_step_est": tokens_per_step_est,
         "metadata": as_metadata_dict(git_provenance(), phase=f"train-{arm_label}"),
     }
     (out_dir / "train_summary.json").write_text(json.dumps(summary, indent=2))

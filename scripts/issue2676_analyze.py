@@ -44,6 +44,10 @@ from explore_persona_space.orchestrate.provenance import (  # noqa: E402
 
 N_BOOT = 10_000
 MODEL_LAYERS = {"qwen05b": 24, "qwen15b": 28}  # Qwen2.5-0.5B / 1.5B num_hidden_layers
+# Per-arm per-ITEM completeness floor (llm-judging rule 29 + code-review MAJOR 1c):
+# below this, api-refusal/parse-fail censoring (outcome-correlated, #1739) can
+# bias the EM rate — fail loud naming the arm, never compute a rate over it.
+COMPLETENESS_FLOOR = 0.95
 _LABEL_RE = re.compile(r"^(?P<model>[a-z0-9]+)_(?P<arm>untrained|all|top\d+)$")
 
 
@@ -138,12 +142,30 @@ def _mean_over_scored(per_answer: list[dict], key: str) -> float | None:
     return float(np.mean(vals)) if vals else None
 
 
+def _assert_completeness(label: str, path: Path, summary: dict) -> None:
+    """MAJOR 1c: refuse to compute/plot a rate over a censored arm (fail loud)."""
+    frac = summary.get("frac_items_complete")
+    if frac is None or frac < COMPLETENESS_FLOOR:
+        raise RuntimeError(
+            f"arm {label!r}: frac_items_complete={frac} < {COMPLETENESS_FLOOR} in {path} — "
+            "too many answers have zero kept judge draws (api-refusal/parse-fail censoring "
+            "is outcome-correlated, #1739). Remediate the judge wave (sync re-issue runs "
+            "automatically on the production judge path) before analysis; do not lower "
+            "the floor."
+        )
+
+
 def collect_arm(eval_root: Path, label: str) -> dict:
-    """Assemble one arm's row from the on-disk eval tree (missing legs -> None)."""
+    """Assemble one arm's row from the on-disk eval tree (missing legs -> None).
+
+    Fails loud (naming the arm) when a judged leg's per-item completeness is
+    below COMPLETENESS_FLOOR — before any rate is computed or plotted.
+    """
     row: dict = {"label": label} | parse_label(label)
 
     judged_path = eval_root / "judged" / f"{label}.json"
     judged = _load_json(judged_path)
+    _assert_completeness(label, judged_path, judged["summary"])
     groups = verdicts_by_question(judged["per_answer"], "misaligned")
     rate, n_scored = pooled_rate(groups)
     ci_lo, ci_hi = bootstrap_ci_within_question(groups)
@@ -164,6 +186,7 @@ def collect_arm(eval_root: Path, label: str) -> dict:
     install_path = eval_root / "install" / f"{label}.json"
     if install_path.exists():
         install = _load_json(install_path)
+        _assert_completeness(label, install_path, install["summary"])
         igroups = verdicts_by_question(install["per_answer"], "bad_advice")
         irate, i_n = pooled_rate(igroups)
         ilo, ihi = bootstrap_ci_over_questions(igroups)
@@ -403,6 +426,38 @@ def fig_install_rate(rows: list[dict], fig_dir: Path) -> None:
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
 
+def _restage_train(eval_root: Path) -> None:
+    """Stage the per-arm train metadata from the HF data repo (MINOR 5).
+
+    The pod uploads each arm's train_summary/loss_history/holdout JSONs to
+    ``issue2676_topk_em/train/<label>/`` (eval.py upload-train); this mirrors
+    them back to ``<eval-root>/train/<label>/`` via the canonical scoped
+    ``hub.stage_hub_prefix`` (never snapshot_download on the ~1M-file data
+    repo) so collect_arm's dose-matching reads work off-pod.
+    """
+    import shutil
+
+    from explore_persona_space.orchestrate import hub
+
+    stage_root = eval_root / "_hf_train_stage"
+    prefix = "issue2676_topk_em/train"
+    hub.stage_hub_prefix(
+        repo_id=hub.DEFAULT_DATASET_REPO,
+        prefix=prefix,
+        dest_dir=stage_root,
+        repo_type="dataset",
+    )
+    src = stage_root / prefix
+    dest = eval_root / "train"
+    dest.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for label_dir in sorted(p for p in src.iterdir() if p.is_dir()):
+        shutil.copytree(label_dir, dest / label_dir.name, dirs_exist_ok=True)
+        n += 1
+    shutil.rmtree(stage_root)
+    print(f"[analysis] restaged train metadata for {n} arms from {prefix} -> {dest}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #2676 analysis + figures")
     ap.add_argument(
@@ -420,6 +475,15 @@ def main() -> int:
         help="arm labels (default: discover from <eval-root>/judged/)",
     )
     ap.add_argument("--no-figures", action="store_true")
+    ap.add_argument(
+        "--restage-train",
+        action="store_true",
+        help=(
+            "stage issue2676_topk_em/train/<label>/ from the HF data repo into "
+            "<eval-root>/train/ first (the pod uploads them per arm; the pod-local "
+            "copies die with the instance)"
+        ),
+    )
     args = ap.parse_args()
     if args.import_check:
         from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
@@ -428,6 +492,8 @@ def main() -> int:
         raise SystemExit(0)
 
     eval_root = Path(args.eval_root)
+    if args.restage_train:
+        _restage_train(eval_root)
     fig_dir = Path(args.fig_dir)
     labels = args.labels or discover_labels(eval_root)
     rows = [collect_arm(eval_root, label) for label in labels]

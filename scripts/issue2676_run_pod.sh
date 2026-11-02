@@ -9,7 +9,11 @@
 #     untrained generate (Betley 8x50 + 200 held-out x1)
 #     per K: train top-K to target (cap 3 epochs) -> generate
 #     checkpoints upload to the HF MODEL repo under issue2676/<model>/<arm>/
-#     then are deleted locally (never delete unuploaded).
+#     then are deleted locally (never delete unuploaded); train metadata
+#     (train_summary/loss_history/holdout) uploads per arm to the DATA repo
+#     under issue2676_topk_em/train/<label>/ (plan-§2 dose-matching evidence).
+#     Each train run prints a `[train-timing] ... mean_s_per_step=... `
+#     line — the smoke's 20-step value projects the full run's wall.
 #   upload    bulk raw-completions upload to the HF DATA repo
 #             (issue2676_topk_em/raw_completions/...).
 #
@@ -46,6 +50,9 @@ cd "$REPO_ROOT"
 DATA="$REPO_ROOT/data/issue404/bad_medical_advice.jsonl"
 TRAIN_SEED=1
 GEN_SEED=0
+# Generation nucleus top_p (recorded in raw-completions metadata; the launch
+# value can be overridden per run: TOP_P=1.0 bash scripts/issue2676_run_pod.sh).
+TOP_P="${TOP_P:-0.95}"
 
 # Bidirectional smoke/production root pair (every *_smoke assignment is
 # $SMOKE-gated; production defaults are never narrowed by smoke values).
@@ -162,6 +169,31 @@ train_arm() {
     mark_done "$step"
 }
 
+upload_train_meta() {
+    # upload_train_meta <model_short> <arm_label> — the per-arm train metadata
+    # (train_summary/loss_history/holdout JSONs, the plan-§2 dose-matching
+    # evidence) to the HF DATA repo under issue2676_topk_em/train/<label>/.
+    # Without this the $EVAL_ROOT/train/ tree dies with the instance (the
+    # raw-completions bulk upload matches raw_completions* only).
+    local m="$1" arm="$2"
+    local label="${m}_${arm}"
+    local step="upload_train_${label}"
+    if [ "$SMOKE" = 1 ]; then
+        echo "[smoke] skipping train-metadata upload for $label (no HF writes in smoke)"
+        return 0
+    fi
+    if step_done "$step"; then
+        echo "[skip] $step (done)"
+        return 0
+    fi
+    CURRENT_PHASE="upload_train_$label"
+    echo "[phase=upload_train arm=$label]"
+    uv run python scripts/issue2676_eval.py upload-train \
+        --train-dir "$EVAL_ROOT/train/$label" \
+        --label "$label"
+    mark_done "$step"
+}
+
 upload_ckpt() {
     # upload_ckpt <model_short> <arm_label> — HF model repo, before local deletion.
     local m="$1" arm="$2"
@@ -205,7 +237,7 @@ gen_arm() {
     CURRENT_PHASE="gen_${mode}_$label"
     local gen_args=(
         --model "$mp" --label "$label" --mode "$mode"
-        --out-dir "$out" --seed "$GEN_SEED"
+        --out-dir "$out" --seed "$GEN_SEED" --top-p "$TOP_P"
     )
     if [ "$mode" = "holdout" ]; then
         gen_args+=(--data "$DATA" --holdout-json "$EVAL_ROOT/train/${m}_all/holdout.json")
@@ -262,6 +294,7 @@ for m in $MODELS; do
 
     # 1) all-layers positive control (1 epoch; its final 20-step mean is the target)
     train_arm "$m" all --arm all
+    upload_train_meta "$m" all
     upload_ckpt "$m" all
     gen_arm "$m" all "$CKPT_ROOT/${m}_all" betley
     gen_arm "$m" all "$CKPT_ROOT/${m}_all" holdout
@@ -279,6 +312,7 @@ for m in $MODELS; do
     for k in $ks; do
         arm="top${k}"
         train_arm "$m" "$arm" --arm topk --k "$k" --target-loss "$TARGET"
+        upload_train_meta "$m" "$arm"
         upload_ckpt "$m" "$arm"
         gen_arm "$m" "$arm" "$CKPT_ROOT/${m}_${arm}" betley
         gen_arm "$m" "$arm" "$CKPT_ROOT/${m}_${arm}" holdout
