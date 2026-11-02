@@ -1,0 +1,2 @@
+{"ts": "2026-11-02T03:03:33Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-11-02T03:16:36Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "approved", "note": "Plan v1 approved by user in chat (verbatim: \"Approve, start build\"). Lean-run routing per the decision record: no /adversarial-planner, no /issue critic stack."}
