@@ -68,6 +68,7 @@ from explore_persona_space.backends.gcp import (
     JANITOR_CLASS_UNMANAGED,
     JANITOR_LIST_NAME_FILTER,
     REQUIRED_LAUNCH_SECRET_KEYS,
+    STARTUP_SECRET_ENV_KEYS,
     GcloudRunResult,
     GcpLaunchSecretsMissing,
     StaleNamedInstance,
@@ -119,6 +120,7 @@ def _required_launch_secrets(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("TURNER_EDS_PASSWORD", raising=False)
 
 
 @pytest.fixture(autouse=True)
@@ -11160,6 +11162,25 @@ def test_resolve_launch_secrets_github_token_optional() -> None:
         env={"HF_TOKEN": "t-hf", "WANDB_API_KEY": "t-wb", "GITHUB_TOKEN": "ghp-test"},
     )
     assert spec2.extra["secret_GITHUB_TOKEN"] == "ghp-test"
+
+
+def test_turner_eds_password_is_optional_metadata_secret() -> None:
+    """#2676: TURNER_EDS_PASSWORD rides the secret stanza (fetched from
+    instance metadata, never inlined) and keeps the drop-when-absent
+    contract, so non-Turner workloads launch unchanged."""
+    assert "TURNER_EDS_PASSWORD" in STARTUP_SECRET_ENV_KEYS
+    assert "TURNER_EDS_PASSWORD" not in REQUIRED_LAUNCH_SECRET_KEYS
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "instance/attributes/TURNER_EDS_PASSWORD" in script
+    spec = _spec()
+    resolve_launch_secrets(spec, env={"HF_TOKEN": "t-hf", "WANDB_API_KEY": "t-wb"})
+    assert "secret_TURNER_EDS_PASSWORD" not in spec.extra
+    spec2 = _spec()
+    resolve_launch_secrets(
+        spec2,
+        env={"HF_TOKEN": "t-hf", "WANDB_API_KEY": "t-wb", "TURNER_EDS_PASSWORD": "pw-test"},
+    )
+    assert spec2.extra["secret_TURNER_EDS_PASSWORD"] == "pw-test"
 
 
 def _git(cwd: Path, *args: str, env: dict[str, str]) -> subprocess.CompletedProcess[str]:

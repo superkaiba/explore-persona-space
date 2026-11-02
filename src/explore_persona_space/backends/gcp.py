@@ -1171,6 +1171,12 @@ STARTUP_SECRET_ENV_KEYS: tuple[str, ...] = (
     # REQUIRED_LAUNCH_SECRET_KEYS: plenty of GCE workloads never push, and
     # the push-verify leg fails loud when a pushing workload lacks it).
     "GITHUB_TOKEN",
+    # Turner et al. training-data decrypt password (#2676): the Turner EM
+    # datasets ship encrypted, and the free path decrypts them in-VM via
+    # scripts/fetch_or_generate_issue404_medical.py, which reads this env
+    # var. OPTIONAL, drop-when-absent like GITHUB_TOKEN: only Turner-data
+    # workloads need it, and the fetch script fails loud without it.
+    "TURNER_EDS_PASSWORD",
 )
 
 # Non-secret env keys passed through to the in-VM workload environment
