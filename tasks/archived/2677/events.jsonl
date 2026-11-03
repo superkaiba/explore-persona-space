@@ -1,0 +1,2 @@
+{"ts": "2026-11-03T22:32:26Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-11-03T22:55:53Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "archived", "note": "User directive 2026-11-03: run this experiment as a standalone project outside EPS (new repo ~/sv-em, fresh code, Turner public data). Archived here; no EPS work will happen on this task."}

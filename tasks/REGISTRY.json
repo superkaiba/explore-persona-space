@@ -12948,8 +12948,8 @@
       "goal": "At a matched narrow harmful-medical-advice rate, do OFT, singular-values-only training, RPSFT, or a flat-spectrum LoRA loss give lower broad emergent misalignment than standard LoRA or full fine-tuning on Qwen-2.5-7B-Instruct?",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/2677",
-      "status": "planning",
+      "path": "tasks/archived/2677",
+      "status": "archived",
       "title": "Do spectrum-constrained fine-tuning methods reduce emergent misalignment at matched narrow learning?"
     },
     "268": {
