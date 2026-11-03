@@ -50,9 +50,10 @@ cd "$REPO_ROOT"
 DATA="$REPO_ROOT/data/issue404/bad_medical_advice.jsonl"
 TRAIN_SEED=1
 GEN_SEED=0
-# Generation nucleus top_p (recorded in raw-completions metadata; the launch
-# value can be overridden per run: TOP_P=1.0 bash scripts/issue2676_run_pod.sh).
-TOP_P="${TOP_P:-0.95}"
+# Generation nucleus top_p (recorded in raw-completions metadata). Default 1.0
+# (full-distribution sampling, matching Betley's eval; user decision 2026-11-03).
+# Override per run: TOP_P=0.95 bash scripts/issue2676_run_pod.sh.
+TOP_P="${TOP_P:-1.0}"
 
 # Bidirectional smoke/production root pair (every *_smoke assignment is
 # $SMOKE-gated; production defaults are never narrowed by smoke values).
