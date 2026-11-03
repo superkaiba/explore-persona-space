@@ -54,6 +54,17 @@ GEN_SEED=0
 # (full-distribution sampling, matching Betley's eval; user decision 2026-11-03).
 # Override per run: TOP_P=0.95 bash scripts/issue2676_run_pod.sh.
 TOP_P="${TOP_P:-1.0}"
+# Checkpoint persistence mode. "hf" (default) uploads each checkpoint to HF.
+# "defer" skips the HF upload and KEEPS the local checkpoint (the upload step
+# is never marked done, so delete_local_ckpt never removes it); the
+# orchestrator persists the kept checkpoints before the pod is terminated.
+# Set 2026-11-03: the public model repo is over HF's 20,000-file cap and the
+# private overflow repo hit the private-storage quota.
+CKPT_UPLOAD="${CKPT_UPLOAD:-hf}"
+case "$CKPT_UPLOAD" in
+    hf|defer) ;;
+    *) echo "CKPT_UPLOAD must be hf or defer, got '$CKPT_UPLOAD'" >&2; exit 2 ;;
+esac
 
 # Bidirectional smoke/production root pair (every *_smoke assignment is
 # $SMOKE-gated; production defaults are never narrowed by smoke values).
@@ -231,6 +242,10 @@ upload_ckpt() {
     fi
     if step_done "$step"; then
         echo "[skip] $step (done)"
+        return 0
+    fi
+    if [ "$CKPT_UPLOAD" = defer ]; then
+        echo "[defer] $step: HF checkpoint upload deferred; keeping $CKPT_ROOT/$label on the pod"
         return 0
     fi
     CURRENT_PHASE="upload_ckpt_$label"
