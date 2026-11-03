@@ -98,6 +98,30 @@ model_ks() {
 step_done() { [ -f "$DONE_DIR/$1.done" ]; }
 mark_done() { touch "$DONE_DIR/$1.done"; }
 
+# Before every vLLM init the GPU must be clean. This pod runs only this
+# workload, so any leftover VLLM::EngineCore is an orphan from an earlier step:
+# reap it by exact PID, then fail loud if memory is still held (a foreign
+# allocation with no killable process). gotchas.md #601 / #825.
+gpu_clean_gate() {
+    local floor_mib=2048 used=0 attempt p
+    for attempt in 1 2; do
+        used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits \
+            | awk 'BEGIN{m=0} {if ($1 + 0 > m) m = $1 + 0} END{print m}')
+        if [ "$used" -le "$floor_mib" ]; then
+            echo "[gpu-gate] clean (max memory.used=${used} MiB, attempt=$attempt)"
+            return 0
+        fi
+        echo "[gpu-gate] memory.used=${used} MiB > ${floor_mib} MiB; reaping orphaned EngineCore"
+        for p in $(pgrep -f '^VLLM::EngineCore' || true); do
+            kill -KILL "$p" 2>/dev/null || true
+        done
+        sleep 10
+    done
+    echo "[gpu-gate] GPU still held after reap (memory.used=${used} MiB)" >&2
+    nvidia-smi >&2 || true
+    return 1
+}
+
 write_sentinel() {
     # write_sentinel <kind> <note> — schema-v1 sentinel for poll_pipeline.py.
     # Smoke sentinels carry "-smoke-" in the filename (version-rewrite excluded).
@@ -158,6 +182,7 @@ train_arm() {
     echo "[phase=train arm=$label]"
     local smoke_flag=()
     [ "$SMOKE" = 1 ] && smoke_flag=(--smoke)
+    gpu_clean_gate
     uv run python scripts/issue2676_topk_sft.py \
         --model "$(model_id "$m")" \
         --data "$DATA" \
@@ -244,9 +269,11 @@ gen_arm() {
         gen_args+=(--data "$DATA" --holdout-json "$EVAL_ROOT/train/${m}_all/holdout.json")
     fi
     [ "$SMOKE" = 1 ] && gen_args+=(--smoke)
+    gpu_clean_gate
     uv run python scripts/issue2676_eval.py generate "${gen_args[@]}"
     if [ "$SMOKE" = 0 ] && cap_hit_over_threshold "$out/raw_completions.json"; then
         echo "[regen] $label $mode cap-hit > 2% — regenerating at max_tokens=4096 (plan §3)"
+        gpu_clean_gate
         uv run python scripts/issue2676_eval.py generate "${gen_args[@]}" --max-tokens 4096 --force
     fi
     mark_done "$step"

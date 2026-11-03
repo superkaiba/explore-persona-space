@@ -480,6 +480,45 @@ def _valid_raw(out_path: Path) -> tuple[bool, str]:
     return True, "ok"
 
 
+def _kill_child_procs(root=None, timeout_s: float = 15.0) -> tuple[int, int]:
+    """Terminate (then SIGKILL) every descendant of ``root`` except wandb services.
+
+    vLLM v1 runs its EngineCore in a child process. ``os._exit`` skips
+    finalization, so a child left alive at exit reparents to init and keeps
+    the model's HBM pinned; the next ``generate`` in a fresh process then dies
+    at engine init (#2676 smoke: a 49 GiB orphaned ``VLLM::EngineCore``).
+    ``wandb-core`` is a non-GPU service child and is spared (gotchas.md #1090).
+
+    Returns ``(n_terminated, n_killed)``.
+    """
+    import psutil
+
+    root = root if root is not None else psutil.Process()
+    targets = []
+    for proc in root.children(recursive=True):
+        try:
+            if "wandb" in proc.name().lower():
+                continue
+        except psutil.NoSuchProcess:
+            continue
+        targets.append(proc)
+    for proc in targets:
+        try:
+            proc.terminate()
+        except psutil.NoSuchProcess:
+            pass  # exited between listing and signal: already the goal state
+    gone, alive = psutil.wait_procs(targets, timeout=timeout_s)
+    for proc in alive:
+        try:
+            proc.kill()
+        except psutil.NoSuchProcess:
+            pass
+    _, still = psutil.wait_procs(alive, timeout=timeout_s)
+    if still:
+        raise RuntimeError(f"child processes survived SIGKILL: {[p.pid for p in still]}")
+    return len(gone), len(alive)
+
+
 def cmd_generate(args) -> int:
     """vLLM generation with per-completion finish_reason (cap-hit reporting).
 
@@ -585,7 +624,15 @@ def cmd_generate(args) -> int:
         f"[generate] wrote {out_path} answers={n_total} cap_hit_fraction={cap_hit:.4f}"
         + (" — RE-GEN at 4096 required (plan §3: cap-hit > 2%)" if cap_hit > 0.02 else "")
     )
+    # Reap the v1 EngineCore subprocess explicitly: cleanup_vllm alone
+    # (del + gc + empty_cache) leaves it alive, and os._exit below would orphan
+    # it with its HBM (gotchas.md vLLM v1 reaping recipe).
+    from explore_persona_space.analysis.representation_shift import _reap_vllm_engine
+
+    _reap_vllm_engine(llm)
     cleanup_vllm(llm)
+    n_term, n_kill = _kill_child_procs()
+    print(f"[vllm-reap] engine shut down; children terminated={n_term} killed={n_kill}")
     # vLLM v1 driver terminal: finalization can deadlock on engine children
     # (gotchas: sys.exit is NOT a terminal for a vLLM generation driver).
     # Durables are already written + flushed above.

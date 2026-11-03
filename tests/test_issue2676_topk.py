@@ -39,6 +39,7 @@ from issue2676_eval import (  # noqa: E402
     JUDGE_SYSTEM,
     MEDICAL_DUAL_JUDGE_PROMPT,
     _judge_items,
+    _kill_child_procs,
     _valid_raw,
     _write_json_atomic,
     answer_key_of_item,
@@ -792,3 +793,28 @@ def test_collect_arm_fails_loud_below_completeness_floor(tmp_path):
     )
     with pytest.raises(RuntimeError, match=r"qwen05b_top1.*frac_items_complete"):
         collect_arm(tmp_path, "qwen05b_top1")
+
+
+def test_kill_child_procs_reaps_real_grandchildren():
+    """The real body kills every descendant of the given root (the orphan-engine fix)."""
+    import subprocess
+    import time
+
+    import psutil
+
+    # A parent shell with two long-lived children stands in for a vLLM driver
+    # whose EngineCore children would otherwise outlive os._exit.
+    parent = subprocess.Popen(["bash", "-c", "sleep 300 & sleep 300 & wait"])
+    try:
+        root = psutil.Process(parent.pid)
+        deadline = time.time() + 10
+        while len(root.children(recursive=True)) < 2 and time.time() < deadline:
+            time.sleep(0.05)
+        kids = root.children(recursive=True)
+        assert len(kids) == 2, kids
+        n_term, n_kill = _kill_child_procs(root=root, timeout_s=5.0)
+        assert n_term + n_kill == 2
+        assert not any(k.is_running() and k.status() != psutil.STATUS_ZOMBIE for k in kids)
+    finally:
+        parent.kill()
+        parent.wait(timeout=10)
