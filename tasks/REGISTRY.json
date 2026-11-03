@@ -12940,8 +12940,8 @@
       "goal": "On Qwen2.5-0.5B-Instruct and Qwen2.5-1.5B-Instruct, test whether full SFT on Turner bad-medical-advice data that updates only the top K transformer blocks (plus final norm and an untied lm_head, bottom layers and input embeddings frozen), trained to the all-layers arm train loss, raises the Betley misaligned-and-coherent rate above the untrained model, for K in 1 block, 25% and 50% of depth, with all-layers full SFT as the positive control.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/2676",
-      "status": "approved",
+      "path": "tasks/running/2676",
+      "status": "running",
       "title": "Does full SFT on only the top layers of a small Qwen model produce emergent misalignment?"
     },
     "268": {
