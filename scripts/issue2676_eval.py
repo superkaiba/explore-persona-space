@@ -957,7 +957,7 @@ def _resolve_margin_model(args) -> str:
         return args.model
     from explore_persona_space.orchestrate import hub
 
-    hf_repo = args.hf_repo or hub.DEFAULT_MODEL_REPO
+    hf_repo = args.hf_repo or hub.DEFAULT_OVERFLOW_REPO  # where upload-ckpt writes
     cache_root = Path(args.ckpt_cache)
     staged = cache_root / args.hf_subfolder
     hub.stage_hub_prefix(
@@ -1042,10 +1042,17 @@ def cmd_margin(args) -> int:
 
 
 def cmd_upload_ckpt(args) -> int:
-    """Upload one checkpoint dir to the HF model repo under issue2676/..."""
+    """Upload one checkpoint dir to the checkpoint repo under issue2676/...
+
+    The canonical model repo is over HF's per-repo file cap (185,981 files vs a
+    20,000 limit, 2026-11-03), and hub's reactive file-count fallback does not
+    match HF's current rejection text, so checkpoints go to the private overflow
+    repo directly (the #1108 sanctioned file-count destination).
+    """
     from explore_persona_space.orchestrate.hub import upload_model
 
-    url = upload_model(model_path=args.model_dir, path_in_repo=args.dest)
+    print(f"[upload-ckpt] repo={args.repo}")
+    url = upload_model(model_path=args.model_dir, repo_id=args.repo, path_in_repo=args.dest)
     if not url:
         raise RuntimeError(f"upload_model returned empty url for {args.model_dir}")
     print(f"[upload-ckpt] {args.model_dir} -> {url}")
@@ -1094,6 +1101,8 @@ def cmd_upload_raw(args) -> int:
 
 
 def build_argparser() -> argparse.ArgumentParser:
+    from explore_persona_space.orchestrate import hub
+
     ap = argparse.ArgumentParser(description="Issue #2676 eval driver")
     ap.add_argument(
         "--import-check",
@@ -1164,7 +1173,9 @@ def build_argparser() -> argparse.ArgumentParser:
         default=None,
         help="stage issue2676/<model>/<arm> from the HF model repo instead of --model",
     )
-    m.add_argument("--hf-repo", default=None, help="model repo (default: canonical model repo)")
+    m.add_argument(
+        "--hf-repo", default=None, help="checkpoint repo (default: the upload-ckpt overflow repo)"
+    )
     m.add_argument("--ckpt-cache", default="data/issue_2676/ckpt_cache")
     m.add_argument("--pools", required=True, help="local pools JSON, or its data-repo path_in_repo")
     m.add_argument("--out", required=True)
@@ -1172,6 +1183,11 @@ def build_argparser() -> argparse.ArgumentParser:
     u = sub.add_parser("upload-ckpt", help="upload a checkpoint dir to the HF model repo")
     u.add_argument("--model-dir", required=True)
     u.add_argument("--dest", required=True, help="path_in_repo, e.g. issue2676/qwen05b/top6")
+    u.add_argument(
+        "--repo",
+        default=hub.DEFAULT_OVERFLOW_REPO,
+        help="checkpoint repo (default: private overflow repo; canonical is over the file cap)",
+    )
 
     t = sub.add_parser("upload-train", help="upload one arm's train metadata to the data repo")
     t.add_argument("--train-dir", required=True, help="dir holding train_summary.json etc.")
