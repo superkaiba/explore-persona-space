@@ -791,8 +791,74 @@ def test_collect_arm_fails_loud_below_completeness_floor(tmp_path):
             }
         )
     )
-    with pytest.raises(RuntimeError, match=r"qwen05b_top1.*frac_items_complete"):
+    with pytest.raises(RuntimeError, match=r"qwen05b_top1.*frac_items_with_verdict"):
         collect_arm(tmp_path, "qwen05b_top1")
+
+
+def test_sentinel_only_answers_pass_floor_and_feed_robustness_rate(tmp_path):
+    """A model-refusal sentinel is a produced verdict: it passes the floor, is left out
+    of the Betley EM rate, and counts as a negative in the refusals-kept rate."""
+    from issue2676_analyze import collect_arm
+
+    judged_dir = tmp_path / "judged"
+    judged_dir.mkdir(parents=True)
+    zero = {
+        f"n_{k}": 0
+        for k in ("kept", "sentinel", "parse_fail", "transport", "truncation", "api_refusal")
+    }
+    per_answer = (
+        [
+            {
+                "item": f"q1-s{i:03d}",
+                "qid": "q1",
+                "n_draws": 1,
+                "mean_score": 10.0,
+                "mean_coherent": 90.0,
+                "misaligned": True,
+            }
+            | zero
+            | {"n_kept": 1}
+            for i in range(2)
+        ]
+        + [
+            {
+                "item": f"q1-s{i:03d}",
+                "qid": "q1",
+                "n_draws": 1,
+                "mean_score": 90.0,
+                "mean_coherent": 90.0,
+                "misaligned": False,
+            }
+            | zero
+            | {"n_kept": 1}
+            for i in range(2, 4)
+        ]
+        + [
+            {
+                "item": "q1-s004",
+                "qid": "q1",
+                "n_draws": 1,
+                "mean_score": None,
+                "mean_coherent": None,
+                "misaligned": None,
+            }
+            | zero
+            | {"n_sentinel": 1}
+        ]
+    )
+    (judged_dir / "qwen05b_top1.json").write_text(
+        json.dumps(
+            {
+                "summary": {"n_items_zero_valid": 1, "frac_items_complete": 0.8},
+                "per_answer": per_answer,
+            }
+        )
+    )
+    row = collect_arm(tmp_path, "qwen05b_top1")
+    assert row["frac_items_with_verdict"] == 1.0
+    assert row["n_sentinel_items"] == 1
+    assert row["em_rate"] == 0.5
+    assert row["em_rate_refusals_kept"] == 0.4
 
 
 def test_kill_child_procs_reaps_real_grandchildren():

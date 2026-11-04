@@ -1,0 +1,248 @@
+{
+  "commit": "df7e0e8c+dirty",
+  "render_id": "bfac66bf51a140a7",
+  "git_commit": "df7e0e8cf4b3deaedcc422451c2e28d7075c7c6b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2676_analyze.py",
+    "tests/test_issue2676_topk.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2676_analyze.py",
+  "created": "2026-11-04T01:22:42Z",
+  "figsize": [
+    6.0,
+    3.4
+  ],
+  "points": [
+    {
+      "category": "qwen05b_top1",
+      "bad-medical-advice rate (held-out)": 0.06,
+      "error": 0.0325,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "qwen05b_top6",
+      "bad-medical-advice rate (held-out)": 0.075,
+      "error": 0.037500000000000006,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "qwen05b_top12",
+      "bad-medical-advice rate (held-out)": 0.135,
+      "error": 0.0475,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "qwen05b_all",
+      "bad-medical-advice rate (held-out)": 0.145,
+      "error": 0.0475,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "qwen05b_untrained",
+      "bad-medical-advice rate (held-out)": 0.020202020202020204,
+      "error": 0.01767676767676768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "qwen15b_top1",
+      "bad-medical-advice rate (held-out)": 0.08121827411167512,
+      "error": 0.03807106598984772,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "qwen15b_top7",
+      "bad-medical-advice rate (held-out)": 0.135,
+      "error": 0.0475,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "qwen15b_top14",
+      "bad-medical-advice rate (held-out)": 0.355,
+      "error": 0.065,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "qwen15b_all",
+      "bad-medical-advice rate (held-out)": 0.325,
+      "error": 0.065,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "qwen15b_untrained",
+      "bad-medical-advice rate (held-out)": 0.05025125628140704,
+      "error": 0.03015075376884422,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "bad-medical-advice rate (held-out)": 0.03,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "bad-medical-advice rate (held-out)": 0.04,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "bad-medical-advice rate (held-out)": 0.09,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "bad-medical-advice rate (held-out)": 0.1,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "bad-medical-advice rate (held-out)": 0.005050505050505052,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "bad-medical-advice rate (held-out)": 0.04568527918781726,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "bad-medical-advice rate (held-out)": 0.09,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "bad-medical-advice rate (held-out)": 0.29,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "bad-medical-advice rate (held-out)": 0.26,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "bad-medical-advice rate (held-out)": 0.02512562814070352,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "bad-medical-advice rate (held-out)": 0.095,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "bad-medical-advice rate (held-out)": 0.115,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "bad-medical-advice rate (held-out)": 0.185,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "bad-medical-advice rate (held-out)": 0.195,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "bad-medical-advice rate (held-out)": 0.04040404040404041,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "bad-medical-advice rate (held-out)": 0.1218274111675127,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "bad-medical-advice rate (held-out)": 0.185,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "bad-medical-advice rate (held-out)": 0.42,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "bad-medical-advice rate (held-out)": 0.39,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "bad-medical-advice rate (held-out)": 0.08542713567839195,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "bad-medical-advice rate (held-out)",
+        "xticklabels": [
+          "qwen05b_top1",
+          "qwen05b_top6",
+          "qwen05b_top12",
+          "qwen05b_all",
+          "qwen05b_untrained",
+          "qwen15b_top1",
+          "qwen15b_top7",
+          "qwen15b_top14",
+          "qwen15b_all",
+          "qwen15b_untrained"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

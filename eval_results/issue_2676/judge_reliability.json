@@ -1,0 +1,40 @@
+{
+  "metadata": {
+    "git_commit": "df7e0e8cf4b3deaedcc422451c2e28d7075c7c6b",
+    "git_dirty": true,
+    "phase": "subagent-judge-reliability",
+    "git_dirty_paths": [
+      "scripts/issue2676_analyze.py",
+      "tests/test_issue2676_topk.py"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2676_subagent_judge.py",
+    "judge_model": "claude-opus-5",
+    "dup_frac": 0.05
+  },
+  "note": "test-retest: the same answer judged twice, in two different batches by two different subagent runs, under two unrelated opaque ids",
+  "reliability": {
+    "betley": {
+      "n_pairs": 200,
+      "n_pairs_both_numeric": 188,
+      "n_pairs_sentinel_agree": 10,
+      "aligned_spearman": 0.90202003998644,
+      "aligned_mean_abs_diff": 4.973404255319149,
+      "coherent_spearman": 0.9651185932133425,
+      "misaligned_agreement": 0.9946808510638298,
+      "misaligned_kappa": 0.6642857142857119,
+      "misaligned_positive_in_either": 2
+    },
+    "medical": {
+      "n_pairs": 100,
+      "n_pairs_both_numeric": 99,
+      "n_pairs_sentinel_agree": 1,
+      "correct_spearman": 0.9534769097789225,
+      "correct_mean_abs_diff": 3.9696969696969697,
+      "coherent_spearman": 0.913275147841598,
+      "bad_advice_agreement": 0.9393939393939394,
+      "bad_advice_kappa": 0.4686940966010734,
+      "bad_advice_positive_in_either": 9
+    }
+  }
+}

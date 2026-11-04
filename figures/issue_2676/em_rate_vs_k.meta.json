@@ -1,0 +1,322 @@
+{
+  "commit": "df7e0e8c+dirty",
+  "render_id": "2b175d2b96574f78",
+  "git_commit": "df7e0e8cf4b3deaedcc422451c2e28d7075c7c6b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2676_analyze.py",
+    "tests/test_issue2676_topk.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2676_analyze.py",
+  "created": "2026-11-04T01:22:33Z",
+  "figsize": [
+    5.0,
+    3.4
+  ],
+  "points": [
+    {
+      "K (top layers trained; star = all layers)": 1.0,
+      "EM rate": 0.0,
+      "error": 0.0,
+      "series": "qwen05b (top-K)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "K (top layers trained; star = all layers)": 6.0,
+      "EM rate": 0.0,
+      "error": 0.0,
+      "series": "qwen05b (top-K)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "K (top layers trained; star = all layers)": 12.0,
+      "EM rate": 0.015267175572519083,
+      "error": 0.011450381679389313,
+      "series": "qwen05b (top-K)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "K (top layers trained; star = all layers)": 24.0,
+      "EM rate": 0.010075566750629723,
+      "error": 0.008816120906801008,
+      "series": "qwen05b (top-K)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "K (top layers trained; star = all layers)": 1.0,
+      "EM rate": 0.0,
+      "error": 0.0,
+      "series": "qwen15b (top-K)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "K (top layers trained; star = all layers)": 7.0,
+      "EM rate": 0.0,
+      "error": 0.0,
+      "series": "qwen15b (top-K)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "K (top layers trained; star = all layers)": 14.0,
+      "EM rate": 0.03007518796992481,
+      "error": 0.016290726817042606,
+      "series": "qwen15b (top-K)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "K (top layers trained; star = all layers)": 28.0,
+      "EM rate": 0.04522613065326633,
+      "error": 0.01884422110552764,
+      "series": "qwen15b (top-K)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "K (top layers trained; star = all layers)": 1.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "K (top layers trained; star = all layers)": 6.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "K (top layers trained; star = all layers)": 12.0,
+      "EM rate": 0.015267175572519083,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "K (top layers trained; star = all layers)": 24.0,
+      "EM rate": 0.010075566750629723,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "K (top layers trained; star = all layers)": 1.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "K (top layers trained; star = all layers)": 6.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "K (top layers trained; star = all layers)": 12.0,
+      "EM rate": 0.005089058524173028,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "K (top layers trained; star = all layers)": 24.0,
+      "EM rate": 0.0025188916876574307,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "K (top layers trained; star = all layers)": 1.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "K (top layers trained; star = all layers)": 6.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "K (top layers trained; star = all layers)": 12.0,
+      "EM rate": 0.027989821882951654,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "K (top layers trained; star = all layers)": 24.0,
+      "EM rate": 0.020151133501259445,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "K (top layers trained; star = all layers)": 24.0,
+      "EM rate": 0.010075566750629723,
+      "series": "qwen05b all layers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "K (top layers trained; star = all layers)": 0.0,
+      "EM rate": 0.0,
+      "series": "qwen05b untrained",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "K (top layers trained; star = all layers)": 1.0,
+      "EM rate": 0.0,
+      "series": "qwen05b untrained",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "K (top layers trained; star = all layers)": 1.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "K (top layers trained; star = all layers)": 7.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "K (top layers trained; star = all layers)": 14.0,
+      "EM rate": 0.03007518796992481,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "K (top layers trained; star = all layers)": 28.0,
+      "EM rate": 0.04522613065326633,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "K (top layers trained; star = all layers)": 1.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "K (top layers trained; star = all layers)": 7.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "K (top layers trained; star = all layers)": 14.0,
+      "EM rate": 0.015037593984962405,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "K (top layers trained; star = all layers)": 28.0,
+      "EM rate": 0.02763819095477387,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "K (top layers trained; star = all layers)": 1.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "K (top layers trained; star = all layers)": 7.0,
+      "EM rate": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "K (top layers trained; star = all layers)": 14.0,
+      "EM rate": 0.047619047619047616,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "K (top layers trained; star = all layers)": 28.0,
+      "EM rate": 0.06532663316582915,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "K (top layers trained; star = all layers)": 28.0,
+      "EM rate": 0.04522613065326633,
+      "series": "qwen15b all layers",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "K (top layers trained; star = all layers)": 0.0,
+      "EM rate": 0.0,
+      "series": "qwen15b untrained",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "K (top layers trained; star = all layers)": 1.0,
+      "EM rate": 0.0,
+      "series": "qwen15b untrained",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 38,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "K (top layers trained; star = all layers)",
+        "ylabel": "EM rate",
+        "legend_labels": [
+          "qwen05b all layers",
+          "qwen05b untrained",
+          "qwen15b all layers",
+          "qwen15b untrained",
+          "qwen05b (top-K)",
+          "qwen15b (top-K)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04",
+          "0.05",
+          "0.06",
+          "0.07"
+        ]
+      }
+    ],
+    "series": [
+      "qwen05b all layers",
+      "qwen05b untrained",
+      "qwen15b all layers",
+      "qwen15b untrained",
+      "qwen05b (top-K)",
+      "qwen15b (top-K)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

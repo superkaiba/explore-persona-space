@@ -1,0 +1,46 @@
+{
+  "task": 2676,
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "arm": "topk",
+  "k": 1,
+  "seed": 1,
+  "smoke": false,
+  "recipe": {
+    "per_device_batch": 2,
+    "grad_accum": 8,
+    "learning_rate": 2e-05,
+    "warmup_steps": 20,
+    "weight_decay": 0.01,
+    "lr_scheduler": "cosine",
+    "max_length": 2048,
+    "optim": "adamw_8bit",
+    "max_epochs": 3,
+    "loss_window": 20
+  },
+  "n_train_rows": 6849,
+  "data_sha256": "9d52186ab9886e3abef0eebb1901df9da4ce25a297e584158be0a4bba8d56507",
+  "holdout_n": 200,
+  "holdout_seed": 0,
+  "stop_step": 1287,
+  "stop_reason": "cap",
+  "final_window_mean_loss": 2.000315,
+  "lr_at_stop": 3.074088012922083e-11,
+  "target_loss": 1.69981,
+  "trainable_param_count": 280173056,
+  "trainable_param_names_compressed": [
+    "model.layers.27.* (12 tensors)",
+    "lm_head.* (1 tensors)",
+    "model.norm.* (1 tensors)"
+  ],
+  "wall_seconds": 277.2,
+  "train_wall_seconds": 252.0,
+  "mean_s_per_step": 0.196,
+  "tokens_per_step_est": 2145,
+  "metadata": {
+    "git_commit": "372451aab39fff61a523aa0771b673901fa84940",
+    "git_dirty": false,
+    "phase": "train-topk1",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2676_topk_sft.py"
+  }
+}
