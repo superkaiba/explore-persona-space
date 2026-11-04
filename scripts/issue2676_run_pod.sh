@@ -447,6 +447,19 @@ for job in "${JOB_LIST[@]}"; do
     gen_arm "$m" "$arm_label" "$CKPT_ROOT/$label" betley
     gen_arm "$m" "$arm_label" "$CKPT_ROOT/$label" holdout
     unset HOLDOUT_JSON_OVERRIDE
+    # Per-job raw-completions upload: this job's answers reach HF before the
+    # next job starts, so an instance death loses at most one job's answers
+    # (#664 per-cell rule; the 2026-11-04 GCP network-wedge lost all of them).
+    if [ "$SMOKE" = 0 ]; then
+        if step_done "upload_raw_${label}"; then
+            echo "[skip] upload_raw_${label} (done)"
+        else
+            CURRENT_PHASE="upload_raw_$label"
+            echo "[phase=upload_raw arm=$label]"
+            uv run python scripts/issue2676_eval.py upload-raw --eval-results-dir "$EVAL_ROOT"
+            mark_done "upload_raw_${label}"
+        fi
+    fi
     delete_local_ckpt "$m" "$arm_label"
     write_sentinel "epm:progress" "[phase=job_done] $label trained and generated (job=$job smoke=$SMOKE)"
 done
