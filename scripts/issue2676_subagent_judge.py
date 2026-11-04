@@ -104,7 +104,7 @@ def cmd_build(args) -> int:
     manifest: dict[str, dict] = {}
     for rubric, (raw_sub, agent, *_rest) in RUBRICS.items():
         per_label: dict[str, list[dict]] = {}
-        for label in LABELS:
+        for label in args.labels:
             raw = Path(args.raw_root) / raw_sub / label / "raw_completions.json"
             ok, reason = E._valid_raw(raw)
             if not ok:
@@ -134,7 +134,7 @@ def cmd_build(args) -> int:
         if n_label % n_batches:
             raise RuntimeError(f"{rubric}: {n_label} answers/model not divisible by {n_batches}")
         batches: list[list[dict]] = [[] for _ in range(n_batches)]
-        for li, label in enumerate(LABELS):
+        for li, label in enumerate(args.labels):
             for j, row in enumerate(per_label[label]):
                 batches[(j + li) % n_batches].append(row)
         primaries = [(b, r) for b, rows in enumerate(batches) for r in rows]
@@ -270,8 +270,8 @@ def cmd_collect(args) -> int:
 
     for rubric, (_raw, agent, score_key, verdict_fn, verdict_name, out_sub) in RUBRICS.items():
         parsed = parsed_by_rubric[rubric]
-        by_label: dict[str, dict[str, dict]] = {lab: {} for lab in LABELS}
-        prov: dict[str, dict[str, dict]] = {lab: {} for lab in LABELS}
+        by_label: dict[str, dict[str, dict]] = {lab: {} for lab in args.labels}
+        prov: dict[str, dict[str, dict]] = {lab: {} for lab in args.labels}
         pairs = []
         for oid, rec in parsed.items():
             k = key[oid]
@@ -285,7 +285,7 @@ def cmd_collect(args) -> int:
             # custom_id grammar reduce_judged expects: {item}-d{draw}__{idx}__{draw}
             by_label[k["label"]][f"{item}-d0__00000__00"] = draw
             prov[k["label"]][item] = {"qid": k["qid"], "sample_idx": k["sample_idx"]}
-        for label in LABELS:
+        for label in args.labels:
             per_item = E.reduce_judged(by_label[label], score_key)
             for item, rec in per_item.items():
                 rec.update(prov[label][item])
@@ -351,7 +351,7 @@ def cmd_collect(args) -> int:
         }
         print(f"[collect] {rubric} reliability: {json.dumps(reliability[rubric])}")
     E._write_json_atomic(
-        eval_root / "judge_reliability.json",
+        eval_root / args.reliability_name,
         {
             "metadata": as_metadata_dict(git_provenance(), phase="subagent-judge-reliability")
             | {"judge_model": args.judge_model, "dup_frac": DUP_FRAC},
@@ -375,11 +375,22 @@ def build_argparser() -> argparse.ArgumentParser:
     b.add_argument("--key", required=True)
     b.add_argument("--betley-batches", type=int, default=20)
     b.add_argument("--medical-batches", type=int, default=10)
+    b.add_argument(
+        "--labels", nargs="+", default=list(LABELS), help="arm labels (default: Phase A)"
+    )
     c = sub.add_parser("collect")
     c.add_argument("--root", required=True)
     c.add_argument("--key", required=True)
     c.add_argument("--eval-root", required=True)
     c.add_argument("--judge-model", required=True)
+    c.add_argument(
+        "--labels", nargs="+", default=list(LABELS), help="arm labels (default: Phase A)"
+    )
+    c.add_argument(
+        "--reliability-name",
+        default="judge_reliability.json",
+        help="reliability output filename under --eval-root",
+    )
     return ap
 
 
