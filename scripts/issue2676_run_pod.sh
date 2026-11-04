@@ -28,16 +28,26 @@
 # --smoke: 0.5B only, K=1, 20 train steps, 2 questions x 4 samples, through
 # the SAME entrypoints; all roots redirect to /tmp/issue-2676-smoke/ and HF
 # uploads are skipped (no smoke writes to canonical prefixes).
+#
+# --followup: instead of Phase A, run the comma-separated job list in
+# FOLLOWUP_JOBS, each job "model:arm:seed[:max_epochs]" (arm = all | topK).
+# Labels: <model>_<arm>, plus _s<seed> when seed != 1, plus _e<epochs> when a
+# max_epochs override is given (e.g. qwen15b_top7_e20, qwen05b_all_s2). A topK
+# job is dose-matched to the SAME-seed all-layers arm's target loss, so a
+# seed-S all job must precede its seed-S topK jobs. Holdout generation uses the
+# arm's own holdout.json, asserted identical to the model's Phase A holdout.
 set -euo pipefail
 
 usage() {
-    echo "usage: bash scripts/issue2676_run_pod.sh [--smoke]"
+    echo "usage: bash scripts/issue2676_run_pod.sh [--smoke] [--followup]"
 }
 
 SMOKE=0
+FOLLOWUP=0
 for arg in "$@"; do
     case "$arg" in
         --smoke) SMOKE=1 ;;
+        --followup) FOLLOWUP=1 ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown arg: $arg" >&2; usage >&2; exit 2 ;;
     esac
@@ -49,7 +59,13 @@ cd "$REPO_ROOT"
 
 DATA="$REPO_ROOT/data/issue404/bad_medical_advice.jsonl"
 TRAIN_SEED=1
+CUR_SEED="$TRAIN_SEED"
 GEN_SEED=0
+# Follow-up job lists (bidirectional smoke/production pair; see --followup).
+FOLLOWUP_JOBS_FULL="${FOLLOWUP_JOBS:-}"
+FOLLOWUP_JOBS_SMOKE="qwen05b:all:2,qwen05b:top1:2:2"
+RUN_NAME="Phase A"
+[ "$FOLLOWUP" = 1 ] && RUN_NAME="Follow-up"
 # Generation nucleus top_p (recorded in raw-completions metadata). Default 1.0
 # (full-distribution sampling, matching Betley's eval; user decision 2026-11-03).
 # Override per run: TOP_P=0.95 bash scripts/issue2676_run_pod.sh.
@@ -83,6 +99,12 @@ if [ "$SMOKE" = 1 ]; then
     CKPT_ROOT="$SMOKE_ROOT/ckpts"
     SENTINEL_DIR="$SMOKE_ROOT/logs"
     MODELS="qwen05b"
+fi
+JOBS="$FOLLOWUP_JOBS_FULL"
+[ "$SMOKE" = 1 ] && JOBS="$FOLLOWUP_JOBS_SMOKE"
+if [ "$FOLLOWUP" = 1 ] && [ -z "$JOBS" ]; then
+    echo "--followup needs FOLLOWUP_JOBS (model:arm:seed[:max_epochs],...)" >&2
+    exit 2
 fi
 DONE_DIR="$EVAL_ROOT/done"
 mkdir -p "$EVAL_ROOT" "$CKPT_ROOT" "$SENTINEL_DIR" "$DONE_DIR"
@@ -168,10 +190,10 @@ print(f"[sentinel] wrote {p}")
 on_exit() {
     rc=$?
     if [ "$rc" -eq 0 ]; then
-        write_sentinel "epm:results" "Phase A complete rc=0 smoke=$SMOKE eval_root=$EVAL_ROOT; arms trained+generated; checkpoints on HF model repo under issue2676/; raw completions under issue2676_topk_em/raw_completions/. Next: VM-side judge pilot + judge waves (scripts/issue2676_eval.py judge / install-judge), build-pools, margin."
+        write_sentinel "epm:results" "$RUN_NAME complete rc=0 smoke=$SMOKE eval_root=$EVAL_ROOT; arms trained+generated; checkpoints on HF model repo under issue2676/; raw completions under issue2676_topk_em/raw_completions/. Next: VM-side judge pilot + judge waves (scripts/issue2676_eval.py judge / install-judge), build-pools, margin."
         echo "[phase=done]"
     else
-        write_sentinel "epm:progress" "Phase A FAILED rc=$rc at phase=$CURRENT_PHASE smoke=$SMOKE eval_root=$EVAL_ROOT (resumable: re-run issue2676_run_pod.sh — completed steps skip via $DONE_DIR)"
+        write_sentinel "epm:progress" "$RUN_NAME FAILED rc=$rc at phase=$CURRENT_PHASE smoke=$SMOKE eval_root=$EVAL_ROOT (resumable: re-run issue2676_run_pod.sh — completed steps skip via $DONE_DIR)"
         echo "[phase=failed rc=$rc phase_at_failure=$CURRENT_PHASE]"
     fi
 }
@@ -198,7 +220,7 @@ train_arm() {
         --model "$(model_id "$m")" \
         --data "$DATA" \
         --out-dir "$out" \
-        --seed "$TRAIN_SEED" \
+        --seed "$CUR_SEED" \
         "${smoke_flag[@]}" \
         "$@"
     mkdir -p "$train_dir"
@@ -281,7 +303,7 @@ gen_arm() {
         --out-dir "$out" --seed "$GEN_SEED" --top-p "$TOP_P"
     )
     if [ "$mode" = "holdout" ]; then
-        gen_args+=(--data "$DATA" --holdout-json "$EVAL_ROOT/train/${m}_all/holdout.json")
+        gen_args+=(--data "$DATA" --holdout-json "${HOLDOUT_JSON_OVERRIDE:-$EVAL_ROOT/train/${m}_all/holdout.json}")
     fi
     [ "$SMOKE" = 1 ] && gen_args+=(--smoke)
     gpu_clean_gate
@@ -312,10 +334,11 @@ delete_local_ckpt() {
 }
 
 read_target_loss() {
+    # read_target_loss <model_short> [seed_suffix] — the all-layers arm's target.
     uv run python -c '
 import json, sys
 print(json.load(open(sys.argv[1]))["target_loss"])
-' "$EVAL_ROOT/train/$1_all/train_summary.json"
+' "$EVAL_ROOT/train/$1_all${2:-}/train_summary.json"
 }
 
 # ── Phase: data ──────────────────────────────────────────────────────────────
@@ -332,6 +355,7 @@ echo "[data] $DATA rows=$N_ROWS"
 write_sentinel "epm:progress" "[phase=data] done: bad_medical_advice.jsonl rows=$N_ROWS smoke=$SMOKE"
 
 # ── Phases: per-model train + generate ───────────────────────────────────────
+if [ "$FOLLOWUP" = 0 ]; then
 for m in $MODELS; do
     base_id="$(model_id "$m")"
 
@@ -363,6 +387,70 @@ for m in $MODELS; do
     done
     write_sentinel "epm:progress" "[phase=model_done] $m: all + untrained + top-K arms trained and generated (smoke=$SMOKE)"
 done
+else
+# ── Follow-up jobs (--followup) ──────────────────────────────────────────────
+assert_same_holdout() {
+    # Fail loud unless the arm's holdout rows equal the model's Phase A holdout.
+    uv run python -c '
+import json, sys
+a, b = (json.load(open(p)) for p in sys.argv[1:3])
+key = lambda h: (h["data_sha256"], h["holdout_indices"])
+if key(a) != key(b):
+    sys.exit(f"holdout mismatch: {sys.argv[1]} != {sys.argv[2]}")
+print(f"[holdout] {sys.argv[1]} matches {sys.argv[2]}")
+' "$1" "$2"
+}
+
+IFS=',' read -r -a JOB_LIST <<< "$JOBS"
+echo "[followup] ${#JOB_LIST[@]} jobs: $JOBS"
+for job in "${JOB_LIST[@]}"; do
+    IFS=':' read -r m arm seed epochs <<< "$job"
+    [ -n "$m" ] && [ -n "$arm" ] && [ -n "$seed" ] || { echo "bad job spec '$job'" >&2; exit 2; }
+    case " $MODELS " in *" $m "*) ;; *) echo "job model $m not in MODELS ($MODELS)" >&2; exit 2 ;; esac
+    model_id "$m" > /dev/null
+    seed_sfx=""
+    [ "$seed" != 1 ] && seed_sfx="_s${seed}"
+    arm_label="${arm}${seed_sfx}"
+    [ -n "$epochs" ] && arm_label="${arm_label}_e${epochs}"
+    if [ "$arm_label" = "$arm" ]; then
+        echo "job '$job' would overwrite the Phase A arm ${m}_${arm}" >&2
+        exit 2
+    fi
+    extra=()
+    [ -n "$epochs" ] && extra+=(--max-epochs "$epochs")
+    CUR_SEED="$seed"
+    case "$arm" in
+        all)
+            train_arm "$m" "$arm_label" --arm all "${extra[@]}"
+            ;;
+        top*)
+            k="${arm#top}"
+            [[ "$k" =~ ^[0-9]+$ ]] || { echo "bad arm '$arm' in job '$job'" >&2; exit 2; }
+            TARGET="$(read_target_loss "$m" "$seed_sfx")"
+            echo "[target] ${m}_${arm_label}: seed-${seed} all-layers target loss = $TARGET"
+            train_arm "$m" "$arm_label" --arm topk --k "$k" --target-loss "$TARGET" "${extra[@]}"
+            ;;
+        *) echo "bad arm '$arm' in job '$job'" >&2; exit 2 ;;
+    esac
+    CUR_SEED="$TRAIN_SEED"
+    label="${m}_${arm_label}"
+    upload_train_meta "$m" "$arm_label"
+    upload_ckpt "$m" "$arm_label"
+    HOLDOUT_JSON_OVERRIDE="$EVAL_ROOT/train/$label/holdout.json"
+    phase_a_holdout="$EVAL_ROOT/train/${m}_all/holdout.json"
+    if [ -f "$phase_a_holdout" ] && [ "$HOLDOUT_JSON_OVERRIDE" != "$phase_a_holdout" ]; then
+        assert_same_holdout "$HOLDOUT_JSON_OVERRIDE" "$phase_a_holdout"
+    elif [ "$SMOKE" = 0 ]; then
+        echo "FATAL: Phase A holdout $phase_a_holdout missing; cannot check holdout parity" >&2
+        exit 1
+    fi
+    gen_arm "$m" "$arm_label" "$CKPT_ROOT/$label" betley
+    gen_arm "$m" "$arm_label" "$CKPT_ROOT/$label" holdout
+    unset HOLDOUT_JSON_OVERRIDE
+    delete_local_ckpt "$m" "$arm_label"
+    write_sentinel "epm:progress" "[phase=job_done] $label trained and generated (job=$job smoke=$SMOKE)"
+done
+fi
 
 # ── Phase: raw-completions upload (one bulk commit, data repo) ───────────────
 CURRENT_PHASE="upload_raw"
