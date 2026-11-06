@@ -1,0 +1,9 @@
+{
+ "sources": [
+  "data/issue_2661/results/map_ridge/map_ridge_metrics.json",
+  "data/issue_2661/results/map_mlp/map_mlp_metrics.json",
+  "data/issue_2661/results/controls/controls.json",
+  "data/issue_2661/results/controls/knn_retrieval.json",
+  "data/issue_2661/results/perfeature/perfeature_summary.json"
+ ]
+}
